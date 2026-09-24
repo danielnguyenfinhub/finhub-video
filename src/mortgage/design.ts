@@ -13,8 +13,15 @@ export type CoverProps = {
   subtitle: string;
   keywords: string[];
 };
-// Must render <PacedVideo seg src look />, which owns pacing and audio.
-export type TalkProps = { seg: Segment; index: number; src: string; look?: Look };
+// Must render <PacedVideo seg src look foreground />, which owns pacing and
+// audio (and, with foreground, the brand backdrop behind the cut-out).
+export type TalkProps = {
+  seg: Segment;
+  index: number;
+  src: string;
+  look?: Look;
+  foreground?: string; // set when edit.json "background" is on
+};
 // Frame 0 is the first word of the talk.
 export type OverlayProps = { reel: Reel; keywords: string[]; talkFrames: number };
 

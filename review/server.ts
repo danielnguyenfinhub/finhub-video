@@ -1,12 +1,15 @@
 // Local server for the review page: serves the page and public/ (with HTTP
 // Range, so the Player's <video> can seek), saves edit.json and starts renders.
 // Bound to 127.0.0.1 only. Bundled by review/build.mjs into dist/server.cjs.
-import { spawn, type ChildProcess } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import {
   copyFileSync,
   createReadStream,
+  createWriteStream,
   existsSync,
   readdirSync,
+  renameSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -21,6 +24,7 @@ const PUBLIC = join(ROOT, "public");
 const VIDEOS = join(PUBLIC, "videos");
 const PORT = 4100;
 const MAX_BODY = 1_000_000;
+const MAX_FOREGROUND = 8_000_000_000;
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 const TYPES: Record<string, string> = {
@@ -105,6 +109,59 @@ const saveEdit = async (req: IncomingMessage, res: ServerResponse, slug: string)
   json(res, 200, { saved: `public/videos/${slug}/edit.json`, backup: `public/videos/${slug}/edit.json.bak` });
 };
 
+// Video frames in a file, counted from packets (fast: no decoding).
+const videoFrames = (file: string) =>
+  Number(
+    execFileSync("ffprobe", [
+      "-v", "error", "-select_streams", "v:0", "-count_packets",
+      "-show_entries", "stream=nb_read_packets", "-of", "csv=p=0", file,
+    ]).toString().trim(),
+  );
+
+// Saves the background-removed foreground (from matte.html) as
+// foreground.webm. Streamed to a .part file, then kept only if it has exactly
+// as many frames as source.mp4: the render plays it through the same cuts and
+// pacing, so a single dropped frame would put it out of sync with the voice.
+const saveForeground = (req: IncomingMessage, res: ServerResponse, slug: string) =>
+  new Promise<void>((done) => {
+    const dir = join(VIDEOS, slug);
+    const part = join(dir, "foreground.webm.part");
+    const out = createWriteStream(part);
+    let bytes = 0;
+    let settled = false;
+    const finish = (status: number, body: unknown) => {
+      if (settled) return;
+      settled = true;
+      json(res, status, body);
+      done();
+    };
+    const fail = (e: Error) => {
+      out.destroy();
+      rmSync(part, { force: true });
+      finish(400, { error: `Foreground not saved: ${e.message}` });
+    };
+    req.on("data", (c: Buffer) => {
+      bytes += c.length;
+      if (bytes > MAX_FOREGROUND) req.destroy(new Error("it is larger than 8 GB"));
+    });
+    req.on("error", fail);
+    out.on("error", fail);
+    req.pipe(out);
+    out.on("finish", () => {
+      if (settled) return;
+      try {
+        const want = videoFrames(join(dir, "source.mp4"));
+        const got = videoFrames(part);
+        if (got !== want)
+          throw new Error(`it has ${got} frames but source.mp4 has ${want}, so it would drift out of sync. Run it again.`);
+        renameSync(part, join(dir, "foreground.webm"));
+        finish(200, { saved: `public/videos/${slug}/foreground.webm`, frames: got });
+      } catch (e) {
+        fail(e as Error);
+      }
+    });
+  });
+
 // One render at a time, through the same script Daniel would run.
 let render: { slug: string; proc: ChildProcess; lines: string[]; exitCode: number | null } | null = null;
 const startRender = (res: ServerResponse, slug: string) => {
@@ -133,7 +190,7 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? "/", "http://localhost");
     const path = decodeURIComponent(url.pathname);
-    const api = /^\/api\/(edit|render)\/([^/]+)$/.exec(path);
+    const api = /^\/api\/(edit|render|foreground)\/([^/]+)$/.exec(path);
     if (path === "/api/videos") return json(res, 200, listVideos());
     if (api) {
       const [, what, slug] = api;
@@ -141,6 +198,7 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { error: `No reviewable video "${slug}" in public/videos/.` });
       if (what === "edit" && req.method === "POST") return await saveEdit(req, res, slug);
       if (what === "render" && req.method === "POST") return startRender(res, slug);
+      if (what === "foreground" && req.method === "POST") return await saveForeground(req, res, slug);
       if (what === "render")
         return json(res, 200, render?.slug === slug
           ? { running: render.exitCode === null, exitCode: render.exitCode, lines: render.lines }

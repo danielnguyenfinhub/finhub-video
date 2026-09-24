@@ -56,7 +56,13 @@ const Tape: React.FC<{ left: number; top: number; rotate: number }> = ({
 
 // Cuts alternate between a wide and a closer framing inside the card, each
 // landing with a small spring punch, so jump cuts read as intentional.
-const Talk: React.FC<TalkProps> = ({ seg, index, src, look }) => {
+const Talk: React.FC<TalkProps> = ({
+  seg,
+  index,
+  src,
+  look,
+  foreground,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const base =
@@ -91,6 +97,7 @@ const Talk: React.FC<TalkProps> = ({ seg, index, src, look }) => {
           seg={seg}
           src={src}
           look={look}
+          foreground={foreground}
           style={{
             transform: `scale(${base + punch})`,
             transformOrigin: "50% 30%",

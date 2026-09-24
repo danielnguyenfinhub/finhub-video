@@ -17,3 +17,5 @@ remotion-video-skill.zip
 
 # Python bytecode from scripts/*.py
 __pycache__/
+/public/videos/*/foreground.webm
+/public/videos/*/foreground.webm.part

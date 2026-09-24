@@ -11,7 +11,13 @@ import { grayscale } from "@remotion/effects/grayscale";
 import { vignette } from "@remotion/effects/vignette";
 import { Video } from "@remotion/media";
 import type React from "react";
-import { OffthreadVideo, interpolate, type EffectsProp } from "remotion";
+import {
+  AbsoluteFill,
+  Audio,
+  OffthreadVideo,
+  interpolate,
+  type EffectsProp,
+} from "remotion";
 import type { Look } from "./schema";
 import { retryVideoFetch } from "./style";
 import type { Segment } from "./timeline";
@@ -34,13 +40,28 @@ const LOOK_EFFECTS: Record<Look, EffectsProp> = {
   ],
 };
 
+// edit.json "background": "brand" — what sits behind Daniel once the room is
+// removed: navy into brand blue with a soft light behind his head.
+const BrandBackdrop: React.FC = () => (
+  <AbsoluteFill
+    style={{
+      background:
+        "radial-gradient(ellipse 70% 45% at 50% 32%, rgba(79, 163, 224, 0.45), transparent 70%), linear-gradient(170deg, #0B1F3D 0%, #0B2F5E 55%, #0064A8 100%)",
+    }}
+  />
+);
+
 export const PacedVideo: React.FC<{
   seg: Segment;
   src: string;
   look?: Look;
   style?: React.CSSProperties;
   muted?: boolean;
-}> = ({ seg, src, look, style, muted }) => {
+  // foreground.webm (Daniel cut out, with alpha; review/matte.html makes it):
+  // set, the room is replaced by the brand backdrop. Same frames as src, so it
+  // plays through the same trimBefore and rate; the voice still comes from src.
+  foreground?: string;
+}> = ({ seg, src, look, style, muted, foreground }) => {
   const dur = seg.outDuration;
   const shared = {
     src,
@@ -65,18 +86,40 @@ export const PacedVideo: React.FC<{
   // No fallback to <OffthreadVideo>: that would ship the video ungraded. Its
   // objectFit prop (default "contain") overrides style.objectFit, so it is set
   // too. No onError: after delayRenderRetries the render fails, as it should.
-  return look ? (
-    <Video
-      {...shared}
-      objectFit="cover"
-      effects={LOOK_EFFECTS[look]}
-      disallowFallbackToOffthreadVideo
-      delayRenderRetries={retryVideoFetch.delayRenderRetries}
-      delayRenderTimeoutInMilliseconds={
-        retryVideoFetch.delayRenderTimeoutInMilliseconds
-      }
-    />
-  ) : (
-    <OffthreadVideo {...shared} {...retryVideoFetch} />
+  // `transparent` keeps the cut-out's alpha (<OffthreadVideo> otherwise
+  // extracts opaque JPEG frames).
+  const player = (props: typeof shared, transparent = false) =>
+    look ? (
+      <Video
+        {...props}
+        objectFit="cover"
+        effects={LOOK_EFFECTS[look]}
+        disallowFallbackToOffthreadVideo
+        delayRenderRetries={retryVideoFetch.delayRenderRetries}
+        delayRenderTimeoutInMilliseconds={
+          retryVideoFetch.delayRenderTimeoutInMilliseconds
+        }
+      />
+    ) : (
+      <OffthreadVideo
+        {...props}
+        {...retryVideoFetch}
+        transparent={transparent}
+      />
+    );
+  if (!foreground) return player(shared);
+  return (
+    <AbsoluteFill>
+      {muted ? null : (
+        <Audio
+          src={src}
+          trimBefore={seg.srcFrom}
+          playbackRate={seg.rate}
+          volume={(f) => shared.volume(f)}
+        />
+      )}
+      <BrandBackdrop />
+      {player({ ...shared, src: foreground, muted: true }, true)}
+    </AbsoluteFill>
   );
 };

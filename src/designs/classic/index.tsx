@@ -28,7 +28,13 @@ const HOOK_FRAMES = 105;
 // The first segment eases in from a 1.3 zoom; alternate segments sit
 // punched-in on the face, so every jump cut reads as an intentional zoom-cut,
 // and each cut lands with a small spring "punch" and a slow 2% drift.
-const Talk: React.FC<TalkProps> = ({ seg, index, src, look }) => {
+const Talk: React.FC<TalkProps> = ({
+  seg,
+  index,
+  src,
+  look,
+  foreground,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const base =
@@ -49,6 +55,7 @@ const Talk: React.FC<TalkProps> = ({ seg, index, src, look }) => {
         seg={seg}
         src={src}
         look={look}
+        foreground={foreground}
         style={{
           transform: `scale(${base + punch + drift})`,
           transformOrigin: "50% 30%",

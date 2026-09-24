@@ -98,6 +98,12 @@ def main() -> None:
 
     if not (ROOT / "public" / "videos" / slug / "edit.json").exists():
         raise SystemExit(f"public/videos/{slug}/edit.json not found; run prep-video.py first.")
+    edit = json.loads((ROOT / "public" / "videos" / slug / "edit.json").read_text(encoding="utf-8"))
+    if edit.get("background") and not (ROOT / "public" / "videos" / slug / "foreground.webm").exists():
+        raise SystemExit(
+            f'edit.json has "background": "{edit["background"]}" but public/videos/{slug}/foreground.webm '
+            f"is missing. Run `npm run review`, open http://localhost:4100/matte.html?slug={slug} "
+            f'and wait for "Saved", or remove "background" from edit.json.')
     out_dir = ROOT / "out" / "videos" / slug
     out_dir.mkdir(parents=True, exist_ok=True)
     full = out_dir / f"{slug}.mp4"
