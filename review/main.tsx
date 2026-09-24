@@ -72,7 +72,10 @@ const App = () => {
         setStatus(null);
       })
       .catch((e) =>
-        setStatus({ tone: "bad", text: `Could not load ${slug}: ${e.message}` }),
+        setStatus({
+          tone: "bad",
+          text: `Could not load ${slug}: ${e.message}`,
+        }),
       );
   }, [slug]);
 
@@ -169,7 +172,10 @@ const App = () => {
         setRendering(false);
         setStatus(
           r.exitCode === 0
-            ? { tone: "ok", text: `Rendered. Files are in out/videos/${slug}/.` }
+            ? {
+                tone: "ok",
+                text: `Rendered. Files are in out/videos/${slug}/.`,
+              }
             : {
                 tone: "bad",
                 text: `Render failed (exit ${r.exitCode}). See the log below.`,
