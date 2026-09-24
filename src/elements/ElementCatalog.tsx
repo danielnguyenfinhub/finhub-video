@@ -15,6 +15,7 @@ import { FocusCrop } from "./FocusCrop";
 import { FrequencyBars } from "./FrequencyBars";
 import { ImageCarousel } from "./ImageCarousel";
 import { KenBurns } from "./KenBurns";
+import { LineGraph } from "./LineGraph";
 import { LineReveal } from "./LineReveal";
 import { NeonTitle } from "./NeonTitle";
 import { NewsTicker } from "./NewsTicker";
@@ -83,6 +84,15 @@ const CAROUSEL_IMAGES = [
   "sample-frame.png",
 ].map((p) => staticFile(p));
 
+// Illustrative figures only (labelled as such on screen), not real rates.
+const SAMPLE_TREND = [
+  { label: "Q1", value: 4.35 },
+  { label: "Q2", value: 4.35 },
+  { label: "Q3", value: 4.1 },
+  { label: "Q4", value: 3.85 },
+  { label: "Q5", value: 3.6 },
+];
+
 const SCENES: [string, React.ReactNode][] = [
   ["Typewriter", <Centre key="t" bg="#F6F1E4"><Typewriter text="Lãi suất cố định hay thả nổi? Fixed or variable?" /></Centre>],
   ["LineReveal", <Centre key="l" bg="#F6F1E4"><LineReveal lines={["Chi phí thật sự", "của khoản vay", "The real cost"]} /></Centre>],
@@ -90,6 +100,7 @@ const SCENES: [string, React.ReactNode][] = [
   ["NeonTitle", <Centre key="n" bg="#070B14"><NeonTitle text="Lãi suất 2026" /></Centre>],
   ["RgbSplitText", <Centre key="r" bg="#070B14"><RgbSplitText text="Cảnh báo" frequency={0.5} /></Centre>],
   ["CountdownRing", <Centre key="c"><CountdownRing seconds={3} /></Centre>],
+  ["LineGraph", <Centre key="lg"><LineGraph data={SAMPLE_TREND} title="Lãi suất · ví dụ minh hoạ" unit="%" /></Centre>],
   ["SlashIntro", <SlashIntro key="si" top="PHẦN 2" bottom="Vay mua nhà lần đầu" />],
   ["KenBurns", <KenBurns key="k" src={staticFile("sample-frame.png")} />],
   ["TiltFrame", <TiltFrame key="tf"><Clip /></TiltFrame>],
