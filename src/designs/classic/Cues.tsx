@@ -14,9 +14,9 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { LenderRow } from "../brand/LenderRow";
-import { NotoEmoji } from "../brand/NotoEmoji";
-import { brand } from "../brand/theme";
+import { LenderRow } from "../../brand/LenderRow";
+import { NotoEmoji } from "../../brand/NotoEmoji";
+import { brand } from "../../brand/theme";
 import { FilmFinish, LeakFlash } from "./Frame";
 import {
   Bars,
@@ -27,8 +27,8 @@ import {
   type CueOf,
   type Rel,
 } from "./Infographics";
-import { outFrameOf, type Cue, type Reel } from "./schema";
-import { FONT, clamp, pop } from "./style";
+import { outFrameOf, type Cue, type Reel } from "../../mortgage/schema";
+import { FONT, clamp, pop } from "../../mortgage/style";
 
 // ---------------------------------------------------------------- verdict
 

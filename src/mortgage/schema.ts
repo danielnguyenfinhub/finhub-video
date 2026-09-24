@@ -115,6 +115,8 @@ export type Look = (typeof LOOKS)[number];
 export const editSchema = z.strictObject({
   // Not shown anywhere: why a span was removed, what the video is about, etc.
   notes: z.array(z.string()).optional(),
+  // The look of the video: a folder in src/designs/ (default "classic").
+  design: text.optional(),
   title: text,
   subtitle: text.optional(),
   coverFrameMs: ms.optional(),

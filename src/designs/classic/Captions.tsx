@@ -9,10 +9,10 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { brand } from "../brand/theme";
-import type { Reel } from "./schema";
-import { toOutMs } from "./timeline";
-import { FONT, STROKE, emphasised, enter } from "./style";
+import { brand } from "../../brand/theme";
+import type { Reel } from "../../mortgage/schema";
+import { toOutMs } from "../../mortgage/timeline";
+import { FONT, STROKE, emphasised, enter } from "../../mortgage/style";
 
 // ---------------------------------------------------------------- captions
 

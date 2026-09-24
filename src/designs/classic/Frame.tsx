@@ -17,8 +17,8 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { brand } from "../brand/theme";
-import type { EditJson } from "./schema";
+import { brand } from "../../brand/theme";
+import type { EditJson } from "../../mortgage/schema";
 import {
   FONT,
   LOGO,
@@ -26,7 +26,7 @@ import {
   emphasised,
   enter,
   retryVideoFetch,
-} from "./style";
+} from "../../mortgage/style";
 
 // ---------------------------------------------------------------- cover
 

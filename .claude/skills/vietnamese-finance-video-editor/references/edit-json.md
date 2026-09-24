@@ -23,7 +23,7 @@ the render with a readable error). Full worked example: `public/videos/ty-do/edi
 
 | Field | Required | What it does |
 |---|---|---|
-| `design` | no | The look: a folder in `src/designs/` (default `"classic"`). Needs the bootstrap in design-architecture.md |
+| `design` | no | The look: a folder in `src/designs/` registered in `src/designs/index.ts` (default `"classic"`). An unknown name fails the render and lists the designs there are |
 | `cut` | no | Automatic cuts, each on unless false: `{fillers?, stutters?, badWords?, words?: []}`. Restarts in different words still need `remove` |
 | `music` | no | `{file: "music/<name>.mp3", volume?}` looped bed, auto-ducked under speech |
 | `title` | yes | Cover headline and thumbnail text, Vietnamese, ≤ 8 words. Numbers and keyword-list words are auto-highlighted |
@@ -36,7 +36,7 @@ the render with a readable error). Full worked example: `public/videos/ty-do/edi
 | `keywords` | no | Extra words/phrases to highlight in captions (added to the finance default list) |
 | `pacing` | no | `{mode:"auto"|"off", target?, min?, max?, overrides?:[{fromMs,toMs,rate}]}`. Default auto: target 4.4 words/s, rate 0.9–1.2, pitch preserved |
 | `chapters` | no | `[{atMs,title,effect}]`; `effect` ∈ fade, slide, wipe, flip, clockWipe, iris, pushCut, blurSlide, bookFlip, crossZoom, crosswarp, dissolve, dreamyZoom, filmBurn, linearBlur, ripple, swap, zoomBlur, zoomInOut (`TRANSITIONS` in `src/mortgage/timeline.ts`). From blurSlide on they need HTML-in-canvas (Chrome 149+, which Remotion's renderer downloads); an older Studio browser previews them as a fade. Lands on the nearest cut; shows a "PHẦN n" banner |
-| `look` | no | Colour grade on the talking-head footage: `"warm"`, `"cinematic"` or `"mono"` (recipes in `LOOK_EFFECTS`, `src/mortgage/MortgageReel.tsx`). Left out, footage plays as recorded. Graded footage plays through `@remotion/media` `<Video>`; if that can't decode the file the render fails rather than ship it ungraded |
+| `look` | no | Colour grade on the talking-head footage: `"warm"`, `"cinematic"` or `"mono"` (recipes in `LOOK_EFFECTS`, `src/mortgage/PacedVideo.tsx`). Left out, footage plays as recorded. Graded footage plays through `@remotion/media` `<Video>`; if that can't decode the file the render fails rather than ship it ungraded |
 | `stats` | no | `[{atMs,durMs,big,label}]` stat cards at the top, e.g. `{"atMs":12900,"durMs":3000,"big":"~$400","label":"cho mỗi hộ gia đình"}` |
 | `cues` | no | Infographics — see below |
 | `cta` | no | `{question?}` on the contact card. Default "Bạn cần tư vấn về khoản vay?"; button text is fixed |
