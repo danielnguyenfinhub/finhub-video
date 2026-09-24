@@ -1,5 +1,6 @@
 // Talk-timeline text overlays: karaoke captions, stat cards and chapter banners.
 import { createTikTokStyleCaptions, type TikTokPage } from "@remotion/captions";
+import { fitText } from "@remotion/layout-utils";
 import { Underline } from "@remotion/rough-notation";
 import type React from "react";
 import {
@@ -9,10 +10,10 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { brand } from "../brand/theme";
-import type { Reel } from "./schema";
-import { toOutMs } from "./timeline";
-import { FONT, STROKE, emphasised, enter } from "./style";
+import { brand } from "../../brand/theme";
+import type { Reel } from "../../mortgage/schema";
+import { toOutMs } from "../../mortgage/timeline";
+import { FONT, STROKE, emphasised, enter } from "../../mortgage/style";
 
 // ---------------------------------------------------------------- captions
 
@@ -127,6 +128,17 @@ const StatCardView: React.FC<{ big: string; label: string }> = ({
     [0, 1],
     { extrapolateLeft: "clamp" },
   );
+  // Long headlines shrink to fit the card (800 px of text), never above 120 px.
+  const bigSize = Math.min(
+    120,
+    fitText({
+      text: big,
+      withinWidth: 800,
+      fontFamily: FONT,
+      fontWeight: 900,
+      letterSpacing: "-2px",
+    }).fontSize,
+  );
   const underline = interpolate(frame, [8, 24], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -158,10 +170,11 @@ const StatCardView: React.FC<{ big: string; label: string }> = ({
       >
         <span
           style={{
-            fontSize: 120,
+            fontSize: bigSize,
             fontWeight: 900,
             color: brand.highlight,
             letterSpacing: -2,
+            whiteSpace: "nowrap",
           }}
         >
           {big}

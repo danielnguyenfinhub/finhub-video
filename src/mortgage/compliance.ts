@@ -245,6 +245,10 @@ export const assertRateGate = (
 export const CONDITIONS_NOTE_VI =
   "Điều kiện áp dụng. Tùy thuộc vào tiêu chí tín dụng của bên cho vay; các khoản phí và lệ phí sẽ được áp dụng.";
 
+/** Added when edit.json compliance.taxNote is set (the video discusses tax). */
+export const TAX_NOTE =
+  "Thông tin chung, không phải tư vấn thuế. Hãy hỏi kế toán hoặc đại lý thuế đã đăng ký. General information only, not tax advice.";
+
 /** The comparison-rate warning, Vietnamese, per the recommended disclaimer. */
 export const comparisonWarningVi = (ratesAsAt: string) =>
   `Lãi suất chính xác tại ngày ${ratesAsAt} và có thể thay đổi bất kỳ lúc nào. ` +

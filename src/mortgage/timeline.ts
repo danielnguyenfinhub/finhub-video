@@ -140,6 +140,11 @@ const fixWord = (
   if (lw === "lợi" && prev === "tiền") return w.replace(/ợi/, "ời"); // tiền lời
   if (lw === "than" && next === "chốt") return w.replace(/an/, "en"); // then chốt
   if (lw === "đắm") return w.replace(/ắm/, "óng"); // đóng
+  // Matched without punctuation ("giống." ends a sentence); "giống như" stays.
+  const bw = bare(w);
+  if (bw === "vai" && prev === "gói") return w.replace(/ai/, "ay"); // gói vay
+  if (bw === "giống" && prev === "tiền" && next !== "như")
+    return w.replace(/iống/, "ốc"); // tiền gốc
   return w;
 };
 

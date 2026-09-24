@@ -1,0 +1,36 @@
+[
+  {
+    "slug": "ty-do",
+    "date": "2026-09-24",
+    "design": "classic",
+    "direction": "DATA-LED",
+    "axes": {
+      "cover": "frozen-frame + big title",
+      "captions": "karaoke pill + stroke",
+      "framing": "full-frame zoom-cuts",
+      "graphics": "navy cards + stat panels",
+      "transitions": "light-leak flash + slide/wipe",
+      "texture": "clean gradient",
+      "sound": "money-rain hook sfx + whooshes",
+      "cta": "white card logo + contact list"
+    },
+    "reused": false
+  },
+  {
+    "slug": "interest-in-advance",
+    "date": "2026-09-24",
+    "design": "classic",
+    "direction": "EXPLAINER",
+    "axes": {
+      "cover": "frozen-frame + big title",
+      "captions": "karaoke pill + stroke",
+      "framing": "full-frame zoom-cuts",
+      "graphics": "navy cards + stat panels",
+      "transitions": "light-leak flash + slide/wipe",
+      "texture": "clean gradient",
+      "sound": "money-rain hook sfx + whooshes",
+      "cta": "white card logo + contact list"
+    },
+    "reused": true
+  }
+]

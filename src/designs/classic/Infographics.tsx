@@ -4,9 +4,9 @@
 import { StrikeThrough } from "@remotion/rough-notation";
 import type React from "react";
 import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { brand } from "../brand/theme";
-import type { Cue } from "./schema";
-import { DIM, FONT, clamp, pop, toneColor } from "./style";
+import { brand } from "../../brand/theme";
+import type { Cue } from "../../mortgage/schema";
+import { DIM, FONT, clamp, pop, toneColor } from "../../mortgage/style";
 
 export type CueOf<K extends Cue["kind"]> = Extract<Cue, { kind: K }>;
 // Frame offset of a source moment relative to the start of the cue.
