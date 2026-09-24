@@ -126,7 +126,7 @@ The talking-head template. Each video is a folder `public/videos/<slug>/` with `
 - `src/index.ts` — entry point, registers the root component
 - `src/Root.tsx` — every `<Composition>` must be registered here
 - `src/Composition.tsx` — the `MyComp` composition (1280×720 @ 30fps)
-- `src/showcase/` — reference reels that exercise almost every installed `@remotion/*` package: `ShowcaseReel`, `ExtendedReel` and `FullReel` (both combined, plus every `@remotion/transitions` presentation and all 74 `@remotion/effects` effects, which are also registered alone as `EffectsCatalog`). Each scene is a worked example for its package, so search here before writing a new one. The scene-by-scene map is in `docs/findings.md`.
+- `src/showcase/` — reference reels that exercise almost every installed `@remotion/*` package: `ShowcaseReel`, `ExtendedReel` and `FullReel` (both combined, plus every `@remotion/transitions` presentation and all 74 `@remotion/effects` effects, which are also registered alone as `EffectsCatalog`, then one scene each for `@remotion/web-renderer`, `@remotion/whisper-web`, `@remotion/svg-3d-engine` and `@remotion/maptiler`). Each scene is a worked example for its package, so search here before writing a new one. The scene-by-scene map is in `docs/findings.md`.
 - `docs/findings.md` — verified behaviour of individual packages in this project and sandbox; read the part you need
 - `scripts/renderer-apis.mjs` — the Node-side APIs that can't run in a scene (`@remotion/bundler`, `@remotion/renderer`, the offline Lambda/Cloud Run helpers and others), run for real: `node scripts/renderer-apis.mjs --browser-executable=… --gl=swangle`
 - `player-demo/` — a standalone web page for `@remotion/player`'s `<Player>` and `<Thumbnail>`, which can't live inside a composition: `node player-demo/build.mjs [--serve]`; see its README
@@ -164,12 +164,17 @@ Each was confirmed with a real render. The details, and how the showcase works a
 - **No H.264, HEVC or AAC decoding through WebCodecs.** `@remotion/media`'s `<Video>` quietly falls back to `<OffthreadVideo>` and `<Audio>` to `<Html5Audio>`; give WebCodecs-based code a VP9 `.webm` (with Opus for sound). `MediabunnyScene` lists what decodes here.
 - **Chromium 141, so no `HtmlInCanvas`** (it needs 149+). Most `@remotion/transitions` presentations are built on it; only `fade`, `slide`, `wipe`, `flip`, `clockWipe`, `iris`, `none` and `pushCut` render here. `<ThreeWebGPUCanvas>` crashes the render.
 - **At most 16 WebGL contexts per page**, and each component with `effects` uses two, so keep eight or fewer mounted at once.
+- **No MapTiler, no H.264 encoding, no cross-origin isolation.** `api.maptiler.com` is blocked (and no key is set), so `MapTilerScene` shows its "add a key" notice. `@remotion/web-renderer` can't encode H.264 here, so it picks WebM. The render page isn't cross-origin isolated, so `@remotion/whisper-web` can't transcribe.
 
 ## Third-party API keys (e.g. ElevenLabs voiceover)
 
 `@remotion/elevenlabs` is a Speech-to-Text→`Caption[]` converter (`elevenLabsTranscriptToCaptions()`), not a text-to-speech package — don't confuse the two. `CaptionsScene` demonstrates the converter itself against a hand-built mock transcript (no network needed — the exact shape a real ElevenLabs STT call returns with `timestamps_granularity: "word"`), since this sandbox can't call ElevenLabs' API for a real one. For generating voiceover audio, `scripts/generate-voiceover.mjs` calls ElevenLabs' TTS REST API directly and writes MP3s to `public/voiceover/`, following the `voiceover.md` skill guide. Copy `.env.example` to `.env.local` and fill in `ELEVENLABS_API_KEY`, then run `node scripts/generate-voiceover.mjs`.
 
 The API key is only ever read inside that standalone script, never inside a `.tsx` component: components get bundled for the browser, and Remotion's CLI exposes `.env`/`.env.local` to that bundle's `process.env` (see `env-variables.mdx`), so a key referenced from a component would ship inside the render output. This pre-generate-once-then-read-the-static-file pattern is how to wire up any other third-party API (image/video generation, other TTS providers, etc.) safely.
+
+The one exception is MapTiler: its SDK draws the map in the browser, so `MapTilerScene` reads `REMOTION_MAPTILER_KEY` from `.env` inside the component, as Remotion's own map examples do. MapTiler keys are browser keys by design; use a dedicated free key, since a render has no origin to restrict it to.
+
+Client-side rendering (`@remotion/web-renderer`, used in `WebRendererScene` and the player demo) always sends Remotion a telemetry ping per render: IP address, page domain, video or still, success or failure, never content. The free licence needs no `licenseKey`; pass `isProduction: false` for test renders.
 
 ## Skills
 
