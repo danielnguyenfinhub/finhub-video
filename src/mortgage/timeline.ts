@@ -18,7 +18,15 @@ export type Word = {
   confidence: number | null;
 };
 
-export type TransitionKind = "fade" | "slide" | "wipe" | "flip" | "clockWipe";
+// Chapter transitions edit.json can pick. From blurSlide on they are shader
+// transitions (HTML-in-canvas, Chrome 149+, which Remotion's own renderer
+// ships); a Studio browser without it shows them as a fade.
+export const TRANSITIONS = [
+  "fade", "slide", "wipe", "flip", "clockWipe", "iris", "pushCut",
+  "blurSlide", "bookFlip", "crossZoom", "crosswarp", "dissolve", "dreamyZoom",
+  "filmBurn", "linearBlur", "ripple", "swap", "zoomBlur", "zoomInOut",
+] as const;
+export type TransitionKind = (typeof TRANSITIONS)[number];
 
 export type Pacing = {
   mode: "auto" | "off";

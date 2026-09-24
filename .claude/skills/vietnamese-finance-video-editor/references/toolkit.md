@@ -7,10 +7,11 @@ Every colour you pass comes from `src/brand/theme.ts`.
 ## Transitions — `@remotion/transitions/<name>`
 Installed presentations: fade, slide, wipe, flip, clock-wipe, iris, swap, push-cut,
 blur-slide, linear-blur, zoom-blur, zoom-in-out, cross-zoom, dreamy-zoom, crosswarp,
-dissolve, ripple, film-burn, book-flip, none. A design's `chapterTransition` maps the
-five edit.json kinds (fade/slide/wipe/flip/clockWipe) to ANY of these — the kinds are
-slots, not looks. Pick one transition family per design (e.g. EXPLAINER: book-flip +
-dissolve; BROADCAST: push-cut + swap; CINEMATIC: film-burn + dreamy-zoom).
+dissolve, ripple, film-burn, book-flip, none. MortgageReel's edit.json `chapters[].effect`
+takes all of them except none, by camelCase name (see edit-json.md). Pick one
+transition family per design (e.g. EXPLAINER: bookFlip + dissolve; BROADCAST: pushCut +
+swap; CINEMATIC: filmBurn + dreamyZoom), and pair it with an edit.json `look` (warm /
+cinematic / mono) for the footage grade.
 
 ## Drawing and diagrams
 - `@remotion/paths` — evolvePath (draw a path on), getLength, getPointAtLength,

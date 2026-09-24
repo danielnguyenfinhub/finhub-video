@@ -6,13 +6,18 @@
 import {
   TransitionSeries,
   linearTiming,
+  pushCut,
   springTiming,
   type TransitionPresentation,
 } from "@remotion/transitions";
-import { Audio } from "@remotion/media";
+import { Audio, Video } from "@remotion/media";
+import { colorCorrection } from "@remotion/effects/color-correction";
+import { grayscale } from "@remotion/effects/grayscale";
+import { vignette } from "@remotion/effects/vignette";
 import { clockWipe } from "@remotion/transitions/clock-wipe";
 import { fade } from "@remotion/transitions/fade";
 import { flip } from "@remotion/transitions/flip";
+import { iris } from "@remotion/transitions/iris";
 import { slide } from "@remotion/transitions/slide";
 import { wipe } from "@remotion/transitions/wipe";
 import React from "react";
@@ -26,8 +31,24 @@ import {
   useCurrentFrame,
   useVideoConfig,
   type CalculateMetadataFunction,
+  type EffectsProp,
 } from "remotion";
 import { z } from "zod";
+import { brand } from "../brand/theme";
+import {
+  blurSlideOrFallback,
+  bookFlipOrFallback,
+  crossZoomOrFallback,
+  crosswarpOrFallback,
+  dissolveOrFallback,
+  dreamyZoomOrFallback,
+  filmBurnOrFallback,
+  linearBlurOrFallback,
+  rippleOrFallback,
+  swapOrFallback,
+  zoomBlurOrFallback,
+  zoomInOutOrFallback,
+} from "../showcase/htmlInCanvasPresentation";
 import { Captions, Chapters, StatCards } from "./Captions";
 import { assertCompliantCopy, assertRateGate } from "./compliance";
 import { MotionTrack } from "./Cues";
@@ -46,6 +67,7 @@ import {
   onScreenCopy,
   parseEdit,
   type EditJson,
+  type Look,
   type Reel,
 } from "./schema";
 import { KEYWORDS, clamp, retryVideoFetch, useReelFont } from "./style";
@@ -127,26 +149,51 @@ export const calculateMortgageReelMetadata: CalculateMetadataFunction<
   };
 };
 
-// Widened so the five differently-typed presentations fit one <Transition> prop.
-const presentation = (
-  kind: TransitionKind,
-): TransitionPresentation<Record<string, unknown>> => {
-  switch (kind) {
-    case "fade":
-      return fade();
-    case "slide":
-      return slide({ direction: "from-right" });
-    case "wipe":
-      return wipe({ direction: "from-left" });
-    case "flip":
-      return flip({ direction: "from-right" });
-    case "clockWipe":
-      // clockWipe's props are required, so it only widens via unknown.
-      return clockWipe({
-        width: WIDTH,
-        height: HEIGHT,
-      }) as unknown as TransitionPresentation<Record<string, unknown>>;
-  }
+// Widened so the differently-typed presentations fit one <Transition> prop;
+// presentations with required props only widen via unknown. A Record, so a
+// name added to TRANSITIONS without an entry here fails the type check.
+type AnyPresentation = TransitionPresentation<Record<string, unknown>>;
+const widen = (p: unknown) => p as AnyPresentation;
+const PRESENTATIONS: Record<TransitionKind, () => AnyPresentation> = {
+  fade: () => widen(fade()),
+  slide: () => widen(slide({ direction: "from-right" })),
+  wipe: () => widen(wipe({ direction: "from-left" })),
+  flip: () => widen(flip({ direction: "from-right" })),
+  clockWipe: () => widen(clockWipe({ width: WIDTH, height: HEIGHT })),
+  iris: () => widen(iris({ width: WIDTH, height: HEIGHT })),
+  pushCut: () => widen(pushCut({ flashColor: brand.accent })),
+  // Shader transitions, each falling back to fade() without HTML-in-canvas.
+  blurSlide: blurSlideOrFallback,
+  bookFlip: bookFlipOrFallback,
+  crossZoom: crossZoomOrFallback,
+  crosswarp: crosswarpOrFallback,
+  dissolve: dissolveOrFallback,
+  dreamyZoom: dreamyZoomOrFallback,
+  filmBurn: filmBurnOrFallback,
+  linearBlur: linearBlurOrFallback,
+  ripple: rippleOrFallback,
+  swap: swapOrFallback,
+  zoomBlur: zoomBlurOrFallback,
+  zoomInOut: zoomInOutOrFallback,
+};
+const presentation = (kind: TransitionKind) => PRESENTATIONS[kind]();
+
+// edit.json `look` recipes. Values stay inside each effect's documented range
+// (contrast/saturation 0-3, temperature -1..1, vignette amount 0-1).
+const LOOK_EFFECTS: Record<Look, EffectsProp> = {
+  warm: [
+    colorCorrection({ temperature: 0.15, saturation: 1.1, contrast: 1.05 }),
+    vignette({ amount: 0.25 }),
+  ],
+  cinematic: [
+    colorCorrection({ temperature: 0.05, saturation: 0.9, contrast: 1.15 }),
+    vignette({ amount: 0.4 }),
+  ],
+  mono: [
+    grayscale({ amount: 1 }),
+    colorCorrection({ contrast: 1.1 }),
+    vignette({ amount: 0.3 }),
+  ],
 };
 
 // One kept piece of the source, played at its pacing rate. Alternate segments
@@ -157,11 +204,12 @@ const presentation = (
 // duration (trimAfter - trimBefore frames), not scaled by playbackRate, so at a
 // rate below 1 it would blank the segment's tail. The enclosing sequence of
 // outDuration frames ends playback at srcFrom + outDuration * rate ≈ srcTo.
-const TalkSegment: React.FC<{ seg: Segment; index: number; src: string }> = ({
-  seg,
-  index,
-  src,
-}) => {
+const TalkSegment: React.FC<{
+  seg: Segment;
+  index: number;
+  src: string;
+  look?: Look;
+}> = ({ seg, index, src, look }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const dur = seg.outDuration;
@@ -177,27 +225,45 @@ const TalkSegment: React.FC<{ seg: Segment; index: number; src: string }> = ({
       : (1 - spring({ frame, fps, config: { damping: 18, stiffness: 260 } })) *
         0.05;
   const drift = interpolate(frame, [0, dur], [0, 0.02]);
+  const shared = {
+    src,
+    trimBefore: seg.srcFrom,
+    playbackRate: seg.rate,
+    volume: (f: number) =>
+      interpolate(f, [0, 2, dur - 2, dur], [0, 1, 1, 0], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      }),
+    style: {
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      transform: `scale(${base + punch + drift})`,
+      transformOrigin: "50% 30%",
+    } as const,
+  };
+  // A graded video plays through @remotion/media's <Video>, whose `effects`
+  // run the grade on each decoded frame. <OffthreadVideo> has no effects prop
+  // and wrapping it in <HtmlInCanvas> never paints, so the render hangs.
+  // No fallback to <OffthreadVideo>: that would ship the video ungraded. Its
+  // objectFit prop (default "contain") overrides style.objectFit, so it is set
+  // too. No onError: after delayRenderRetries the render fails, as it should.
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      <OffthreadVideo
-        src={src}
-        trimBefore={seg.srcFrom}
-        playbackRate={seg.rate}
-        {...retryVideoFetch}
-        volume={(f) =>
-          interpolate(f, [0, 2, dur - 2, dur], [0, 1, 1, 0], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          })
-        }
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          transform: `scale(${base + punch + drift})`,
-          transformOrigin: "50% 30%",
-        }}
-      />
+      {look ? (
+        <Video
+          {...shared}
+          objectFit="cover"
+          effects={LOOK_EFFECTS[look]}
+          disallowFallbackToOffthreadVideo
+          delayRenderRetries={retryVideoFetch.delayRenderRetries}
+          delayRenderTimeoutInMilliseconds={
+            retryVideoFetch.delayRenderTimeoutInMilliseconds
+          }
+        />
+      ) : (
+        <OffthreadVideo {...shared} {...retryVideoFetch} />
+      )}
     </AbsoluteFill>
   );
 };
@@ -284,7 +350,7 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
         {timeline.segments.map((seg, i) => (
           <React.Fragment key={seg.srcFrom}>
             <TransitionSeries.Sequence durationInFrames={seg.outDuration}>
-              <TalkSegment seg={seg} index={i} src={src} />
+              <TalkSegment seg={seg} index={i} src={src} look={edit.look} />
             </TransitionSeries.Sequence>
             {seg.transitionAfter ? (
               <TransitionSeries.Transition
