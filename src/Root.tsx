@@ -1,0 +1,152 @@
+import "./index.css";
+import { Composition, Folder, Still } from "remotion";
+import { MyComposition } from "./Composition";
+import {
+  ShowcaseReel,
+  calculateShowcaseReelMetadata,
+  showcaseReelDefaultProps,
+} from "./showcase/ShowcaseReel";
+import {
+  ExtendedReel,
+  calculateExtendedReelMetadata,
+  extendedReelDefaultProps,
+  extendedReelSchema,
+} from "./showcase/ExtendedReel";
+import { SourceClipGenerator } from "./showcase/SourceClipGenerator";
+import {
+  FullReel,
+  calculateFullReelMetadata,
+  fullReelDefaultProps,
+  fullReelSchema,
+} from "./showcase/FullReel";
+import {
+  EFFECTS_CATALOG_DURATION,
+  EffectsCatalogScene,
+} from "./showcase/EffectsCatalogScene";
+import { AbsoluteFill } from "remotion";
+import { TyDoReel, tyDoComposition } from "./tydo/TyDoReel";
+import {
+  MortgageReel,
+  calculateMortgageReelMetadata,
+  mortgageReelComposition,
+  mortgageReelSchema,
+} from "./mortgage/MortgageReel";
+import { gradientBg, palette } from "./showcase/palette";
+import { poppins } from "./showcase/font";
+import { BrandKitDemo } from "./brand/BrandKitDemo";
+import { EmojiCatalog } from "./brand/EmojiCatalog";
+import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
+
+// A single-frame <Still> for a poster image (`npx remotion still Poster`).
+// Deliberately static rather than reusing TitleScene's animated entrance —
+// a <Still> always renders frame 0, where a spring()/interpolate() entrance
+// hasn't started yet, so it would render blank.
+const PosterStill: React.FC = () => (
+  <AbsoluteFill
+    style={{
+      background: gradientBg,
+      justifyContent: "center",
+      alignItems: "center",
+      fontFamily: poppins,
+    }}
+  >
+    <div
+      style={{
+        fontSize: 110,
+        fontWeight: 700,
+        color: palette.text,
+        letterSpacing: -2,
+      }}
+    >
+      {fullReelDefaultProps.title}
+    </div>
+    <div style={{ fontSize: 36, color: palette.textDim, marginTop: 24 }}>
+      {fullReelDefaultProps.subtitle}
+    </div>
+  </AbsoluteFill>
+);
+
+export const RemotionRoot: React.FC = () => {
+  return (
+    <>
+      <MyComposition />
+      <Folder name="FinanceHub">
+        <Composition {...tyDoComposition} component={TyDoReel} />
+        {/* The reusable talking-head template: one public/videos/<slug>/ per video. */}
+        <Composition
+          {...mortgageReelComposition}
+          component={MortgageReel}
+          schema={mortgageReelSchema}
+          defaultProps={{ slug: "ty-do", reel: null }}
+          calculateMetadata={calculateMortgageReelMetadata}
+        />
+      </Folder>
+      <Folder name="Brand">
+        {/* The FinHub brand kit in src/brand/, with sample text. */}
+        <Composition id="BrandKitDemo" component={BrandKitDemo} durationInFrames={300} fps={30} width={1920} height={1080} />
+        <Composition id="EmojiCatalog" component={EmojiCatalog} durationInFrames={90} fps={30} width={1920} height={1080} />
+        {/* Transparent logo + lower third for video editors; renders ProRes 4444 by default. */}
+        <Composition id="BrandOverlay" component={BrandOverlay} schema={brandOverlaySchema} defaultProps={brandOverlayDefaultProps} calculateMetadata={calculateBrandOverlayMetadata} durationInFrames={240} fps={30} width={1920} height={1080} />
+        <Composition id="BrandOverlayVertical" component={BrandOverlay} schema={brandOverlaySchema} defaultProps={brandOverlayDefaultProps} calculateMetadata={calculateBrandOverlayMetadata} durationInFrames={240} fps={30} width={1080} height={1920} />
+      </Folder>
+      <Folder name="Reels">
+        <Composition
+          id="ShowcaseReel"
+          component={ShowcaseReel}
+          width={1280}
+          height={720}
+          fps={30}
+          durationInFrames={300}
+          defaultProps={showcaseReelDefaultProps}
+          calculateMetadata={calculateShowcaseReelMetadata}
+        />
+        <Composition
+          id="ExtendedReel"
+          component={ExtendedReel}
+          width={1280}
+          height={720}
+          fps={30}
+          durationInFrames={1275}
+          schema={extendedReelSchema}
+          defaultProps={extendedReelDefaultProps}
+          calculateMetadata={calculateExtendedReelMetadata}
+        />
+        <Composition
+          id="FullReel"
+          component={FullReel}
+          width={1280}
+          height={720}
+          fps={30}
+          durationInFrames={1860}
+          schema={fullReelSchema}
+          defaultProps={fullReelDefaultProps}
+          calculateMetadata={calculateFullReelMetadata}
+        />
+      </Folder>
+      <Folder name="Catalogs">
+        {/* Every @remotion/effects effect on its own; FullReel plays it too. */}
+        <Composition
+          id="EffectsCatalog"
+          component={EffectsCatalogScene}
+          width={1280}
+          height={720}
+          fps={30}
+          durationInFrames={EFFECTS_CATALOG_DURATION}
+        />
+      </Folder>
+      <Folder name="Utilities">
+        {/* Not part of any reel — a one-off source generator for
+            public/sample-clip.mp4 (see scripts/generate-sample-media.mjs). */}
+        <Composition
+          id="SourceClipGenerator"
+          component={SourceClipGenerator}
+          width={960}
+          height={540}
+          fps={30}
+          durationInFrames={90}
+        />
+        <Still id="Poster" component={PosterStill} width={1280} height={720} />
+      </Folder>
+    </>
+  );
+};

@@ -1,0 +1,19 @@
+node_modules
+dist
+.DS_Store
+.env
+.env.local
+
+# Ignore the output video from Git but not videos you import into src/.
+out
+
+# Claude Chat skill bundle (built from chat-skill/ + .claude/skills/)
+remotion-video-skill.zip
+
+# Original recordings and MortgageReel render proxies (too large for GitHub)
+/public/4.1*.mp4
+/public/videos/*/source.mp4
+/public/videos/*/original.*
+
+# Python bytecode from scripts/*.py
+__pycache__/

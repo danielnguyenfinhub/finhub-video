@@ -1,0 +1,49 @@
+import {AnimatedEmoji, getAvailableEmojis} from "@remotion/animated-emoji";
+import {AbsoluteFill, interpolate, staticFile, useCurrentFrame, useVideoConfig} from "remotion";
+import {palette} from "./palette";
+import {poppins} from "./font";
+
+// Demonstrates: @remotion/animated-emoji — Google Fonts' animated emoji as
+// a <Loop>+<OffthreadVideo transparent> component, plus getAvailableEmojis()
+// (the full catalog this package ships metadata for). Fully self-hosted: no
+// runtime fetch from any CDN, unlike @remotion/google-fonts. The video
+// files aren't bundled with the npm package itself (by design, to keep it
+// small) — copy the ones you need, once, from remotion-dev/animated-emoji's
+// public/ folder on GitHub into this project's public/. star-struck-0.5x
+// (mp4+webm, ~750KB) was copied in that way for this scene.
+const availableEmojis = getAvailableEmojis();
+
+export const AnimatedEmojiScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const {width} = useVideoConfig();
+  const scale = interpolate(frame, [0, 15], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{background: "#0b1120", fontFamily: poppins, justifyContent: "center", alignItems: "center"}}>
+      <div style={{position: "absolute", top: 64, width, textAlign: "center", color: palette.textDim, fontSize: 26}}>
+        @remotion/animated-emoji · self-hosted, no CDN at render time
+      </div>
+      <div style={{transform: `scale(${scale})`, width: 260, height: 260}}>
+        {/* calculateSrc picks the file for each emoji, scale and format. This is
+            the package's default spelled out (a staticFile() in public/);
+            return a CDN URL instead to host the files elsewhere. */}
+        <AnimatedEmoji
+          emoji="star-struck"
+          scale="0.5"
+          playbackRate={1.5}
+          calculateSrc={({emoji, scale: emojiScale, format}) => staticFile(`${emoji}-${emojiScale}x.${format === "hevc" ? "mp4" : "webm"}`)}
+          style={{width: 260, height: 260}}
+        />
+      </div>
+      <div style={{color: palette.textDim, fontSize: 16, fontFamily: "monospace", marginTop: 8}}>
+        getAvailableEmojis(): {availableEmojis.length} emoji catalogued
+      </div>
+      <div style={{position: "absolute", bottom: 56, width, textAlign: "center", color: palette.text, fontSize: 32, fontWeight: 600}}>
+        Google Fonts' animated emoji, frame-accurate and offline
+      </div>
+    </AbsoluteFill>
+  );
+};
