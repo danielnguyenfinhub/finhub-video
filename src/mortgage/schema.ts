@@ -153,6 +153,9 @@ export const editSchema = z.strictObject({
   look: z.enum(LOOKS).optional(),
   captionFixes: z.array(z.strictObject({ from: text, to: text })).optional(),
   keywords: z.array(text).optional(),
+  // Caption look in the classic design: "outline" (bold white words with an
+  // outline, the default) or "box" (a white rounded box hugging each line).
+  captionStyle: z.enum(["outline", "box"]).optional(),
   pacing: z
     .strictObject({
       mode: z.enum(["auto", "off"]),

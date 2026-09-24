@@ -2,7 +2,8 @@
 // sticky-note stats, chapter tabs, the hook note and a pencil progress line.
 // Timing comes from the same core data as every design (toOutMs on the paced
 // timeline); only the drawing differs.
-import { createTikTokStyleCaptions, type TikTokPage } from "@remotion/captions";
+import type { TikTokPage } from "@remotion/captions";
+import { captionPages } from "../../mortgage/captionPages";
 import { fitText } from "@remotion/layout-utils";
 import { Audio } from "@remotion/media";
 import { Trail } from "@remotion/motion-blur";
@@ -109,10 +110,10 @@ const Captions: React.FC<{ reel: Reel; keywords: string[] }> = ({
   keywords,
 }) => {
   const { fps } = useVideoConfig();
-  const { pages } = createTikTokStyleCaptions({
+  const pages = captionPages({
     captions: reel.timeline.captions,
-    combineTokensWithinMilliseconds: 1200,
-    breakOnSilenceAfterMilliseconds: 350,
+    combineWithinMs: 1200,
+    breakOnSilenceAfterMs: 350,
   });
   return (
     <>
