@@ -21,7 +21,8 @@ gradient · money-rain hook sfx + whooshes · white card logo + contact list.
 title, pen-circled face, drawn arrow) · marker highlight on paper · taped paper-card inset
 over ruled paper · sticky notes + rough-notation pen marks · book-flip + dissolve (set in
 edit.json chapters) · paper grain (noise) + ruled lines · pen tap + ding + whoosh ·
-handwritten sign-off on sticky note. Cues still draw as classic's navy cards.
+handwritten sign-off on sticky note. Cues draw pen-on-paper (index cards, sticky-note
+compare, crossed-off kinetic, hand-drawn bars, pen tick/cross, pen-drawn venn).
 
 ## The 6 directions
 
