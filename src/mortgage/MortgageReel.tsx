@@ -78,20 +78,21 @@ const fetchJson = async (slug: string, file: string): Promise<unknown> => {
   return res.json();
 };
 
-export const calculateMortgageReelMetadata: CalculateMetadataFunction<
-  MortgageReelProps
-> = async ({ props }) => {
-  const { slug } = props;
-  const [editJson, words] = await Promise.all([
-    fetchJson(slug, "edit.json"),
-    fetchJson(slug, "words.json"),
-  ]);
+// edit.json + words.json -> the reel and its length. Validates the edit,
+// enforces ASIC RG 234 and the rate gate (throws, so a render FAILS rather
+// than ship a non-compliant claim). Shared by calculateMetadata and the
+// review page (review/), which previews unsaved edits in a <Player>.
+export const buildReel = (
+  editJson: unknown,
+  words: unknown,
+  slug: string,
+): { reel: Reel; durationInFrames: number } => {
   const edit = parseEdit(editJson, slug);
   // Throws for an unknown name, listing the designs there are.
   const design = getDesign(edit.design ?? DEFAULT_DESIGN);
   if (!Array.isArray(words) || words.length === 0)
     throw new Error(`public/videos/${slug}/words.json has no words.`);
-  // Throws "RG 234: restricted terminology found" and fails the render.
+  // Throws "RG 234: restricted terminology found".
   assertCompliantCopy(
     { ...onScreenCopy(edit), [`design:${design.id}`]: design.copy },
     edit.exemptions ?? [],
@@ -101,6 +102,7 @@ export const calculateMortgageReelMetadata: CalculateMetadataFunction<
     assertRateGate(rate.rateFigure, rate.comparisonRate, rate.ratesAsAt);
   const timeline = buildTimeline(words as Word[], edit, FPS);
   return {
+    reel: { edit, timeline },
     durationInFrames:
       TALK_START_FRAME +
       timeline.talkFrames +
@@ -108,9 +110,19 @@ export const calculateMortgageReelMetadata: CalculateMetadataFunction<
       OUTRO_TRANSITION +
       COMPLIANCE_FRAMES -
       COMPLIANCE_TRANSITION,
-    defaultOutName: slug,
-    props: { slug, reel: { edit, timeline } },
   };
+};
+
+export const calculateMortgageReelMetadata: CalculateMetadataFunction<
+  MortgageReelProps
+> = async ({ props }) => {
+  const { slug } = props;
+  const [editJson, words] = await Promise.all([
+    fetchJson(slug, "edit.json"),
+    fetchJson(slug, "words.json"),
+  ]);
+  const { reel, durationInFrames } = buildReel(editJson, words, slug);
+  return { durationInFrames, defaultOutName: slug, props: { slug, reel } };
 };
 
 // edit.json's music, looped under the whole video and ducked under speech. The
