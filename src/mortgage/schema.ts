@@ -115,6 +115,8 @@ export type Look = (typeof LOOKS)[number];
 export const editSchema = z.strictObject({
   // Not shown anywhere: why a span was removed, what the video is about, etc.
   notes: z.array(z.string()).optional(),
+  // The look of the video: a folder in src/designs/ (default "classic").
+  design: text.optional(),
   title: text,
   subtitle: text.optional(),
   coverFrameMs: ms.optional(),
@@ -180,6 +182,8 @@ export const editSchema = z.strictObject({
     .strictObject({
       illustrativeNumbers: z.boolean().optional(),
       conditionsNote: z.boolean().optional(),
+      // The video discusses tax: adds "not tax advice" (VI + EN) to the card.
+      taxNote: z.boolean().optional(),
       advertisedRate: z
         .strictObject({ rateFigure: text, comparisonRate: text, ratesAsAt: text })
         .optional(),

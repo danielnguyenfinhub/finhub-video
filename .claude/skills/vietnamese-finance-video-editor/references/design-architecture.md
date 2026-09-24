@@ -51,10 +51,13 @@ Core wiring in `MortgageReel.tsx`:
   `ComplianceCard`; `<Sequence from={TALK_START_FRAME} durationInFrames={talk - OUTRO_TRANSITION}
   layout="none"><design.Overlay …/></Sequence>`.
 
-## One-time bootstrap
+## One-time bootstrap (DONE 24/09/2026)
 
-Do this on the first video edited under this skill (it was designed and proven on
-24/09/2026, then deliberately not merged). Work on a branch; say so to Daniel.
+Done on branch `refactor/design-architecture`: steps 1–6 below, proven pixel-identical
+(PSNR ∞ on 5 stills, same frame count) against the pre-refactor render. Kept for the
+record; do not repeat. Differences from the plan: `TalkProps` also carries `look`
+(edit.json colour grade, applied by `PacedVideo`); the default chapter transitions live
+in `src/mortgage/transitions.ts` (`chapterTransition`), which designs reuse or override.
 
 1. `git mv src/mortgage/{Captions,Cues,Frame,Infographics}.tsx src/designs/classic/`;
    fix imports (`./schema|style|timeline|compliance` → `../../mortgage/…`,
