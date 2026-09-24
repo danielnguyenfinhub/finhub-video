@@ -2,6 +2,10 @@
 
 A Remotion project: videos are written as React components and rendered to MP4/WebM. Remotion and all `@remotion/*` packages are pinned to the same version (see `package.json`) — keep them in lockstep when upgrading (`npx remotion upgrade`).
 
+## How this repo is used: Claude Code is the editor
+
+This is Daniel's video editor, and the editing interface is a Claude Code chat. Daniel is a mortgage broker, not a developer: he records a video, puts it in `public/videos/<slug>/source.mp4`, and says in chat what he wants. The agent does the editing end to end with the `vietnamese-finance-video-editor` skill (prep, `edit.json`, design, render) and hands back a finished video to watch, not options or instructions. `npm run review` is a secondary page for Daniel's own small tweaks (design, grade, timings). Judge new code by whether it makes the next video better or faster to edit this way.
+
 This repository was split out of `danielnguyenfinhub/remotion` (a fork of the Remotion monorepo, kept as version 1), where it lived as `my-video/`. Older notes such as `docs/findings.md` refer to that repository's `packages/...` source folders.
 
 ## Commands
