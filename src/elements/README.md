@@ -21,12 +21,14 @@ composition (Studio → "Elements"), which is how each was verified.
 | `TextMatte` | content shows through big letters | blend modes |
 | `VideoGrid` | up to 9 clips in a grid with name tags | `OffthreadVideo` |
 | `NewsTicker` | seamless scrolling ticker | `@remotion/layout-utils` `measureText`, `useDelayRender` |
+| `CaptionBox` | boxed captions, the word being said lit in amber (takes `words.json` words) | `createTikTokStyleCaptions` (`@remotion/captions`) |
 | `SocialHandle` | "follow us" pill with the logo | `Img`, `spring` |
 | `ProgressBar` | reels-style progress bar | `useVideoConfig` |
 | `ReviewStamp` | "draft" watermark + burnt-in timecode for review copies | `useCurrentFrame` |
 | `Particles` | seeded drifting particles | `random` |
 | `PulseBadge` | badge that pulses every N frames | `Loop` |
 | `AudioRing` | frequency ring around a logo/face | `@remotion/media-utils` `useAudioData`, `visualizeAudio` |
+| `FrequencyBars` | equaliser bars with falling peak markers; silent unless `playAudio` (the voice is already playing) | `useAudioData`, `visualizeAudio` |
 | `NoiseField` | breathing dot-grid background | `@remotion/noise` `noise3D` |
 | `starWipe` | custom transition presentation: next scene grows from a star | `@remotion/transitions`, `@remotion/shapes` `makeStar`, `@remotion/paths` `translatePath` |
 
