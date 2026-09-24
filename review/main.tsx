@@ -280,6 +280,23 @@ const App = () => {
                   ))}
                 </select>
               </label>
+              <label>
+                Caption style
+                <select
+                  value={draft.captionStyle ?? "outline"}
+                  onChange={(e) =>
+                    update((d) => ({
+                      ...d,
+                      // "outline" is the default, so it is left out when saved.
+                      captionStyle:
+                        e.target.value === "box" ? "box" : undefined,
+                    }))
+                  }
+                >
+                  <option value="outline">outline (default)</option>
+                  <option value="box">box</option>
+                </select>
+              </label>
               <h2>Timeline</h2>
               <p className="dim">
                 Move an item earlier or later by {NUDGE_MS / 1000} s; its inner

@@ -1,13 +1,14 @@
 // Captions in a boxed card near the bottom: words are grouped into pages with
-// @remotion/captions' createTikTokStyleCaptions, and the word being said is lit
+// captionPages (sentence-aware createTikTokStyleCaptions), and the word being said is lit
 // in the accent colour. Takes the same Caption[] as words.json (times in ms,
 // relative to where this element starts). No CSS transitions: a render draws
 // every frame on its own, so a transition would never play.
-import { createTikTokStyleCaptions, type Caption } from "@remotion/captions";
+import type { Caption } from "@remotion/captions";
 import type React from "react";
 import { useMemo } from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand/theme";
+import { captionPages } from "../mortgage/captionPages";
 import { FONT } from "../mortgage/style";
 
 export const CaptionBox: React.FC<{
@@ -18,12 +19,9 @@ export const CaptionBox: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const nowMs = (frame / fps) * 1000;
-  const { pages } = useMemo(
+  const pages = useMemo(
     () =>
-      createTikTokStyleCaptions({
-        captions,
-        combineTokensWithinMilliseconds: combineWithinMs,
-      }),
+      captionPages({ captions, combineWithinMs, breakOnSilenceAfterMs: 350 }),
     [captions, combineWithinMs],
   );
   const page = pages.find(

@@ -1,5 +1,6 @@
 // Talk-timeline text overlays: karaoke captions, stat cards and chapter banners.
-import { createTikTokStyleCaptions, type TikTokPage } from "@remotion/captions";
+import type { TikTokPage } from "@remotion/captions";
+import { captionPages } from "../../mortgage/captionPages";
 import { fitText } from "@remotion/layout-utils";
 import { Underline } from "@remotion/rough-notation";
 import type React from "react";
@@ -14,6 +15,7 @@ import { brand } from "../../brand/theme";
 import type { Reel } from "../../mortgage/schema";
 import { toOutMs } from "../../mortgage/timeline";
 import { FONT, STROKE, emphasised, enter } from "../../mortgage/style";
+import { BoxCaptionPage } from "./BoxCaption";
 
 // ---------------------------------------------------------------- captions
 
@@ -81,10 +83,11 @@ export const Captions: React.FC<{ reel: Reel; keywords: string[] }> = ({
   keywords,
 }) => {
   const { fps } = useVideoConfig();
-  const { pages } = createTikTokStyleCaptions({
+  const Page = reel.edit.captionStyle === "box" ? BoxCaptionPage : CaptionPage;
+  const pages = captionPages({
     captions: reel.timeline.captions,
-    combineTokensWithinMilliseconds: 900,
-    breakOnSilenceAfterMilliseconds: 350,
+    combineWithinMs: 900,
+    breakOnSilenceAfterMs: 350,
   });
   return (
     <>
@@ -105,7 +108,7 @@ export const Captions: React.FC<{ reel: Reel; keywords: string[] }> = ({
             durationInFrames={dur}
             layout="none"
           >
-            <CaptionPage page={page} keywords={keywords} />
+            <Page page={page} keywords={keywords} />
           </Sequence>
         );
       })}
