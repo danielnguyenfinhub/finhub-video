@@ -10,7 +10,7 @@ A small standalone web page that embeds the `ShowcaseReel` composition with `@re
 
 ## Build and open
 
-Run these from `my-video/`, after `npm i`:
+Run these from the project root, after `npm i`:
 
 ```console
 node player-demo/build.mjs           # bundle into player-demo/dist/

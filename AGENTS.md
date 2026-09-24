@@ -1,6 +1,8 @@
-# my-video
+# finhub-video
 
 A Remotion project: videos are written as React components and rendered to MP4/WebM. Remotion and all `@remotion/*` packages are pinned to the same version (see `package.json`) — keep them in lockstep when upgrading (`npx remotion upgrade`).
+
+This repository was split out of `danielnguyenfinhub/remotion` (a fork of the Remotion monorepo, kept as version 1), where it lived as `my-video/`. Older notes such as `docs/findings.md` refer to that repository's `packages/...` source folders.
 
 ## Commands
 
@@ -109,7 +111,7 @@ The talking-head template. Each video is a folder `public/videos/<slug>/` with `
 2. Edit `edit.json` (its fields are described in `src/mortgage/schema.ts`) and preview `MortgageReel` in the Studio with `slug` set.
 3. `python scripts/render-video.py <slug>` renders, sets the final mix to -14 LUFS, and writes the mobile copy, thumbnail and `.srt`.
 
-- **Automatic cuts** (`edit.json` `cut`, all on by default): hesitation sounds, stutters (the first of a word or phrase said twice in a row), swear words, and any extra `words`. Restarts in different words still need a `remove` span. `node scripts/export-srt.mjs <slug>` lists every automatic cut; check it before rendering.
+- **Automatic cuts** (`edit.json` `cut`, all on by default): hesitation sounds, stutters (the first of a word or phrase said twice in a row, within a sentence), swear words, and any extra `words`. Restarts in different words still need a `remove` span. `node scripts/export-srt.mjs <slug>` lists every automatic cut; check it before rendering.
 - **Music** (`edit.json` `music`: a file under `public/music/` and an optional `volume`, default 0.3): looped under the whole video and ducked to 30% while Daniel talks. Use only tracks licensed for social media.
 
 ## Project structure
@@ -164,28 +166,30 @@ The API key is only ever read inside that standalone script, never inside a `.ts
 
 ## Skills
 
-`.claude/skills/` contains the official Remotion agent skills (vendored from this monorepo's `packages/skills`, matching the pinned Remotion version). Start with `remotion-best-practices` — it routes to the specific skill for the task (creating compositions, markup/animation, captions, maps, rendering, Studio). Follow them when writing any Remotion markup.
+`.claude/skills/` contains the official Remotion agent skills (vendored from Remotion's `packages/skills`, matching the pinned Remotion version). Start with `remotion-best-practices` — it routes to the specific skill for the task (creating compositions, markup/animation, captions, maps, rendering, Studio). Follow them when writing any Remotion markup.
+
+`.claude/skills/vietnamese-finance-video-editor/` is the owner's own skill, not Remotion's: use it whenever Daniel asks to edit a new talking-head video. It holds the locked-core/new-design-every-video workflow, the design log (`public/videos/design-log.json`, through its `scripts/main.py`) and the compliance rules. Re-vendoring replaces only Remotion's skills and keeps this one.
 
 When upgrading Remotion, re-vendor the skills so guidance matches the installed version:
 
 ```console
-node scripts/vendor-skills.mjs   # defaults to ../packages/skills/skills; pass another source path if needed
+node scripts/vendor-skills.mjs   # defaults to ../remotion/packages/skills/skills; pass another source path if needed
 ```
 
-The script copies the skills without their symlinks (which break on Windows checkouts and inflate zip bundles), rewrites sibling-skill links accordingly, and fails if any relative link is broken. Do not copy the skills by hand.
+The default source is a Remotion checkout in a `remotion` folder next to this one (GitHub Desktop clones `danielnguyenfinhub/remotion` there); check out the Remotion version you're upgrading to first. The script copies the skills without their symlinks (which break on Windows checkouts and inflate zip bundles), rewrites sibling-skill links accordingly, and fails if any relative link is broken. Do not copy the skills by hand.
 
 `node scripts/build-chat-skill.mjs` packages `chat-skill/SKILL.md` plus these skills into `remotion-video-skill.zip` for upload to claude.ai (Claude Chat and account-wide Cowork). Rebuild it after re-vendoring.
 
 ## Elements
 
-`.claude/elements/` is a local copy of the official [Remotion Elements](https://www.remotion.dev/elements/) gallery (vendored from this monorepo's `packages/docs/elements`) — 41 small, self-contained, drop-in components across 11 categories (audio, backgrounds, captions, commerce, data, layouts, maps, overlays, storytelling, text, youtube). `.claude/elements/CATALOG.md` lists every one with its description. Elements are designed to be copied and edited directly (not installed as a dependency): pick one from the catalog, copy its `.tsx` file (and `initial-props.ts` if present) into `src/showcase/`, and adapt it — check the file's own imports for any package to install first.
+`.claude/elements/` is a local copy of the official [Remotion Elements](https://www.remotion.dev/elements/) gallery (vendored from Remotion's `packages/docs/elements`) — 41 small, self-contained, drop-in components across 11 categories (audio, backgrounds, captions, commerce, data, layouts, maps, overlays, storytelling, text, youtube). `.claude/elements/CATALOG.md` lists every one with its description. Elements are designed to be copied and edited directly (not installed as a dependency): pick one from the catalog, copy its `.tsx` file (and `initial-props.ts` if present) into `src/showcase/`, and adapt it — check the file's own imports for any package to install first.
 
 Two files come from the live site instead, because they are newer than `packages/docs/elements`: `captions/rounded-captions` and `youtube/youtube-subscribe-nudge`. The vendor script deletes and rewrites the whole folder, so after re-vendoring, restore them with `git checkout -- .claude/elements/captions/rounded-captions .claude/elements/youtube/youtube-subscribe-nudge` and re-add their `CATALOG.md` lines, unless upstream has caught up.
 
 Re-vendor after pulling upstream changes to `packages/docs/elements`:
 
 ```console
-node scripts/vendor-elements.mjs   # defaults to ../packages/docs/elements; pass another source path if needed
+node scripts/vendor-elements.mjs   # defaults to ../remotion/packages/docs/elements; pass another source path if needed
 ```
 
 ## Conventions
@@ -197,5 +201,5 @@ node scripts/vendor-elements.mjs   # defaults to ../packages/docs/elements; pass
 - Users may edit files between conversations (including visually in Remotion Studio); treat surprising diffs as intentional and don't overwrite them.
 - Run `npm run lint` before committing.
 - Read a media file's duration, size or codecs with Mediabunny (`Input` with `UrlSource(staticFile(…))`, or `FilePathSource` in Node), as in the `remotion-multimedia` skill, not with the deprecated `parseMedia()`/`getVideoMetadata()`. It's a direct dependency, pinned to the version `@remotion/media` uses.
-- Mediabunny's docs (mediabunny.dev) are blocked in this sandbox. To read them, clone the source at the installed version, outside this repo and read-only: `GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch v1.56.1 https://github.com/Vanilagy/mediabunny ../../vanilagy/mediabunny`, then read `docs/guide/` and `examples/`. Match the tag to `mediabunny` in `package.json`; never copy the source into this repo or install a different version than `@remotion/media` uses.
-- The owner uses Remotion's free license (individuals, for-profit companies with up to 3 employees, and non-profits qualify; see the monorepo's `LICENSE.md`). Pass `acknowledgeRemotionLicense` where an API takes it (`<Player>`, `parseMedia()`, `convertMedia()` and others); it only hides Remotion's license notice.
+- Mediabunny's docs (mediabunny.dev) are blocked in this sandbox. To read them, clone the source at the installed version, outside this repo and read-only: `GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch v1.56.1 https://github.com/Vanilagy/mediabunny ../vanilagy/mediabunny`, then read `docs/guide/` and `examples/`. Match the tag to `mediabunny` in `package.json`; never copy the source into this repo or install a different version than `@remotion/media` uses.
+- The owner uses Remotion's free license (individuals, for-profit companies with up to 3 employees, and non-profits qualify; see [Remotion's license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md)). Pass `acknowledgeRemotionLicense` where an API takes it (`<Player>`, `parseMedia()`, `convertMedia()` and others); it only hides Remotion's license notice.

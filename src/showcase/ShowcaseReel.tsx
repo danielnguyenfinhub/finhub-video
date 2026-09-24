@@ -41,7 +41,7 @@ export const calculateShowcaseReelMetadata: CalculateMetadataFunction<ShowcaseRe
 // @remotion/captions, and @remotion/paths. Text uses font.ts's system font
 // stack, not @remotion/google-fonts: Google Fonts can't load inside this
 // sandbox's renderer (see font.ts).
-// See my-video/.claude/skills/remotion-best-practices/SKILL.md for the
+// See .claude/skills/remotion-best-practices/SKILL.md for the
 // guide each scene follows.
 export const ShowcaseReel: React.FC<ShowcaseReelProps> = ({title, subtitle}) => {
   return (

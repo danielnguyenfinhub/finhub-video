@@ -149,9 +149,14 @@ const key = (s: string) =>
     .replace(/[^\p{L}\p{N}]/gu, "");
 
 // Why each word is cut automatically (null: kept). A listed word or phrase is
-// matched word for word; a stutter is the first of two identical runs. Words
-// in `remove` spans have an empty key, so they never match.
-const autoCutReasons = (keys: string[], cut: AutoCut): (string | null)[] => {
+// matched word for word; a stutter is the first of two identical runs, unless
+// the first ends a sentence ("…cho các bạn. Các bạn hãy…" is two sentences).
+// Words in `remove` spans have an empty key, so they never match.
+const autoCutReasons = (
+  keys: string[],
+  sentenceEnds: boolean[],
+  cut: AutoCut,
+): (string | null)[] => {
   const reasons: (string | null)[] = keys.map(() => null);
   const lists: [string, string[]][] = [
     ["filler", cut.fillers === false ? [] : FILLERS],
@@ -162,6 +167,7 @@ const autoCutReasons = (keys: string[], cut: AutoCut): (string | null)[] => {
     list.map((p) => ({ reason, words: p.split(/\s+/).map(key).filter(Boolean) })),
   );
   const same = (a: number, b: number, n: number) => {
+    if (sentenceEnds[a + n - 1]) return false;
     for (let j = 0; j < n; j++)
       if (keys[a + j] === "" || keys[a + j] !== keys[b + j]) return false;
     return true;
@@ -207,6 +213,7 @@ const prepareWords = (raw: Word[], edit: TimelineEdit): EditWord[] => {
   );
   const reasons = autoCutReasons(
     timed.map((w, i) => (removed[i] ? "" : key(w.text))),
+    timed.map((w) => /[.?!…]$/.test(w.text.trim())),
     cut,
   );
   // A sentence starts after a full stop or a pause, and keeps starting through
