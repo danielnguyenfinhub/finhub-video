@@ -128,6 +128,7 @@ The talking-head template. Each video is a folder `public/videos/<slug>/` with `
 3. `python scripts/render-video.py <slug>` renders, sets the final mix to -14 LUFS, and writes the mobile copy, thumbnail and `.srt`.
 
 - **Automatic cuts** (`edit.json` `cut`, all on by default): hesitation sounds, stutters (the first of a word or phrase said twice in a row, within a sentence), swear words, and any extra `words`. Restarts in different words still need a `remove` span. `node scripts/export-srt.mjs <slug>` lists every automatic cut; check it before rendering.
+- **Brand background** (`edit.json` `"background": "brand"`): replaces the room behind Daniel with the brand backdrop. It needs `foreground.webm` (Daniel cut out, with transparency) next to `source.mp4`: with `npm run review` running, open http://localhost:4100/matte.html?slug=<slug> in the Claude app's browser (it needs WebGPU) and wait for "Saved". It takes about 13x the video's length, downloads the 25.9 MB `modnet` model from remotion.media the first time, and is saved only if its frame count matches `source.mp4`. `render-video.py` stops with these instructions if the file is missing. `foreground.webm` is not in Git.
 - **Music** (`edit.json` `music`: a file under `public/music/` and an optional `volume`, default 0.3): looped under the whole video and ducked to 30% while Daniel talks. Use only tracks licensed for social media.
 
 ## Project structure

@@ -185,6 +185,9 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
   const { edit, timeline } = reel;
   const design = getDesign(edit.design ?? DEFAULT_DESIGN);
   const src = staticFile(`videos/${slug}/source.mp4`);
+  const foreground = edit.background
+    ? staticFile(`videos/${slug}/foreground.webm`)
+    : undefined;
   const keywords = [...KEYWORDS, ...(edit.keywords ?? [])];
   const talk = timeline.talkFrames;
   return (
@@ -208,7 +211,13 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
         {timeline.segments.map((seg, i) => (
           <React.Fragment key={seg.srcFrom}>
             <TransitionSeries.Sequence durationInFrames={seg.outDuration}>
-              <design.Talk seg={seg} index={i} src={src} look={edit.look} />
+              <design.Talk
+                seg={seg}
+                index={i}
+                src={src}
+                look={edit.look}
+                foreground={foreground}
+              />
             </TransitionSeries.Sequence>
             {seg.transitionAfter ? (
               <TransitionSeries.Transition

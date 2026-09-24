@@ -151,6 +151,10 @@ export const editSchema = z.strictObject({
   // Colour grade on the talking-head footage (not the cover or end cards).
   // Left out, the footage plays as recorded.
   look: z.enum(LOOKS).optional(),
+  // "brand" replaces the room behind Daniel with the brand backdrop. Needs
+  // foreground.webm next to source.mp4 (made once with review/matte.html);
+  // render-video.py stops with instructions if it is missing.
+  background: z.enum(["brand"]).optional(),
   captionFixes: z.array(z.strictObject({ from: text, to: text })).optional(),
   keywords: z.array(text).optional(),
   // Caption look in the classic design: "outline" (bold white words with an
