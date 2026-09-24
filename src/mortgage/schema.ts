@@ -182,6 +182,8 @@ export const editSchema = z.strictObject({
     .strictObject({
       illustrativeNumbers: z.boolean().optional(),
       conditionsNote: z.boolean().optional(),
+      // The video discusses tax: adds "not tax advice" (VI + EN) to the card.
+      taxNote: z.boolean().optional(),
       advertisedRate: z
         .strictObject({ rateFigure: text, comparisonRate: text, ratesAsAt: text })
         .optional(),

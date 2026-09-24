@@ -14,6 +14,7 @@ import {
   DISCLAIMER_EN,
   DISCLAIMER_VI,
   LICENSING_STATEMENT,
+  TAX_NOTE,
   comparisonWarningVi,
 } from "./compliance";
 import type { EditJson } from "./schema";
@@ -56,6 +57,9 @@ export const ComplianceCard: React.FC<{
         ]),
     ...(compliance?.conditionsNote
       ? [{ text: CONDITIONS_NOTE_VI, base: 38, color: "#33445A" }]
+      : []),
+    ...(compliance?.taxNote
+      ? [{ text: TAX_NOTE, base: 38, color: "#33445A" }]
       : []),
     ...(rate
       ? [{ text: comparisonWarningVi(rate.ratesAsAt), base: 34, color: "#33445A" }]
