@@ -16,6 +16,7 @@ composition (Studio → "Elements"), which is how each was verified.
 | `SlashIntro` | diagonal split title card | `spring`, CSS `clip-path` |
 | `KenBurns` | pan-and-zoom over a still | `Img`, `interpolate` |
 | `TiltFrame` | 2.5D camera swing around any content | `spring`, CSS 3D |
+| `ImageCarousel` | 3D ring of photo cards turning one card at a time; not for lender logos (use `LenderRow`) | `@remotion/three` `ThreeCanvas`, `useDelayRender`, `spring` |
 | `FocusCrop` | reframes wide footage to 9:16 following the subject | `OffthreadVideo`, `interpolate` |
 | `BeforeAfter` | sweeping split between two layers (e.g. graded vs not) | CSS `clip-path` |
 | `TextMatte` | content shows through big letters | blend modes |
