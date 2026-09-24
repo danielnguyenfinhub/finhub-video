@@ -7,8 +7,10 @@ yourself, without editing `edit.json` by hand:
   composition, built with the same `buildReel()` as the render);
 - pick the **design** and the **colour grade**;
 - pick each **chapter transition**;
-- move a chapter, stat or cue **earlier or later** in 0.5 s steps (its inner
-  beats move with it) and jump the player to it;
+- **drag** a chapter, stat or cue along the timeline at the top (one lane
+  each, drawn in finished-video time with the cuts removed); its inner beats
+  move with it. Click a block to jump to it, click the track to seek, or use
+  the arrow keys / ◀ ▶ buttons to move it in 0.5 s steps;
 - **Save** writes `public/videos/<slug>/edit.json`, keeping the previous
   version as `edit.json.bak`; **Render video** then runs
   `scripts/render-video.py <slug>` and shows its progress.

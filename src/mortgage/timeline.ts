@@ -365,6 +365,23 @@ export const toOutMs = (
   return ((seg.outFrom + Math.max(0, f - seg.srcFrom) / seg.rate) * 1000) / fps;
 };
 
+// Output ms on the talk timeline -> source ms: the inverse of toOutMs, used when
+// an item is dragged along the review page's timeline. Past the end clamps to
+// the last kept source moment.
+export const toSrcMs = (
+  segments: Segment[],
+  outMs: number,
+  fps: number,
+): number => {
+  const f = Math.max(0, (outMs * fps) / 1000);
+  const seg =
+    segments.find((s) => f < s.outFrom + s.outDuration) ??
+    segments[segments.length - 1];
+  if (!seg) return 0;
+  const src = Math.min(seg.srcTo, seg.srcFrom + (f - seg.outFrom) * seg.rate);
+  return Math.round((src * 1000) / fps);
+};
+
 export const buildTimeline = (
   rawWords: Word[],
   edit: TimelineEdit,

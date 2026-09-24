@@ -43,6 +43,21 @@
       .status.ok { background: #e3f4ec; color: var(--good); }
       .status.bad { background: #fbe6e5; color: var(--bad); }
       .status.info { background: #e6eef8; color: var(--blue); }
+      /* Drag timeline (review/Timeline.tsx): lane names left, scrolling track right. */
+      .timeline { display: grid; grid-template-columns: 84px 1fr; margin-top: 12px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(11, 31, 61, 0.12); padding: 8px 0; }
+      .lane-names { display: grid; grid-template-rows: 22px repeat(3, 40px); font-weight: 600; font-size: 13px; color: var(--dim); padding-left: 12px; align-items: center; }
+      .track-scroll { overflow-x: auto; }
+      .track { position: relative; display: grid; grid-template-rows: 22px repeat(3, 40px); cursor: pointer; }
+      .ruler { position: relative; border-bottom: 1px solid #e3e7ee; }
+      .ruler span { position: absolute; top: 2px; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; transform: translateX(-50%); }
+      .ruler span:first-child { transform: none; }
+      .lane { position: relative; border-bottom: 1px dashed #eef1f5; }
+      .block { position: absolute; top: 6px; height: 28px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; cursor: grab; touch-action: none; border: 0; color: #fff; }
+      .lane.chapters .block { background: var(--navy); }
+      .lane.stats .block { background: var(--blue); }
+      .lane.cues .block { background: var(--amber); color: var(--navy); }
+      .block.dragging { cursor: grabbing; opacity: 0.85; box-shadow: 0 4px 12px rgba(11, 31, 61, 0.3); z-index: 2; }
+      .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--bad); pointer-events: none; }
       .log { background: var(--navy); color: #e6eef8; padding: 10px; border-radius: 8px; font: 12px/1.5 ui-monospace, monospace; max-height: 240px; overflow: auto; }
     </style>
   </head>

@@ -11,18 +11,13 @@ import { MortgageReel, buildReel } from "../src/mortgage/MortgageReel";
 import { LOOKS, outFrameOf, type EditJson } from "../src/mortgage/schema";
 import { TALK_START_FRAME, TRANSITIONS } from "../src/mortgage/timeline";
 import { shiftTimes } from "./shift";
+import { Timeline, type TimelineItem } from "./Timeline";
 
 const FPS = 30;
 const NUDGE_MS = 500;
 
 type Status = { tone: "ok" | "bad" | "info"; text: string } | null;
-type Item = {
-  key: string;
-  label: string;
-  field: "chapters" | "stats" | "cues";
-  index: number;
-  atMs: number;
-};
+type Item = TimelineItem;
 
 const getJson = async (url: string) => {
   const res = await fetch(url);
@@ -45,6 +40,7 @@ const App = () => {
   const [status, setStatus] = useState<Status>(null);
   const [rendering, setRendering] = useState(false);
   const [renderLog, setRenderLog] = useState<string[]>([]);
+  const [frame, setFrame] = useState(0);
 
   useEffect(() => {
     getJson("/api/videos")
@@ -72,7 +68,10 @@ const App = () => {
         setStatus(null);
       })
       .catch((e) =>
-        setStatus({ tone: "bad", text: `Could not load ${slug}: ${e.message}` }),
+        setStatus({
+          tone: "bad",
+          text: `Could not load ${slug}: ${e.message}`,
+        }),
       );
   }, [slug]);
 
@@ -93,6 +92,23 @@ const App = () => {
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const reel = built.value?.reel;
   const toFrame = reel ? outFrameOf(reel.timeline, FPS) : () => 0;
+  const segments = reel?.timeline.segments ?? [];
+  // Last kept source moment: the end of the final chapter's block.
+  const lastSrcMs = segments.length
+    ? Math.floor((segments[segments.length - 1].srcTo * 1000) / FPS) - 1
+    : 0;
+
+  // Playhead for the timeline. Re-subscribes when the Player remounts
+  // (a different video, or the first good build).
+  const playerReady = !!built.value;
+  useEffect(() => {
+    const p = player.current;
+    if (!p) return;
+    const onFrame = (e: { detail: { frame: number } }) =>
+      setFrame(e.detail.frame);
+    p.addEventListener("frameupdate", onFrame);
+    return () => p.removeEventListener("frameupdate", onFrame);
+  }, [playerReady, slug]);
 
   const items: Item[] = draft
     ? [
@@ -102,6 +118,7 @@ const App = () => {
           field: "chapters" as const,
           index: i,
           atMs: c.atMs,
+          endMs: draft.chapters?.[i + 1]?.atMs ?? lastSrcMs,
         })),
         ...(draft.stats ?? []).map((s, i) => ({
           key: `st${i}`,
@@ -109,6 +126,7 @@ const App = () => {
           field: "stats" as const,
           index: i,
           atMs: s.atMs,
+          endMs: s.atMs + s.durMs,
         })),
         ...(draft.cues ?? []).map((c, i) => ({
           key: `cu${i}`,
@@ -116,6 +134,7 @@ const App = () => {
           field: "cues" as const,
           index: i,
           atMs: c.fromMs,
+          endMs: c.toMs,
         })),
       ].sort((a, b) => a.atMs - b.atMs)
     : [];
@@ -169,7 +188,10 @@ const App = () => {
         setRendering(false);
         setStatus(
           r.exitCode === 0
-            ? { tone: "ok", text: `Rendered. Files are in out/videos/${slug}/.` }
+            ? {
+                tone: "ok",
+                text: `Rendered. Files are in out/videos/${slug}/.`,
+              }
             : {
                 tone: "bad",
                 text: `Render failed (exit ${r.exitCode}). See the log below.`,
@@ -198,123 +220,136 @@ const App = () => {
       {built.error ? (
         <pre className="status bad">Preview not updated: {built.error}</pre>
       ) : null}
-      {draft && built.value ? (
-        <div className="layout">
-          <div className="player">
-            <Player
-              ref={player}
-              component={MortgageReel}
-              inputProps={{ slug, reel: built.value.reel }}
-              durationInFrames={built.value.durationInFrames}
-              compositionWidth={1080}
-              compositionHeight={1920}
-              fps={FPS}
-              controls
-              style={{ width: "100%" }}
-              acknowledgeRemotionLicense
-            />
-          </div>
-          <section className="panel">
-            <label>
-              Design
-              <select
-                value={draft.design ?? DEFAULT_DESIGN}
-                onChange={(e) =>
-                  update((d) => ({ ...d, design: e.target.value }))
-                }
-              >
-                {DESIGN_IDS.map((id) => (
-                  <option key={id}>{id}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Colour grade
-              <select
-                value={draft.look ?? ""}
-                onChange={(e) =>
-                  update(({ look: _old, ...d }) =>
-                    e.target.value
-                      ? { ...d, look: e.target.value as EditJson["look"] }
-                      : d,
-                  )
-                }
-              >
-                <option value="">none (as recorded)</option>
-                {LOOKS.map((l) => (
-                  <option key={l}>{l}</option>
-                ))}
-              </select>
-            </label>
-            <h2>Timeline</h2>
-            <p className="dim">
-              Move an item earlier or later by {NUDGE_MS / 1000} s; its inner
-              beats move with it.
-            </p>
-            <ul>
-              {items.map((it) => (
-                <li key={it.key}>
-                  <div className="row">
-                    <button onClick={() => jump(it)} title="Jump to it">
-                      {clock(TALK_START_FRAME + toFrame(it.atMs))}
-                    </button>
-                    <span className="label">{it.label}</span>
-                    <button
-                      onClick={() => nudge(it, -NUDGE_MS)}
-                      aria-label="Earlier"
-                    >
-                      ◀
-                    </button>
-                    <button
-                      onClick={() => nudge(it, NUDGE_MS)}
-                      aria-label="Later"
-                    >
-                      ▶
-                    </button>
-                  </div>
-                  {it.field === "chapters" ? (
-                    <select
-                      value={draft.chapters?.[it.index].effect}
-                      onChange={(e) =>
-                        update((d) => ({
-                          ...d,
-                          chapters: (d.chapters ?? []).map((c, i) =>
-                            i === it.index
-                              ? {
-                                  ...c,
-                                  effect: e.target
-                                    .value as (typeof TRANSITIONS)[number],
-                                }
-                              : c,
-                          ),
-                        }))
-                      }
-                      aria-label="Transition"
-                    >
-                      {TRANSITIONS.map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            <div className="actions">
-              <button disabled={!dirty || !!built.error} onClick={save}>
-                Save edit.json
-              </button>
-              <button disabled={!dirty} onClick={() => setDraft(saved)}>
-                Undo changes
-              </button>
-              <button disabled={dirty || rendering} onClick={startRender}>
-                {rendering ? "Rendering…" : "Render video"}
-              </button>
+      {draft && built.value && reel ? (
+        <>
+          <Timeline
+            items={items}
+            segments={segments}
+            talkFrames={reel.timeline.talkFrames}
+            fps={FPS}
+            frame={frame}
+            nudgeMs={NUDGE_MS}
+            toFrame={toFrame}
+            onSeek={(f) => player.current?.seekTo(f)}
+            onMove={nudge}
+          />
+          <div className="layout">
+            <div className="player">
+              <Player
+                ref={player}
+                component={MortgageReel}
+                inputProps={{ slug, reel: built.value.reel }}
+                durationInFrames={built.value.durationInFrames}
+                compositionWidth={1080}
+                compositionHeight={1920}
+                fps={FPS}
+                controls
+                style={{ width: "100%" }}
+                acknowledgeRemotionLicense
+              />
             </div>
-            {renderLog.length ? (
-              <pre className="log">{renderLog.join("\n")}</pre>
-            ) : null}
-          </section>
-        </div>
+            <section className="panel">
+              <label>
+                Design
+                <select
+                  value={draft.design ?? DEFAULT_DESIGN}
+                  onChange={(e) =>
+                    update((d) => ({ ...d, design: e.target.value }))
+                  }
+                >
+                  {DESIGN_IDS.map((id) => (
+                    <option key={id}>{id}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Colour grade
+                <select
+                  value={draft.look ?? ""}
+                  onChange={(e) =>
+                    update((d) => ({
+                      ...d,
+                      // Empty = no grade; undefined drops "look" when saved.
+                      look: (e.target.value || undefined) as EditJson["look"],
+                    }))
+                  }
+                >
+                  <option value="">none (as recorded)</option>
+                  {LOOKS.map((l) => (
+                    <option key={l}>{l}</option>
+                  ))}
+                </select>
+              </label>
+              <h2>Timeline</h2>
+              <p className="dim">
+                Move an item earlier or later by {NUDGE_MS / 1000} s; its inner
+                beats move with it.
+              </p>
+              <ul>
+                {items.map((it) => (
+                  <li key={it.key}>
+                    <div className="row">
+                      <button onClick={() => jump(it)} title="Jump to it">
+                        {clock(TALK_START_FRAME + toFrame(it.atMs))}
+                      </button>
+                      <span className="label">{it.label}</span>
+                      <button
+                        onClick={() => nudge(it, -NUDGE_MS)}
+                        aria-label="Earlier"
+                      >
+                        ◀
+                      </button>
+                      <button
+                        onClick={() => nudge(it, NUDGE_MS)}
+                        aria-label="Later"
+                      >
+                        ▶
+                      </button>
+                    </div>
+                    {it.field === "chapters" ? (
+                      <select
+                        value={draft.chapters?.[it.index].effect}
+                        onChange={(e) =>
+                          update((d) => ({
+                            ...d,
+                            chapters: (d.chapters ?? []).map((c, i) =>
+                              i === it.index
+                                ? {
+                                    ...c,
+                                    effect: e.target
+                                      .value as (typeof TRANSITIONS)[number],
+                                  }
+                                : c,
+                            ),
+                          }))
+                        }
+                        aria-label="Transition"
+                      >
+                        {TRANSITIONS.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <div className="actions">
+                <button disabled={!dirty || !!built.error} onClick={save}>
+                  Save edit.json
+                </button>
+                <button disabled={!dirty} onClick={() => setDraft(saved)}>
+                  Undo changes
+                </button>
+                <button disabled={dirty || rendering} onClick={startRender}>
+                  {rendering ? "Rendering…" : "Render video"}
+                </button>
+              </div>
+              {renderLog.length ? (
+                <pre className="log">{renderLog.join("\n")}</pre>
+              ) : null}
+            </section>
+          </div>
+        </>
       ) : null}
     </main>
   );
