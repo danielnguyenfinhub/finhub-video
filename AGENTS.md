@@ -110,6 +110,10 @@ Reusable pieces for the owner's real videos; start from these rather than writin
 
 If a second video project ever needs these, `remotion-dev/library-starter` is Remotion's template for publishing them as a package; it pins Remotion 4.0.46, so upgrade it first.
 
+## Elements: `src/elements/`
+
+22 checked building blocks (typewriter, ticker, Ken Burns, focus crop, before/after, audio ring, custom star-wipe transition, …) for designs and one-off videos; see `src/elements/README.md`. Each renders in the `ElementCatalog` composition ("Elements" folder). Check there before writing a new one.
+
 ## MortgageReel: `src/mortgage/`
 
 The talking-head template. Each video is a folder `public/videos/<slug>/` with `source.mp4` (not in Git), `words.json` and `edit.json`; the code doesn't change per video.

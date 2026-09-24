@@ -35,6 +35,7 @@ import { gradientBg, palette } from "./showcase/palette";
 import { poppins } from "./showcase/font";
 import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
+import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 
 // A single-frame <Still> for a poster image (`npx remotion still Poster`).
@@ -88,6 +89,9 @@ export const RemotionRoot: React.FC = () => {
         {/* Transparent logo + lower third for video editors; renders ProRes 4444 by default. */}
         <Composition id="BrandOverlay" component={BrandOverlay} schema={brandOverlaySchema} defaultProps={brandOverlayDefaultProps} calculateMetadata={calculateBrandOverlayMetadata} durationInFrames={240} fps={30} width={1920} height={1080} />
         <Composition id="BrandOverlayVertical" component={BrandOverlay} schema={brandOverlaySchema} defaultProps={brandOverlayDefaultProps} calculateMetadata={calculateBrandOverlayMetadata} durationInFrames={240} fps={30} width={1080} height={1920} />
+      </Folder>
+      <Folder name="Elements">
+        <Composition id="ElementCatalog" component={ElementCatalog} durationInFrames={ELEMENT_CATALOG_FRAMES} fps={30} width={1080} height={1920} />
       </Folder>
       <Folder name="Reels">
         <Composition
