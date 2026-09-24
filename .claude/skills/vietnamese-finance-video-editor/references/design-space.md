@@ -17,6 +17,12 @@
 full-frame zoom-cuts · navy cards + stat panels · light-leak flash + slide/wipe · clean
 gradient · money-rain hook sfx + whooshes · white card logo + contact list.
 
+"explainer" (`src/designs/explainer/`, EXPLAINER direction) = whiteboard sketch (inked
+title, pen-circled face, drawn arrow) · marker highlight on paper · taped paper-card inset
+over ruled paper · sticky notes + rough-notation pen marks · book-flip + dissolve (set in
+edit.json chapters) · paper grain (noise) + ruled lines · pen tap + ding + whoosh ·
+handwritten sign-off on sticky note. Cues still draw as classic's navy cards.
+
 ## The 6 directions
 
 - **DATA-LED** — numbers are the hero. Charts draw on (paths), count-ups, a 3D bar or
