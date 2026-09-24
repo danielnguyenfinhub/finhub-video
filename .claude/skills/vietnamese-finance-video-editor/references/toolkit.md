@@ -40,6 +40,15 @@ dissolve; BROADCAST: push-cut + swap; CINEMATIC: film-burn + dreamy-zoom).
   starburst, …) applied through `<Solid effects>`: branded pattern backdrops,
   radar rings on a key number. Needs `--gl=angle`.
 
+## Maps and extra 3D
+- `@remotion/maptiler` — MapViewport, MapPolyline, MapRoute, MapPoint, MapOverlay,
+  MapHeatmap, MapPolygon, MapRegion: a map of a suburb, a commute, a price heatmap.
+  Needs `REMOTION_MAPTILER_KEY` in `.env`; keep the camera still, animate the layers.
+  Pattern: `src/showcase/MapTilerScene.tsx`.
+- `@remotion/svg-3d-engine` — extrude any SVG path into a 3D shape and tilt it (a
+  house, a card with live text on its face) without WebGL. Pattern:
+  `src/showcase/Svg3DScene.tsx`.
+
 ## Framing Daniel
 - `@remotion/video-matting` — separateVideoLayers, canUseVideoMatting,
   loadVideoMattingModel: cut Daniel out of his room and place him over a designed

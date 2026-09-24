@@ -48,6 +48,10 @@ import {SfxScene} from "./SfxScene";
 import {CoreMediaScene} from "./CoreMediaScene";
 import {MediaToolsScene} from "./MediaToolsScene";
 import {MediabunnyScene} from "./MediabunnyScene";
+import {WebRendererScene} from "./WebRendererScene";
+import {WhisperWebScene} from "./WhisperWebScene";
+import {Svg3DScene} from "./Svg3DScene";
+import {MapTilerScene} from "./MapTilerScene";
 import {CoreEnvironmentScene} from "./CoreEnvironmentScene";
 import {EFFECTS_CATALOG_DURATION, EffectsCatalogScene} from "./EffectsCatalogScene";
 import {CutFlash} from "./CutFlash";
@@ -68,7 +72,7 @@ const SCENE_DURATION = 75;
 const TRANSITION_DURATION = 15;
 // Scenes of SCENE_DURATION each; EffectsCatalogScene, the one longer
 // sequence, is added separately.
-const SCENE_COUNT = 25;
+const SCENE_COUNT = 29;
 // Separators that are <TransitionSeries.Overlay>s rather than Transitions:
 // an overlay sits on the cut without overlapping the scenes, so it doesn't
 // shorten the reel.
@@ -115,7 +119,7 @@ const springT = springTiming({config: {damping: 200}, durationInFrames: TRANSITI
 // fade() (see htmlInCanvasPresentation.ts) rather than throwing where
 // HtmlInCanvas isn't supported. Timings: linearTiming() with and without an
 // easing, and springTiming() with reverse on the last one. Two cuts use a
-// <TransitionSeries.Overlay> (CutFlash) instead of a transition. ~62s covering: spring
+// <TransitionSeries.Overlay> (CutFlash) instead of a transition. ~72s covering: spring
 // animation, staggered text, rough-notation highlights, and
 // useTransitionProgress() reacting to its own exit transition (TitleScene);
 // @remotion/shapes, @remotion/motion-blur, @remotion/noise (ShapesScene);
@@ -135,7 +139,10 @@ const springT = springTiming({config: {damping: 200}, durationInFrames: TRANSITI
 // (SfxScene); @remotion/gsap (GsapScene); core remotion media/canvas
 // components (CoreMediaScene); @remotion/media-parser + @remotion/webcodecs
 // (MediaToolsScene); Mediabunny called directly, the library under
-// @remotion/media (MediabunnyScene); core remotion environment/introspection
+// @remotion/media (MediabunnyScene); @remotion/web-renderer, rendering in the
+// browser (WebRendererScene); @remotion/whisper-web, the WebAssembly
+// transcriber (WhisperWebScene); @remotion/svg-3d-engine (Svg3DScene);
+// @remotion/maptiler (MapTilerScene); core remotion environment/introspection
 // APIs (CoreEnvironmentScene); core remotion Easing/<Series>/<Loop>/<Freeze>/
 // random() (FundamentalsScene); every interpolate() option and its exported
 // validators (InterpolateScene); @remotion/animation-utils + rough-notation
@@ -295,6 +302,26 @@ export const FullReel: React.FC<FullReelProps> = ({title, subtitle, accentColor,
           <MediabunnyScene />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={swapOrFallback()} timing={t} />
+
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATION}>
+          <WebRendererScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={t} />
+
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATION}>
+          <WhisperWebScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={slide({direction: "from-right"})} timing={t} />
+
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATION}>
+          <Svg3DScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={fade()} timing={t} />
+
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATION}>
+          <MapTilerScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={slide({direction: "from-bottom"})} timing={t} />
 
         <TransitionSeries.Sequence durationInFrames={SCENE_DURATION}>
           <CoreEnvironmentScene />
