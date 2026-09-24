@@ -3,7 +3,7 @@
 // them onto the cut, paced output. Validated with zod strict objects so a typo
 // ("atMS") fails the render with its path instead of silently dropping a cue.
 import { z } from "zod";
-import { toOutMs, type Timeline } from "./timeline";
+import { TRANSITIONS, toOutMs, type Timeline } from "./timeline";
 
 const ms = z.number().nonnegative();
 const text = z.string().min(1);
@@ -108,6 +108,10 @@ const exemption = z.strictObject({
 
 const rate = z.number().min(0.5).max(2);
 
+// Colour grades for the talking-head footage; recipes in MortgageReel.tsx.
+export const LOOKS = ["warm", "cinematic", "mono"] as const;
+export type Look = (typeof LOOKS)[number];
+
 export const editSchema = z.strictObject({
   // Not shown anywhere: why a span was removed, what the video is about, etc.
   notes: z.array(z.string()).optional(),
@@ -142,6 +146,9 @@ export const editSchema = z.strictObject({
   music: z
     .strictObject({ file: text, volume: z.number().min(0).max(1).optional() })
     .optional(),
+  // Colour grade on the talking-head footage (not the cover or end cards).
+  // Left out, the footage plays as recorded.
+  look: z.enum(LOOKS).optional(),
   captionFixes: z.array(z.strictObject({ from: text, to: text })).optional(),
   keywords: z.array(text).optional(),
   pacing: z
@@ -160,7 +167,7 @@ export const editSchema = z.strictObject({
       z.strictObject({
         atMs: ms,
         title: text,
-        effect: z.enum(["fade", "slide", "wipe", "flip", "clockWipe"]),
+        effect: z.enum(TRANSITIONS),
       }),
     )
     .optional(),

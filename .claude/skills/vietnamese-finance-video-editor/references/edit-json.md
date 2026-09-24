@@ -35,7 +35,8 @@ the render with a readable error). Full worked example: `public/videos/ty-do/edi
 | `captionFixes` | no | `[{from,to}]` exact caption-token replacements for misheard words. Audio untouched. Built-in: lợi phí→lệ phí, tiền lợi→tiền lời, than chốt→then chốt, đắm→đóng |
 | `keywords` | no | Extra words/phrases to highlight in captions (added to the finance default list) |
 | `pacing` | no | `{mode:"auto"|"off", target?, min?, max?, overrides?:[{fromMs,toMs,rate}]}`. Default auto: target 4.4 words/s, rate 0.9–1.2, pitch preserved |
-| `chapters` | no | `[{atMs,title,effect}]`; `effect` ∈ fade, slide, wipe, flip, clockWipe. Lands on the nearest cut; shows a "PHẦN n" banner |
+| `chapters` | no | `[{atMs,title,effect}]`; `effect` ∈ fade, slide, wipe, flip, clockWipe, iris, pushCut, blurSlide, bookFlip, crossZoom, crosswarp, dissolve, dreamyZoom, filmBurn, linearBlur, ripple, swap, zoomBlur, zoomInOut (`TRANSITIONS` in `src/mortgage/timeline.ts`). From blurSlide on they need HTML-in-canvas (Chrome 149+, which Remotion's renderer downloads); an older Studio browser previews them as a fade. Lands on the nearest cut; shows a "PHẦN n" banner |
+| `look` | no | Colour grade on the talking-head footage: `"warm"`, `"cinematic"` or `"mono"` (recipes in `LOOK_EFFECTS`, `src/mortgage/MortgageReel.tsx`). Left out, footage plays as recorded. Graded footage plays through `@remotion/media` `<Video>`; if that can't decode the file the render fails rather than ship it ungraded |
 | `stats` | no | `[{atMs,durMs,big,label}]` stat cards at the top, e.g. `{"atMs":12900,"durMs":3000,"big":"~$400","label":"cho mỗi hộ gia đình"}` |
 | `cues` | no | Infographics — see below |
 | `cta` | no | `{question?}` on the contact card. Default "Bạn cần tư vấn về khoản vay?"; button text is fixed |
