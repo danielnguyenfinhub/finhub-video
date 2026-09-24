@@ -41,7 +41,14 @@ const entries = [
   },
 ];
 
-for (const file of walk(skillsDir)) {
+// Only the vendored Remotion guides: the other skills in .claude/skills are
+// for Claude Code in this repository (the owner's editing skill is already in
+// his claude.ai account).
+const remotionSkills = readdirSync(skillsDir, { withFileTypes: true })
+  .filter((e) => e.isDirectory() && e.name.startsWith("remotion-"))
+  .flatMap((e) => walk(join(skillsDir, e.name)));
+
+for (const file of remotionSkills) {
   const rel = relative(skillsDir, file).split("\\").join("/");
   const name =
     basename(file) === "SKILL.md"

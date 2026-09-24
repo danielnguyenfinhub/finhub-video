@@ -82,7 +82,7 @@ miễn phí, đảm bảo …) in the verify list — never silently cut them.
 - **Reuse before building**: remix an existing design in `src/designs/`, or lift a scene
   idea from the starter projects (`my-three`, `my-skia`, `my-audiogram`, `my-code-hike`,
   `my-tiktok`, `my-prompt-to-motion-graphics`, `my-music-visualization`, `my-overlay`)
-  in `danielnguyenfinhub/remotion` (version 1, cloned next to this repo as `../remotion`),
+  in `starters/` (each its own project: `npm i` inside it to run one),
   mapping every colour to theme tokens.
 - **Verify at source**: before using a package API, read its types in
   `node_modules/@remotion/<pkg>`; never write a prop from memory.
