@@ -13,6 +13,7 @@ import { CaptionBox } from "./CaptionBox";
 import { CountdownRing } from "./CountdownRing";
 import { FocusCrop } from "./FocusCrop";
 import { FrequencyBars } from "./FrequencyBars";
+import { ImageCarousel } from "./ImageCarousel";
 import { KenBurns } from "./KenBurns";
 import { LineReveal } from "./LineReveal";
 import { NeonTitle } from "./NeonTitle";
@@ -73,6 +74,15 @@ const SAMPLE_WORDS = " Lãi suất cố định giữ khoản trả hàng tháng
     confidence: null,
   }));
 
+// Module-level so ImageCarousel doesn't reload its images every render.
+const CAROUSEL_IMAGES = [
+  "sample-frame.png",
+  "brand/finhub-logo.png",
+  "sample-frame.png",
+  "brand/finhub-logo.png",
+  "sample-frame.png",
+].map((p) => staticFile(p));
+
 const SCENES: [string, React.ReactNode][] = [
   ["Typewriter", <Centre key="t" bg="#F6F1E4"><Typewriter text="Lãi suất cố định hay thả nổi? Fixed or variable?" /></Centre>],
   ["LineReveal", <Centre key="l" bg="#F6F1E4"><LineReveal lines={["Chi phí thật sự", "của khoản vay", "The real cost"]} /></Centre>],
@@ -83,6 +93,7 @@ const SCENES: [string, React.ReactNode][] = [
   ["SlashIntro", <SlashIntro key="si" top="PHẦN 2" bottom="Vay mua nhà lần đầu" />],
   ["KenBurns", <KenBurns key="k" src={staticFile("sample-frame.png")} />],
   ["TiltFrame", <TiltFrame key="tf"><Clip /></TiltFrame>],
+  ["ImageCarousel", <AbsoluteFill key="ic" style={{ backgroundColor: brand.background }}><ImageCarousel images={CAROUSEL_IMAGES} holdFrames={30} /></AbsoluteFill>],
   ["FocusCrop", <FocusCrop key="f" src={CLIP} sourceWidth={960} sourceHeight={540} focus={[{ frame: 0, x: 0.25, y: 0.5 }, { frame: 80, x: 0.75, y: 0.5 }]} />],
   ["BeforeAfter", <BeforeAfter key="b" before={<Clip style={{ filter: "grayscale(1)" }} />} after={<Clip />} />],
   ["TextMatte", <TextMatte key="tm" text="VAY NHÀ"><KenBurns src={staticFile("sample-frame.png")} /></TextMatte>],
