@@ -9,8 +9,10 @@ import { brand } from "../brand/theme";
 import { FONT, LOGO, useReelFont } from "../mortgage/style";
 import { AudioRing } from "./AudioRing";
 import { BeforeAfter } from "./BeforeAfter";
+import { CaptionBox } from "./CaptionBox";
 import { CountdownRing } from "./CountdownRing";
 import { FocusCrop } from "./FocusCrop";
+import { FrequencyBars } from "./FrequencyBars";
 import { ImageCarousel } from "./ImageCarousel";
 import { KenBurns } from "./KenBurns";
 import { LineReveal } from "./LineReveal";
@@ -61,6 +63,17 @@ const Centre: React.FC<{ children: React.ReactNode; bg?: string }> = ({
   </AbsoluteFill>
 );
 
+// Synthetic words for the CaptionBox scene, Whisper-style (leading spaces).
+const SAMPLE_WORDS = " Lãi suất cố định giữ khoản trả hàng tháng ổn định"
+  .split(/(?= )/)
+  .map((text, i) => ({
+    text,
+    startMs: 200 + i * 240,
+    endMs: 420 + i * 240,
+    timestampMs: null,
+    confidence: null,
+  }));
+
 // Module-level so ImageCarousel doesn't reload its images every render.
 const CAROUSEL_IMAGES = [
   "sample-frame.png",
@@ -86,11 +99,13 @@ const SCENES: [string, React.ReactNode][] = [
   ["TextMatte", <TextMatte key="tm" text="VAY NHÀ"><KenBurns src={staticFile("sample-frame.png")} /></TextMatte>],
   ["VideoGrid", <VideoGrid key="vg" clips={[{ src: CLIP, title: "Daniel" }, { src: CLIP }, { src: CLIP }, { src: CLIP, title: "Khách" }]} />],
   ["NewsTicker", <AbsoluteFill key="nt"><Clip /><NewsTicker items={["RBA giữ nguyên lãi suất", "Ví dụ minh hoạ, không phải đề nghị"]} /></AbsoluteFill>],
+  ["CaptionBox", <AbsoluteFill key="cb"><Clip /><CaptionBox captions={SAMPLE_WORDS} /></AbsoluteFill>],
   ["SocialHandle", <Centre key="sh"><SocialHandle platform="facebook" handle="@your-page" /></Centre>],
   ["ProgressBar + ReviewStamp", <AbsoluteFill key="pr"><Clip /><ProgressBar /><ReviewStamp /></AbsoluteFill>],
   ["Particles", <AbsoluteFill key="p" style={{ backgroundColor: brand.background }}><Particles /></AbsoluteFill>],
   ["PulseBadge", <Centre key="pb"><PulseBadge text="MỚI · NEW" every={30} /></Centre>],
   ["AudioRing", <Centre key="a"><AudioRing audioSrc={staticFile("sample-tone.wav")} imageSrc={LOGO} /></Centre>],
+  ["FrequencyBars", <Centre key="fq"><FrequencyBars audioSrc={staticFile("sample-tone.wav")} playAudio /></Centre>],
   ["NoiseField", <NoiseField key="nf" />],
 ];
 
