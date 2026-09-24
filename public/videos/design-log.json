@@ -18,19 +18,19 @@
   },
   {
     "slug": "interest-in-advance",
-    "date": "2026-09-24",
-    "design": "classic",
+    "date": "2026-09-25",
+    "design": "explainer",
     "direction": "EXPLAINER",
     "axes": {
-      "cover": "frozen-frame + big title",
-      "captions": "karaoke pill + stroke",
-      "framing": "full-frame zoom-cuts",
-      "graphics": "navy cards + stat panels",
-      "transitions": "light-leak flash + slide/wipe",
-      "texture": "clean gradient",
-      "sound": "money-rain hook sfx + whooshes",
-      "cta": "white card logo + contact list"
+      "cover": "taped photo on lined paper + marker title",
+      "captions": "marker-highlight words on paper, sentence-aware pages",
+      "framing": "cut-out on brand backdrop inside a taped photo card",
+      "graphics": "sticky notes, pencil lines, hand-drawn cue cards",
+      "transitions": "book flip / clock wipe / swap",
+      "texture": "lined paper + tape",
+      "sound": "pencil click + ding",
+      "cta": "paper contact card"
     },
-    "reused": true
+    "reused": false
   }
 ]
