@@ -2,6 +2,7 @@ import {Player, Thumbnail} from "@remotion/player";
 import type {CallbackListener, EventTypes, PlayerRef, RenderPoster} from "@remotion/player";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {createRoot} from "react-dom/client";
+import {canRenderMediaOnWeb, renderMediaOnWeb} from "@remotion/web-renderer";
 import {AbsoluteFill, useCurrentFrame} from "remotion";
 import {ShowcaseReel, showcaseReelDefaultProps} from "../src/showcase/ShowcaseReel";
 
@@ -442,7 +443,69 @@ const App: React.FC = () => {
         )}
         style={{width: 320, borderRadius: 8, overflow: "hidden"}}
       />
+
+      <h2>Render in the browser</h2>
+      <WebRender />
     </main>
+  );
+};
+
+// @remotion/web-renderer: renders 2 seconds of the reel (frames 45-104, the
+// end of the title and the start of the shapes scene) to a video file in this
+// tab with WebCodecs, no server. MP4 where canRenderMediaOnWeb()
+// says the browser can encode it, else WebM. isProduction: false marks these
+// as development renders in the telemetry ping every web render sends.
+const WebRender: React.FC = () => {
+  const [status, setStatus] = useState("Not rendered yet.");
+  const [file, setFile] = useState<{href: string; name: string} | null>(null);
+
+  const render = useCallback(async () => {
+    setFile(null);
+    try {
+      const mp4 = await canRenderMediaOnWeb({container: "mp4", width: reel.compositionWidth, height: reel.compositionHeight, muted: true});
+      const container = mp4.canRender ? "mp4" : "webm";
+      setStatus(`Rendering ${container}…`);
+      const {getBlob} = await renderMediaOnWeb({
+        composition: {
+          id: "ShowcaseReel",
+          component: reel.component,
+          defaultProps: reel.inputProps,
+          durationInFrames: reel.durationInFrames,
+          width: reel.compositionWidth,
+          height: reel.compositionHeight,
+          fps: reel.fps,
+        },
+        inputProps: reel.inputProps,
+        container,
+        frameRange: [INITIAL_FRAME, INITIAL_FRAME + 59],
+        muted: true,
+        isProduction: false,
+        onProgress: ({progress}) => setStatus(`Rendering ${container}… ${Math.round(progress * 100)}%`),
+      });
+      const blob = await getBlob();
+      setFile({href: URL.createObjectURL(blob), name: `showcase-45-104.${container}`});
+      setStatus(`Done: ${container}, ${(blob.size / 1024).toFixed(0)} KB, rendered in this tab.`);
+    } catch (err) {
+      setStatus(`Failed: ${(err as Error).message}`);
+    }
+  }, []);
+
+  return (
+    <div>
+      <button type="button" onClick={render}>
+        Render 2 seconds of the reel to a video file
+      </button>
+      <span id="web-render-status" style={{marginLeft: 12}}>
+        {status}
+      </span>
+      {file ? (
+        <p>
+          <a href={file.href} download={file.name}>
+            Download {file.name}
+          </a>
+        </p>
+      ) : null}
+    </div>
   );
 };
 
