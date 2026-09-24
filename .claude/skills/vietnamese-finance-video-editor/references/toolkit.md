@@ -79,7 +79,7 @@ dissolve; BROADCAST: push-cut + swap; CINEMATIC: film-burn + dreamy-zoom).
   "vietnamese" (check `getInfo()`); load with `loadFont({ subsets: ["vietnamese"] })`.
 
 ## Starter projects to mine for scene ideas (read, adapt, re-colour)
-In `danielnguyenfinhub/remotion` (version 1), cloned next to this repo as `../remotion`:
+In `starters/` (each its own project: `npm i` inside it to run one):
 `my-three` (3D scenes), `my-skia` (shaders), `my-audiogram` (waveform + captions),
 `my-code-hike` (animated step-by-step reveals), `my-tiktok` (caption styles),
 `my-prompt-to-motion-graphics` (motion-graphic patterns), `my-music-visualization`

@@ -17,7 +17,7 @@ Rendering and Studio need Node.js and a Chrome/Chromium download; they work in C
 
 ## Work lean: fewer tokens per video
 
-Adapted from [ponytail](https://github.com/DietrichGebert/ponytail) (see `.agents/PONYTAIL.md` at the repo root). Before writing anything, stop at the first rung that holds:
+Adapted from [ponytail](https://github.com/DietrichGebert/ponytail) (see `.claude/PONYTAIL.md`). Before writing anything, stop at the first rung that holds:
 
 1. **Is it needed?** Build what the brief asks for. No extra scenes, props or schemas "for later"; add a Zod schema or `Interactive` controls only when the owner wants to edit the video in Studio.
 2. **Is it already here?** A scene in `src/showcase/` that uses the same package (grep `src/showcase` for the package or component name), an Element in `.claude/elements/CATALOG.md`, a badge in `public/badges/`. Copy it and adapt it.
@@ -30,7 +30,14 @@ Checking the work costs tokens too:
 - **Keep command output short.** Pipe renders and lint through `tail -n 5`; the error is at the end.
 - **Read only what the task needs.** `docs/findings.md` holds the detailed notes on individual packages; search it for the package in hand instead of reading it whole.
 - **Don't delegate small lookups.** A subagent starts from nothing: a one-question Explore run here used about 48,000 tokens, and it did not see this file, so put any rule that matters into its prompt.
-- **Mark a deliberate shortcut** with `// ponytail: <limit>, <when to upgrade>`. `/ponytail-debt` at the repo root lists them.
+- **Mark a deliberate shortcut** with `// ponytail: <limit>, <when to upgrade>`. `/ponytail-debt` lists them.
+
+For code changes (scripts, the MortgageReel core, tooling):
+
+- Fix a bug at its root: grep every caller of the function you touch and fix the shared function once.
+- Shortest correct diff, fewest files, deletion over addition. No abstraction, config or boilerplate nobody asked for.
+- Never cut input validation at trust boundaries, error handling that prevents data loss, security, accessibility, or anything explicitly requested. Non-trivial logic still gets a check.
+- Report in a few lines: what changed and what was skipped. Explain at length only when asked.
 
 ## Language: every video is Vietnamese + English
 
@@ -170,6 +177,8 @@ The API key is only ever read inside that standalone script, never inside a `.ts
 
 `.claude/skills/vietnamese-finance-video-editor/` is the owner's own skill, not Remotion's: use it whenever Daniel asks to edit a new talking-head video. It holds the locked-core/new-design-every-video workflow, the design log (`public/videos/design-log.json`, through its `scripts/main.py`) and the compliance rules. Re-vendoring replaces only Remotion's skills and keeps this one.
 
+`.claude/` also holds 18 subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.
+
 When upgrading Remotion, re-vendor the skills so guidance matches the installed version:
 
 ```console
@@ -191,6 +200,10 @@ Re-vendor after pulling upstream changes to `packages/docs/elements`:
 ```console
 node scripts/vendor-elements.mjs   # defaults to ../remotion/packages/docs/elements; pass another source path if needed
 ```
+
+## Starter templates: `starters/`
+
+The 22 official `create-video` templates, created at Remotion 4.0.527 in `danielnguyenfinhub/remotion`: audiogram, blank, code-hike, electron, hello-world, javascript, music-visualization, next, next-no-tailwind, next-pages-dir, overlay, prompt-to-motion-graphics, prompt-to-video, react-router, recorder, render-server, skia, stargazer, still, three, tiktok and vercel, each as `starters/my-<name>/`. They are reference material for scene ideas: each is its own project (`cd starters/my-<name> && npm i`), outside this project's build and type-check (`tsconfig.json` excludes the folder). Copy an idea into `src/` and map its colours to `src/brand/theme.ts`. `starters/my-overlay/README.md` explains using a transparent overlay in a video editor.
 
 ## Conventions
 
