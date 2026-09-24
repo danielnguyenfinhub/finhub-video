@@ -21,7 +21,7 @@ import type { OverlayProps } from "../../mortgage/design";
 import type { EditJson, Reel } from "../../mortgage/schema";
 import { FONT, clamp, emphasised, enter } from "../../mortgage/style";
 import { toOutMs } from "../../mortgage/timeline";
-import { MotionTrack } from "../classic/Cues";
+import { CueTrack } from "./Cues";
 import { INK, MARKER, PencilLine, Sticky } from "./Paper";
 
 const HOOK_FRAMES = 105;
@@ -421,8 +421,7 @@ export const Overlay: React.FC<OverlayProps> = ({
   talkFrames,
 }) => (
   <>
-    {/* ponytail: cues reuse classic's navy cards; draw explainer-style cues when a video needs them */}
-    <MotionTrack reel={reel} />
+    <CueTrack reel={reel} />
     <ProgressLine talkFrames={talkFrames} />
     <StatNotes reel={reel} />
     <ChapterTabs reel={reel} />
