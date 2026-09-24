@@ -6,7 +6,8 @@
 // each time one is wanted.
 //
 // Usage: node scripts/vendor-elements.mjs [path-to-elements-source]
-// Default source is the monorepo's packages/docs/elements.
+// Default source is ../remotion/packages/docs/elements: a Remotion checkout
+// next to this project.
 
 import {
   cpSync,
@@ -22,12 +23,15 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = resolve(
-  process.argv[2] ?? join(projectRoot, "..", "packages", "docs", "elements"),
+  process.argv[2] ??
+    join(projectRoot, "..", "remotion", "packages", "docs", "elements"),
 );
 const target = join(projectRoot, ".claude", "elements");
 
 if (!existsSync(join(source, "index.mdx"))) {
-  console.error(`No Remotion Elements found at ${source}`);
+  console.error(
+    `No Remotion Elements found at ${source}. Clone Remotion next to this project or pass the path to its packages/docs/elements.`,
+  );
   process.exit(1);
 }
 
@@ -83,7 +87,7 @@ for (const category of categories) {
 const catalogMd = [
   "# Remotion Elements — local reference library",
   "",
-  "Drop-in, remixable video building blocks, vendored from this monorepo's `packages/docs/elements`",
+  "Drop-in, remixable video building blocks, vendored from Remotion's `packages/docs/elements`",
   "(the source of https://www.remotion.dev/elements/). Each is a small, self-contained component",
   "designed to be copied into a scene and edited directly, not installed as a dependency.",
   "",

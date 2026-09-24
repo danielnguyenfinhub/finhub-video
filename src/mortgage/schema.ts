@@ -125,8 +125,8 @@ export const editSchema = z.strictObject({
     .optional(),
   remove: z.array(z.tuple([ms, ms])).optional(),
   // Automatic cuts, each on unless set to false: hesitation sounds (ờ, ừm, …),
-  // stutters (the first of a word or phrase said twice in a row) and swear
-  // words. `words` adds more words or phrases to always cut. Restarts in
+  // stutters (the first of a word or phrase said twice in a row, within a
+  // sentence) and swear words. `words` adds more words or phrases to always cut. Restarts in
   // different words still need a `remove` span.
   cut: z
     .strictObject({

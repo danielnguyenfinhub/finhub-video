@@ -1,4 +1,6 @@
-# my-video: findings
+# finhub-video: findings
+
+Written while this project was `my-video/` in `danielnguyenfinhub/remotion`, a fork of the Remotion monorepo: "this monorepo", "this fork" and `packages/...` below mean that repository.
 
 Verified behaviour of individual `@remotion/*` packages in this project and this sandbox, moved out of `AGENTS.md` so it is only read when needed. Each note was checked against the installed package or a real render. Search for the package or component you are working with instead of reading the whole file; `AGENTS.md` keeps a one-line summary of the sandbox limits.
 
