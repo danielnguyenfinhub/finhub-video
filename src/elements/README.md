@@ -13,6 +13,7 @@ composition (Studio → "Elements"), which is how each was verified.
 | `NeonTitle` | neon flicker-on, then glow pulse | `random`, `spring` |
 | `RgbSplitText` | glitch red/cyan channel split | `random` |
 | `CountdownRing` | 5…4…3 countdown with emptying ring | `spring` |
+| `LineGraph` | trend line that draws itself, points pop as it arrives; axis spans the data with its end values printed | `evolvePath` (`@remotion/paths`), `spring` |
 | `SlashIntro` | diagonal split title card | `spring`, CSS `clip-path` |
 | `KenBurns` | pan-and-zoom over a still | `Img`, `interpolate` |
 | `TiltFrame` | 2.5D camera swing around any content | `spring`, CSS 3D |
