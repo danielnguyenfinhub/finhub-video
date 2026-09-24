@@ -6,6 +6,7 @@ import { explainer } from "./explainer";
 const DESIGNS: Record<string, Design> = { classic, explainer };
 
 export const DEFAULT_DESIGN = "classic";
+export const DESIGN_IDS = Object.keys(DESIGNS);
 
 export const getDesign = (id: string): Design => {
   const d = DESIGNS[id];

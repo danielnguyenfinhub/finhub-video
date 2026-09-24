@@ -116,6 +116,7 @@ The talking-head template. Each video is a folder `public/videos/<slug>/` with `
 
 1. `python scripts/prep-video.py "<recording>" <slug>` makes the proxy with the voice cleaned up (`--no-clean` keeps the audio as recorded), the word-level transcript with hesitation sounds written down, and a starter `edit.json`.
 2. Edit `edit.json` (its fields are described in `src/mortgage/schema.ts`) and preview `MortgageReel` in the Studio with `slug` set.
+   Daniel can also do this in `npm run review` (http://localhost:4100/, see `review/README.md`): watch the reel, pick design, grade and chapter transitions, nudge cue timings, save and render.
 3. `python scripts/render-video.py <slug>` renders, sets the final mix to -14 LUFS, and writes the mobile copy, thumbnail and `.srt`.
 
 - **Automatic cuts** (`edit.json` `cut`, all on by default): hesitation sounds, stutters (the first of a word or phrase said twice in a row, within a sentence), swear words, and any extra `words`. Restarts in different words still need a `remove` span. `node scripts/export-srt.mjs <slug>` lists every automatic cut; check it before rendering.
