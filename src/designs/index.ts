@@ -1,8 +1,9 @@
 // Every design a MortgageReel video can name in edit.json `design`.
 import type { Design } from "../mortgage/design";
 import { classic } from "./classic";
+import { explainer } from "./explainer";
 
-const DESIGNS: Record<string, Design> = { classic };
+const DESIGNS: Record<string, Design> = { classic, explainer };
 
 export const DEFAULT_DESIGN = "classic";
 
