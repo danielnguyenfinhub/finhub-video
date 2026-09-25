@@ -50,6 +50,8 @@ check("bare 2 dropped", !figs.some((f) => f.big === "2"));
 check("5 triệu kept", figs.some((f) => f.big === "5"), JSON.stringify(figs.map((f) => [f.big, f.fromFrame])));
 check("100.000% glued", figs.some((f) => f.big === "100.000%"));
 check("all auto", figs.every((f) => f.source === "auto"));
+const pct = figuresOf(reelOf(words("lãi suất hiện là 6 phần trăm mỗi năm")), FPS);
+check("6 phần trăm -> 6%", pct.some((f) => f.big === "6%"), pct.map((f) => f.big).join(" | "));
 
 // A stat over the number replaces the automatic figure.
 const covered = figuresOf(

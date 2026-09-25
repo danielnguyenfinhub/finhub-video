@@ -1,74 +1,217 @@
 # finhub-video
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+Finance Hub's video editor. You record a talking-head video and drop it in a folder. Claude Code turns it into a finished social video: bad takes cut out, the background removed, captions, a hook, charts for the numbers, bank logos, compliance checked. You get back a 9:16 Reel/TikTok, a 4:5 Facebook-feed copy, a mobile copy, a thumbnail and subtitles.
 
-Welcome to your Remotion project!
+It is built on [Remotion](https://www.remotion.dev) (videos written as React code). You never need to touch the code. The editing happens in a Claude Code chat.
 
-## Commands
+---
 
-**Install Dependencies**
+## The short version
 
-```console
+1. **Record** your video (phone is fine, vertical, face in the middle).
+2. **Tell Claude** in this repo's chat, for example:
+   > Edit my new video `C:\Users\Daniel\Videos\phi-ngan-hang.mp4`, slug `phi-ngan-hang`, use the newsroom template.
+3. **Watch** what Claude sends back and ask for changes in plain words ("hook too long", "cut the part about stamp duty", "use datalab instead").
+4. **Post** the files from `out/videos/<slug>/`.
+
+Claude runs every step below for you. The rest of this page covers what those steps are and how to run them by hand.
+
+---
+
+## One-time setup
+
+| Need | Why | Check it with |
+|---|---|---|
+| Node.js 18+ | Remotion, Studio, rendering | `node -v` |
+| Python 3.10+ with `faster-whisper` | the Vietnamese transcript | `python -c "import faster_whisper"` |
+| ffmpeg + ffprobe on PATH | proxy, audio clean-up, final mix | `ffmpeg -version` |
+| Claude desktop app (Code tab) | the editor, plus the browser used for background removal (needs WebGPU) | — |
+
+Then, once, in this folder:
+
+```bash
 npm i
 ```
 
-**Start Preview**
+---
 
-```console
-npm run dev
+## Step by step (what Claude does, or what you run)
+
+Every video lives in its own folder `public/videos/<slug>/`, where the slug is a short name like `ty-do`. The code never changes per video. Only the files in that folder do.
+
+```
+public/videos/<slug>/
+  source.mp4        the cleaned-up proxy of your recording   (not in Git)
+  foreground.webm   you, cut out of the room                  (not in Git)
+  words.json        word-by-word transcript with timings
+  edit.json         every editing decision for this video
 ```
 
-**Render video**
+### 1. Prepare the recording
 
-```console
-npx remotion render
+```bash
+python scripts/prep-video.py "C:\path\to\recording.mp4" my-slug
 ```
 
-**Upgrade Remotion**
+This makes `source.mp4` (voice cleaned up; add `--no-clean` for a studio recording), transcribes it into `words.json`, prints a table of each sentence's pace, and writes a starter `edit.json`. Transcription is slow on CPU and prints its progress as it goes.
 
-```console
-npx remotion upgrade
+### 2. Remove the background (always on)
+
+Every template shows you cut out over its own backdrop, so each video needs `foreground.webm`:
+
+```bash
+npm run review
 ```
+
+Then open `http://localhost:4100/matte.html?slug=my-slug` in the Claude app's browser and wait for **Saved**. It takes about **13× the video's length** (a 3½-minute video took about 45 minutes). The first run downloads a 26 MB model. The render refuses to start without this file.
+
+### 3. Edit: `edit.json`
+
+Claude writes this file from the transcript. Its main fields (the full list is in [`src/mortgage/schema.ts`](src/mortgage/schema.ts)):
+
+| Field | What it does |
+|---|---|
+| `design` | which template to use (see the list below; default `classic`) |
+| `title`, `subtitle`, `coverFrameMs` | the cover card and which frame of you it shows |
+| `hook` | the big line in the first 3½ seconds, e.g. `"4,1 TỶ ĐÔ"` counting up |
+| `remove` | spans to cut, `[startMs, endMs]` in your recording's time |
+| `cut` | automatic cuts, all on by default: ờ/ừm, stutters, swear words |
+| `keywords` | words to highlight in the captions |
+| `chapters` | section titles and where they start |
+| `stats` | numbers to show as charts or cards (numbers you *say* are also picked up automatically) |
+| `cues` | on-screen panels: checklists, comparisons, callouts |
+| `music` | a track under `public/music/` and its volume (licensed tracks only) |
+| `cta` | the one call to action at the end |
+
+Bank logos appear by themselves when you name a bank (CommBank, Westpac, ANZ, NAB, St.George, Bankwest, Firstmac have real logos; other banks get a name badge). To add a logo, put the file in `public/lenders/` and ask Claude to wire it in.
+
+### 4. Preview and tweak
+
+- **Review page** (`npm run review`, then open http://localhost:4100/): watch the video exactly as it will render, switch template and colour grade, drag chapters/stats/cues along the timeline, then **Save** and **Render video**. Wording isn't editable here on purpose. Change text through Claude so it gets the compliance check.
+- **Remotion Studio** (`npm run dev`, http://localhost:3000): the developer view. Open `MortgageReel` and set `slug` (and `design` to try another template without changing `edit.json`).
+
+### 5. Render
+
+```bash
+python scripts/render-video.py my-slug
+```
+
+This writes to `out/videos/my-slug/`:
+
+| File | Use it for |
+|---|---|
+| `my-slug.mp4` | 1080×1920 master: Reels, TikTok, Shorts, Stories |
+| `my-slug-feed.mp4` | 1080×1350 (4:5): the Facebook/Instagram feed |
+| `my-slug-mobile.mp4` | 720×1280, about 27 MB: sending by message |
+| `thumbnail.png` | the cover card |
+| `my-slug.srt` | subtitles to upload alongside |
+
+The sound is set to −14 LUFS, the level Facebook, YouTube and TikTok play at.
+
+Before rendering, `node scripts/export-srt.mjs my-slug` lists every automatic cut so you can check nothing important was removed.
+
+---
+
+## Faceless videos (voiceover, no recording)
+
+Give Claude a document (a lender policy update, an RBA announcement, a fact sheet; never a client's file) and ask for a faceless video.
+
+1. **Script.** Claude writes `public/videos/<slug>/script.json`: a title and scenes, each with the Vietnamese narration (`vi`) and an English line (`en`).
+2. **Approve.** Claude runs `node scripts/voice-video.mjs <slug> --dry-run`, which checks RG 234 and counts the characters ElevenLabs will bill, then sends you the script. Nothing is voiced until you approve.
+3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene with ElevenLabs and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only pays for that scene.
+4. **Edit and render** exactly as for a recorded video: Claude adds the hook, chapters and stats to `edit.json`, then runs `python scripts/render-video.py <slug>`.
+
+The `faceless` design fills the middle of the screen:
+- big captions by default;
+- a counting ring chart when a number is spoken;
+- the bank's logo when a bank is named;
+- the English line along the bottom.
+
+It needs `.env.local` in this folder (never committed; create it yourself):
+
+```dotenv
+ELEVENLABS_API_KEY=your-key
+ELEVENLABS_VOICE_LIBRARY=sbaSITtJLv4yb3vIi67Z
+```
+
+A `"voice"` in `script.json` overrides the voice for one video.
+
+## The templates
+
+Set with `"design": "<id>"` in `edit.json`, or just tell Claude which one.
+
+| id | Best for |
+|---|---|
+| `classic` | the original look; safe default |
+| `studio` | broadcast studio: lower thirds, moving pills |
+| `explainer` | teaching at a whiteboard |
+| `newsroom` | rate moves, fees, market news, with a "breaking news" bar and a number ticker |
+| `datalab` | number-heavy videos; the chart takes the stage |
+| `chatstory` | "a client asked me…" questions, told as a text-message chat |
+| `editorial` | opinion and deep dives, in a magazine-cover style |
+| `neon` | short, punchy "3 things to know" Reels; the fastest pace |
+| `reaction` | reacting to a news story, policy or document |
+| `checklist` | step-by-step processes ("5 steps, don't skip one") |
+| `scenario` | "if… then…": option A vs option B side by side |
+| `kitchen` | warm, slow, personal stories |
+| `series` | a numbered episode in a recurring series |
+
+Every template follows the same golden rules, enforced in [`src/mortgage/golden.ts`](src/mortgage/golden.ts):
+
+- A number you say gets a chart or card.
+- Keywords are highlighted.
+- A bank you name gets its logo.
+- The background is always removed.
+- Charts sit *behind* you, never over your face.
+- The Finance Hub logo pops in after the hook and again in the last 10 seconds.
+- Nothing important leaves the 9:16 or 4:5 safe zones.
+- Something changes on screen every 1.5–3 seconds.
+- Captions are readable with the sound off.
+
+`node scripts/check-golden.mjs my-slug` shows which numbers and banks it found in a video.
+
+---
+
+## Compliance
+
+Every piece of on-screen text is scanned for ASIC RG 234 banned terms before a render. A video that fails won't render until the wording is fixed. Bank logos are shown only when the bank is mentioned and never suggest the bank endorses the video. Use synthetic numbers in examples, never a real client's.
+
+---
 
 ## Working with Claude
 
 This project is set up for all three Claude surfaces:
 
-**Claude Code** (CLI, web, IDE) — open the repository or this folder; [CLAUDE.md](CLAUDE.md)/[AGENTS.md](AGENTS.md) and the Remotion skills in `.claude/skills/` load automatically. Claude can edit, preview (`npm run dev`) and render (`npx remotion render`).
+**Claude Code** (CLI, web, IDE, desktop app): open this folder. [CLAUDE.md](CLAUDE.md)/[AGENTS.md](AGENTS.md) and the skills in `.claude/skills/` load automatically, including `vietnamese-finance-video-editor`, which runs the steps above. [`src/designs/README.md`](src/designs/README.md) is the brief for building a new template.
 
-**Claude Cowork** (desktop app) — open this repository's folder as the working folder. Cowork reads the same `CLAUDE.md` and `.claude/skills/`, and can run the preview and render commands.
+**Claude Cowork** (desktop app): open this repository's folder as the working folder. Cowork reads the same `CLAUDE.md` and `.claude/skills/` and can run the preview and render commands.
 
-**Claude Chat** (claude.ai) — chat has no filesystem, so upload the bundled skill instead: build `remotion-video-skill.zip` (below), then upload it under claude.ai **Settings → Capabilities → Skills**. Chat will then write complete, ready-to-save composition files for this project; preview and render them in Claude Code, Cowork, or a terminal. The uploaded skill also becomes available account-wide, including in Cowork sessions without this folder.
+**Claude Chat** (claude.ai): chat has no filesystem, so upload the bundled skill instead. Build `remotion-video-skill.zip`, then upload it under claude.ai **Settings → Capabilities → Skills**:
 
-Build the uploadable skill bundle from this folder (works on macOS, Linux and Windows; no extra dependencies):
-
-```console
+```bash
 node scripts/build-chat-skill.mjs
 ```
 
-This writes `remotion-video-skill.zip`. claude.ai accepts at most 200 entries and exactly one `SKILL.md` per skill zip, so the script puts `chat-skill/SKILL.md` at the bundle root, renames each vendored sub-skill's `SKILL.md` to `GUIDE.md`, rewrites the links between them, and refuses to write a bundle that would be rejected.
+Chat can then write complete composition files for this project. Preview and render them in Claude Code, Cowork or a terminal. The script keeps the zip within claude.ai's limits (at most 200 entries, one `SKILL.md`).
 
-The skills in `.claude/skills/` are vendored by `node scripts/vendor-skills.mjs`, which flattens the symlinks the upstream skills use (they break on Windows checkouts). Re-run it after `npx remotion upgrade`, then rebuild the bundle.
+The Remotion skills in `.claude/skills/` are vendored by `node scripts/vendor-skills.mjs`. Re-run it after `npx remotion upgrade`, then rebuild the bundle.
 
-## Docs
+---
 
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
+## Other commands
 
-## Help
+```bash
+npm run lint
+```
 
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
+Runs ESLint and the TypeScript check. Run it before committing.
 
-## Issues
+```bash
+npx remotion upgrade
+```
 
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
+Upgrades Remotion. All `@remotion/*` packages stay on one version.
 
-## License
+When something goes wrong, [`AGENTS.md`](AGENTS.md) and `.claude/skills/vietnamese-finance-video-editor/references/landmines.md` hold the known pitfalls.
 
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
+Remotion needs a company licence for some organisations: [terms](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
