@@ -15,6 +15,10 @@ remotion-video-skill.zip
 /public/videos/*/source.mp4
 /public/videos/*/original.*
 
+# Pixabay background music: the licence bars redistributing tracks on their
+# own, so they stay local. public/music/README.md lists where to get each one.
+/public/music/*.mp3
+
 # Python bytecode from scripts/*.py
 __pycache__/
 /public/videos/*/foreground.webm
