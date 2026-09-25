@@ -11,6 +11,7 @@ import { Box, Circle, Highlight, Underline } from "@remotion/rough-notation";
 import type React from "react";
 import {
   AbsoluteFill,
+  Img,
   Sequence,
   interpolate,
   staticFile,
@@ -20,7 +21,7 @@ import {
 import { brand } from "../../brand/theme";
 import type { OverlayProps } from "../../mortgage/design";
 import type { EditJson, Reel } from "../../mortgage/schema";
-import { FONT, clamp, emphasised, enter } from "../../mortgage/style";
+import { FONT, LOGO, clamp, emphasised, enter } from "../../mortgage/style";
 import { toOutMs } from "../../mortgage/timeline";
 import { CueTrack } from "./Cues";
 import { INK, MARKER, PencilLine, Sticky } from "./Paper";
@@ -247,6 +248,8 @@ const ChapterTab: React.FC<{ index: number; title: string }> = ({
           alignItems: "center",
           gap: 26,
           alignSelf: "flex-start",
+          // Ends 24 px before the logo badge (top right); a long title wraps.
+          maxWidth: 760,
           background: "#fff",
           padding: "18px 34px",
           fontFamily: FONT,
@@ -267,7 +270,9 @@ const ChapterTab: React.FC<{ index: number; title: string }> = ({
             PHẦN {index + 1}
           </span>
         </Box>
-        <span style={{ fontSize: 48, fontWeight: 800 }}>{title}</span>
+        <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1.15 }}>
+          {title}
+        </span>
       </div>
     </AbsoluteFill>
   );
@@ -416,6 +421,24 @@ const ProgressLine: React.FC<{ talkFrames: number }> = ({ talkFrames }) => {
   );
 };
 
+// The FinHub logo, top right for the whole talk (as in the classic design),
+// on white as the brand kit requires; drawn last so nothing covers it.
+const LogoBadge: React.FC = () => (
+  <div
+    style={{
+      position: "absolute",
+      top: 28,
+      right: 36,
+      padding: "10px 16px",
+      borderRadius: 18,
+      background: "#fff",
+      boxShadow: "0 6px 18px rgba(11, 31, 61, 0.25)",
+    }}
+  >
+    <Img src={LOGO} style={{ height: 100, display: "block" }} />
+  </div>
+);
+
 export const Overlay: React.FC<OverlayProps> = ({
   reel,
   keywords,
@@ -432,5 +455,6 @@ export const Overlay: React.FC<OverlayProps> = ({
         <HookNote hook={reel.edit.hook} />
       </Sequence>
     ) : null}
+    <LogoBadge />
   </>
 );

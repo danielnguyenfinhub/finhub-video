@@ -29,6 +29,7 @@ import {
   retryVideoFetch,
 } from "../../mortgage/style";
 import { chapterTransition } from "../../mortgage/transitions";
+import { Oscilloscope } from "../../elements/Oscilloscope";
 import { Overlay } from "./Overlay";
 import { INK, MARKER, NOTE, Paper, PencilLine } from "./Paper";
 
@@ -106,6 +107,18 @@ const Talk: React.FC<TalkProps> = ({
       </div>
       <Tape left={20} top={120} rotate={-28} />
       <Tape left={880} top={120} rotate={24} />
+      {/* Daniel's voice as a pencil-blue line on the paper under the
+          captions, following the paced source (not the output clock). */}
+      <div style={{ position: "absolute", left: 90, top: 1560 }}>
+        <Oscilloscope
+          src={src}
+          frame={seg.srcFrom + frame * seg.rate}
+          width={900}
+          height={200}
+          lineWidth={5}
+          amplitude={2.5}
+        />
+      </div>
     </AbsoluteFill>
   );
 };

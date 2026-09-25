@@ -100,3 +100,16 @@ Proven on the interest-in-advance edit, lost when that branch was dropped; re-ap
   same slug: `ffmpeg -i old.png -i new.png -lavfi psnr -f null -` average ≥ 38 dB
   (encode noise only). The 24/09/2026 split measured 38–41 dB.
 - The previous render must come from the same edit.json; a stale out/ file is not a baseline.
+
+## Designs available (25/09/2026)
+
+Thirteen designs are registered in `src/designs/index.ts`: `classic`, `explainer`,
+`studio`, and the ten Facebook-first templates built to `src/designs/README.md` (the
+golden rules: number → chart via `figuresOf`, bank → logo via `lenderMentionsOf`, 4:5
+`SAFE` band, background always removed): `newsroom` (rate/market news), `datalab`
+(cost explainers), `chatstory` (FAQ, light), `editorial` (deep dives), `neon` (short
+tip lists), `reaction` (react to an article/email), `checklist` (step-by-step; chapters
+= steps), `scenario` (A vs B; compare cues), `kitchen` (warm story, slow), `series`
+(episodes; subtitle "Tập N/M · Name"). Preview any video in any design without editing
+it: `--props={"slug":"<slug>","design":"<id>"}`. Concept board with the intended look
+of each: https://claude.ai/artifact/81ciortUN9xjrzbzh3EMPx.
