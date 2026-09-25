@@ -2,12 +2,15 @@
 // reads, so the whole talking-head pipeline (cuts, RG 234, captions, auto
 // charts, bank logos, outro, render-video.py) runs unchanged.
 //
-//   node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs]
+//   node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs] [--voice <profile>]
 //
 // Engines ("engine" in script.json also works; the flag wins):
-//   omnivoice (default)  Daniel's own cloned voice, run locally and free by
-//                        scripts/omnivoice-tts.py (about 20x slower than real
-//                        time on the laptop CPU, timings included). Setup: README "Local voice".
+//   omnivoice (default)  a cloned voice (npm run clone-voice), run locally and
+//                        free by scripts/omnivoice-tts.py (about 20x slower
+//                        than real time on a laptop CPU, timings included).
+//                        --voice / "voiceProfile" picks the profile; with only
+//                        one in ~/.finhub-voice, it's used. Setup: README
+//                        "Clone your voice".
 //   elevenlabs           the ElevenLabs API (paid, fast), eleven_v3.
 //
 // Reads public/videos/<slug>/script.json:
@@ -34,9 +37,10 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { omnivoicePython, resolveProfile } from "./omnivoice.mjs";
 import { aiClip, stockClips } from "./visuals.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -59,13 +63,19 @@ const run = (cmd, args, what) => {
   }
 };
 
-const USAGE = "usage: node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs]";
+const USAGE = "usage: node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs] [--voice <profile>]";
 const argv = process.argv.slice(2);
-const slug = argv.find((a, k) => !a.startsWith("--") && argv[k - 1] !== "--engine");
+const slug = argv.find((a, k) => !a.startsWith("--") && !["--engine", "--voice"].includes(argv[k - 1]));
 if (!slug) fail(USAGE);
 const dryRun = argv.includes("--dry-run");
-const engineFlag = argv.includes("--engine") ? argv[argv.indexOf("--engine") + 1] : undefined;
-if (argv.includes("--engine") && (!engineFlag || engineFlag.startsWith("--"))) fail(`--engine needs a value. ${USAGE}`);
+const value = (flag) => {
+  if (!argv.includes(flag)) return undefined;
+  const v = argv[argv.indexOf(flag) + 1];
+  if (!v || v.startsWith("--")) fail(`${flag} needs a value. ${USAGE}`);
+  return v;
+};
+const engineFlag = value("--engine");
+const voiceFlag = value("--voice");
 const dir = join(ROOT, "public", "videos", slug);
 const scriptPath = join(dir, "script.json");
 if (!existsSync(scriptPath)) fail(`public/videos/${slug}/script.json not found.`);
@@ -188,14 +198,15 @@ if (engine === "elevenlabs") {
 } else {
   // OmniVoice runs in its own Python (torch, the model, faster-whisper for the
   // caption timings), loaded once for every scene that isn't cached yet.
-  const python = process.env.OMNIVOICE_PYTHON ?? join(homedir(), "OmniVoice", ".venv-cpu", "Scripts", "python.exe");
-  const profile = resolve(process.env.OMNIVOICE_VOICE ?? join(homedir(), "OmniVoice", "voices", "daniel.pt"));
+  const python = omnivoicePython();
+  const picked = resolveProfile(voiceFlag ?? script.voiceProfile);
   const steps = Number(process.env.OMNIVOICE_STEPS ?? 32);
-  if (!existsSync(python)) fail(`OmniVoice's Python not found at ${python}. See README "Local voice", or set OMNIVOICE_PYTHON.`);
-  if (!existsSync(profile)) fail(`No voice profile at ${profile}. Make it once: see README "Local voice".`);
+  if (!python) fail('OmniVoice isn\'t set up: run npm run setup-voice (README "Clone your voice").');
+  if (picked.error) fail(picked.error);
+  const profile = picked.path;
   const inRepo = relative(ROOT, profile);
   if (inRepo && !inRepo.startsWith("..") && !isAbsolute(inRepo))
-    fail("The voice profile is a copy of Daniel's voice and this repository is public: move it outside the repo.");
+    fail("A voice profile is a copy of someone's voice and this repository is public: move it outside the repo.");
   if (!Number.isInteger(steps) || steps < 8) fail(`OMNIVOICE_STEPS must be a whole number of at least 8, got "${process.env.OMNIVOICE_STEPS}".`);
 
   // Same text + same profile + same quality = the cached take is reused.

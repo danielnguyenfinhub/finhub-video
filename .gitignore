@@ -24,3 +24,4 @@ __pycache__/
 /public/videos/*/foreground.webm
 /public/videos/*/foreground.webm.part
 /public/videos/*/voice/
+/.omnivoice/

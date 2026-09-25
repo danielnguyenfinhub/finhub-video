@@ -125,6 +125,91 @@ def clone(ref_audio: str, ref_text: str, out: str) -> None:
     print(f"voice profile saved: {out}")
 
 
+def pick_clip(words: list[tuple[str, float, float, float]]) -> tuple[float, float, str] | None:
+    """The clearest stretch to clone from: whole sentences, 6-10 s (3-10 s if
+    nothing longer fits), no pause over 0.6 s, best average confidence, and
+    no digits if possible (a number can be read several ways, so its
+    transcript is ambiguous). Words keep Whisper's own spacing ("0.4%").
+    words: (text, start, end, probability). Returns (start, end, transcript)."""
+    ends_sentence = lambda w: w.rstrip().endswith((".", "?", "!"))
+    for low, digits_ok in ((6.0, False), (3.0, False), (6.0, True), (3.0, True)):
+        best = None
+        for i in range(len(words)):
+            if i > 0 and not ends_sentence(words[i - 1][0]):
+                continue
+            for j in range(i, len(words)):
+                span = words[j][2] - words[i][1]
+                if span > 10.0:
+                    break
+                if j > i and words[j][1] - words[j - 1][2] > 0.6:
+                    break
+                if span >= low and ends_sentence(words[j][0]):
+                    text = "".join(w[0] for w in words[i : j + 1]).strip()
+                    if not digits_ok and any(ch.isdigit() for ch in text):
+                        continue
+                    conf = sum(w[3] for w in words[i : j + 1]) / (j - i + 1)
+                    if best is None or conf > best[0]:
+                        best = (conf, words[i][1], words[j][2], text)
+        if best:
+            return best[1], best[2], best[3]
+    return None
+
+
+SAMPLE = {"vi": "Xin chào, đây là giọng nói của tôi, được tạo bằng OmniVoice.",
+          "en": "Hi, this is my voice, made with OmniVoice."}
+
+
+def clone_from(media: str, out: str) -> None:
+    """Recording (video or audio) -> voice profile, its reference clip and a sample."""
+    import subprocess
+    import tempfile
+
+    import soundfile as sf
+    from faster_whisper import WhisperModel
+
+    if not Path(media).is_file():
+        fail(f"recording not found: {media}")
+    work = Path(tempfile.mkdtemp(prefix="clone-"))
+    full = work / "full.wav"
+    res = subprocess.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", media,
+                          "-vn", "-ac", "1", "-ar", str(SAMPLE_RATE), str(full)], capture_output=True, text=True)
+    if res.returncode != 0:
+        fail(f"ffmpeg couldn't read the recording: {res.stderr.strip()[-300:]}")
+
+    print("Transcribing the recording to find a clean sentence ...", flush=True)
+    whisper = WhisperModel("large-v3", device="cpu", compute_type="int8")
+    segments, info = whisper.transcribe(str(full), word_timestamps=True)
+    words = [(w.word, w.start, w.end, w.probability) for s in segments for w in (s.words or [])]
+    clip = pick_clip(words)
+    if clip is None:
+        fail("no clean 3-10 s sentence found. Record at least 10 s of clear, continuous speech and try again.")
+    start, end, transcript = clip
+
+    audio, sr = sf.read(str(full))
+    ref = Path(out).with_suffix(".wav")
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    pad = int(0.1 * sr)
+    sf.write(str(ref), audio[max(0, int(start * sr) - pad): int(end * sr) + pad], sr)
+    print(f"Clip {start:.1f}-{end:.1f} s ({info.language}): {transcript}", flush=True)
+
+    model = load_model()
+    prompt = model.create_voice_clone_prompt(ref_audio=str(ref), ref_text=transcript)
+    prompt.save(out)
+    lang = "vi" if info.language == "vi" else "en"
+    sample = Path(out).with_name(Path(out).stem + "-sample.wav")
+    sf.write(str(sample), model.generate(text=SAMPLE[lang], voice_clone_prompt=prompt, language=lang)[0], SAMPLE_RATE)
+    print(f"voice profile saved: {out}\nlisten to the sample: {sample}")
+
+
+def check() -> None:
+    """Load everything once: downloads the models on first run, proves the setup."""
+    from faster_whisper import WhisperModel
+
+    load_model()
+    WhisperModel("large-v3", device="cpu", compute_type="int8")
+    print("OmniVoice and faster-whisper are ready.")
+
+
 def speak(jobs_path: str, voice_path: str, num_step: int) -> None:
     import soundfile as sf
     from faster_whisper import WhisperModel
@@ -165,6 +250,20 @@ def selftest() -> None:
     assert matched == 4 / 6, matched
     al = char_alignment(text, times)
     assert len(al["characters"]) == len(text) == len(al["character_start_times_seconds"])
+
+    # pick_clip: whole sentences only, skips the long pause, prefers confidence
+    w = [(" Mở", 0.0, 0.3, 0.5), (" đầu.", 0.3, 0.6, 0.5)]
+    w += [(f" từ{k}", 1.0 + k * 0.5, 1.4 + k * 0.5, 0.95) for k in range(14)] + [(" hết.", 8.0, 8.4, 0.95)]
+    w += [(" Sau", 12.0, 12.3, 0.99), (" ngắt.", 12.3, 12.6, 0.99)]
+    start, end, text2 = pick_clip(w)
+    assert (start, end) == (1.0, 8.4) and text2.startswith("từ0") and text2.endswith("hết."), (start, end, text2)
+    assert pick_clip([(" Ngắn.", 0.0, 0.5, 0.9)]) is None
+
+    # prefers a digit-free sentence, and keeps Whisper's spacing ("0.4%")
+    nums = [(" Trả", 0.0, 0.5, 0.99), (" 0", 0.5, 1.0, 0.99), (".4%", 1.0, 6.5, 0.99), (" nhé.", 6.5, 7.0, 0.99)]
+    plain = [(" Câu", 8.0, 8.5, 0.8)] + [(" chữ", 8.5 + k * 0.5, 9.0 + k * 0.5, 0.8) for k in range(12)] + [(" xong.", 14.5, 15.0, 0.8)]
+    assert pick_clip(nums + plain)[2].startswith("Câu"), pick_clip(nums + plain)
+    assert pick_clip(nums)[2] == "Trả 0.4% nhé.", pick_clip(nums)
     print("selftest ok")
 
 
@@ -172,6 +271,10 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     if args == ["selftest"]:
         selftest()
+    elif args == ["check"]:
+        check()
+    elif len(args) == 3 and args[0] == "clone-from":
+        clone_from(args[1], args[2])
     elif len(args) == 4 and args[0] == "clone":
         clone(args[1], args[2], args[3])
     elif len(args) in (3, 4) and args[0] == "speak":
