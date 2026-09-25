@@ -5,7 +5,8 @@
 Writes to out/videos/<slug>/: <slug>.mp4 (1080x1920 H.264, its final mix of
 voice, music and sound effects set to -14 LUFS, the level YouTube, Facebook
 and TikTok play at), <slug>-mobile.mp4 (720x1280, two-pass x264 sized to about
-27 MB), thumbnail.png (the cover card, frame 45) and <slug>.srt. Exits non-zero
+27 MB), <slug>-feed.mp4 (1080x1350, the 4:5 middle for the Facebook feed),
+thumbnail.png (the cover card, frame 45) and <slug>.srt. Exits non-zero
 on the first failure.
 """
 
@@ -99,11 +100,12 @@ def main() -> None:
     if not (ROOT / "public" / "videos" / slug / "edit.json").exists():
         raise SystemExit(f"public/videos/{slug}/edit.json not found; run prep-video.py first.")
     edit = json.loads((ROOT / "public" / "videos" / slug / "edit.json").read_text(encoding="utf-8"))
-    if edit.get("background") and not (ROOT / "public" / "videos" / slug / "foreground.webm").exists():
+    # Golden rule: the background is always removed, so the cut-out must exist.
+    if not (ROOT / "public" / "videos" / slug / "foreground.webm").exists():
         raise SystemExit(
-            f'edit.json has "background": "{edit["background"]}" but public/videos/{slug}/foreground.webm '
-            f"is missing. Run `npm run review`, open http://localhost:4100/matte.html?slug={slug} "
-            f'and wait for "Saved", or remove "background" from edit.json.')
+            f"public/videos/{slug}/foreground.webm is missing. Run `npm run review`, open "
+            f'http://localhost:4100/matte.html?slug={slug} and wait for "Saved".')
+    del edit  # validated by the render itself
     out_dir = ROOT / "out" / "videos" / slug
     out_dir.mkdir(parents=True, exist_ok=True)
     full = out_dir / f"{slug}.mp4"
@@ -128,6 +130,13 @@ def main() -> None:
         run(common + ["-pass", "2", "-c:a", "aac", "-b:a", str(MOBILE_AUDIO_BPS),
                       "-movflags", "+faststart", str(mobile)], "mobile pass 2")
 
+    # Facebook feed copy: the middle 4:5 of the frame (every design keeps its
+    # text inside that band), so one edit serves Reels and the feed.
+    feed = out_dir / f"{slug}-feed.mp4"
+    run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(full),
+         "-vf", "crop=1080:1350:0:285", "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+         "-c:a", "copy", "-movflags", "+faststart", str(feed)], "feed 4:5 copy")
+
     run(REMOTION + ["still", "src/index.ts", "MortgageReel", str(thumb),
                     f"--props={props}", f"--frame={THUMBNAIL_FRAME}", "--gl=angle"],
         "thumbnail")
@@ -135,7 +144,7 @@ def main() -> None:
     srt = out_dir / f"{slug}.srt"
 
     print("\n== done")
-    for path in (full, mobile):
+    for path in (full, mobile, feed):
         print(f"{path}  {path.stat().st_size / 1e6:.1f} MB  {duration_s(path):.2f} s  "
               f"audio mean {mean_volume_db(path)}")
     for path in (thumb, srt):

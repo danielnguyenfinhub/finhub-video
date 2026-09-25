@@ -61,7 +61,9 @@ export const PacedVideo: React.FC<{
   // set, the room is replaced by the brand backdrop. Same frames as src, so it
   // plays through the same trimBefore and rate; the voice still comes from src.
   foreground?: string;
-}> = ({ seg, src, look, style, muted, foreground }) => {
+  // "none": the design draws its own backdrop behind this component.
+  backdrop?: "brand" | "none";
+}> = ({ seg, src, look, style, muted, foreground, backdrop = "brand" }) => {
   const dur = seg.outDuration;
   const shared = {
     src,
@@ -118,7 +120,7 @@ export const PacedVideo: React.FC<{
           volume={(f) => shared.volume(f)}
         />
       )}
-      <BrandBackdrop />
+      {backdrop === "brand" ? <BrandBackdrop /> : null}
       {player({ ...shared, src: foreground, muted: true }, true)}
     </AbsoluteFill>
   );

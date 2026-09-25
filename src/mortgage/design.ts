@@ -20,16 +20,28 @@ export type TalkProps = {
   index: number;
   src: string;
   look?: Look;
-  foreground?: string; // set when edit.json "background" is on
+  foreground?: string; // the cut-out (always set: golden rule)
+  // The design's Behind layer, already on the talk timeline: render it
+  // between the backdrop and PacedVideo so charts sit behind Daniel.
+  behind?: React.ReactNode;
 };
 // Frame 0 is the first word of the talk.
-export type OverlayProps = { reel: Reel; keywords: string[]; talkFrames: number };
+// src: the source.mp4 URL, for designs that draw Daniel's voice (waveforms).
+export type OverlayProps = {
+  reel: Reel;
+  keywords: string[];
+  talkFrames: number;
+  src: string;
+};
 
 export type Design = {
   id: string;
   Cover: React.FC<CoverProps>; // COVER_FRAMES long, crossfades into the talk
   Talk: React.FC<TalkProps>; // frames one paced segment
-  Overlay: React.FC<OverlayProps>; // captions, hook, chapters, stats, cues, sfx
+  Overlay: React.FC<OverlayProps>; // captions, hook, chapters, cues, sfx
+  // Charts and figures, drawn BEHIND Daniel's cut-out (golden rule: a chart
+  // never covers his face). Same props and frame 0 as Overlay.
+  Behind?: React.FC<OverlayProps>;
   Outro: React.FC<{ question: string }>; // CTA + contact
   chapterTransition: (
     kind: TransitionKind,

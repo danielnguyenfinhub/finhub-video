@@ -9,6 +9,9 @@ import type { Tone } from "./schema";
 export const FONT = '"Be Vietnam Pro", "Segoe UI", sans-serif';
 // Black "NETWORKS" wordmark: always on a white card.
 export const LOGO = staticFile("brand/finhub-logo.png");
+// The cut-out next to a video's source.mp4 (golden rule: always present).
+export const foregroundOf = (src: string) =>
+  src.replace(/source\.mp4$/, "foreground.webm");
 export const STROKE = "0 0 2px #000, 0 4px 0 #000, 0 0 18px rgba(0,0,0,0.85)";
 export const DIM = "#C9D3E6";
 
@@ -25,7 +28,9 @@ export const toneColor = (t: Tone, neutral: string = brand.highlight) =>
 // re-renders that frame in a fresh attempt.
 export const retryVideoFetch = {
   onError: (err: Error) =>
-    console.warn(`OffthreadVideo fetch failed, frame will be retried: ${err.message}`),
+    console.warn(
+      `OffthreadVideo fetch failed, frame will be retried: ${err.message}`,
+    ),
   delayRenderRetries: 2,
   delayRenderTimeoutInMilliseconds: 30000,
 } as const;
@@ -114,7 +119,10 @@ const norm = (s: string) =>
     .trim();
 
 // Which token indices belong to a keyword phrase or contain a number.
-export const emphasised = (tokens: string[], keywords: string[]): Set<number> => {
+export const emphasised = (
+  tokens: string[],
+  keywords: string[],
+): Set<number> => {
   const toks = tokens.map(norm);
   const phrases = keywords.map((k) => norm(k).split(" "));
   const hit = new Set<number>();

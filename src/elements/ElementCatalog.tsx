@@ -17,9 +17,11 @@ import { ImageCarousel } from "./ImageCarousel";
 import { KenBurns } from "./KenBurns";
 import { LineGraph } from "./LineGraph";
 import { LineReveal } from "./LineReveal";
+import { MirroredSpectrum } from "./MirroredSpectrum";
 import { NeonTitle } from "./NeonTitle";
 import { NewsTicker } from "./NewsTicker";
 import { NoiseField } from "./NoiseField";
+import { Oscilloscope } from "./Oscilloscope";
 import { Particles } from "./Particles";
 import { ProgressBar } from "./ProgressBar";
 import { PulseBadge } from "./PulseBadge";
@@ -117,6 +119,8 @@ const SCENES: [string, React.ReactNode][] = [
   ["PulseBadge", <Centre key="pb"><PulseBadge text="MỚI · NEW" every={30} /></Centre>],
   ["AudioRing", <Centre key="a"><AudioRing audioSrc={staticFile("sample-tone.wav")} imageSrc={LOGO} /></Centre>],
   ["FrequencyBars", <Centre key="fq"><FrequencyBars audioSrc={staticFile("sample-tone.wav")} playAudio /></Centre>],
+  ["Oscilloscope", <Centre key="os" bg="#F6F1E4"><Oscilloscope src={staticFile("sample-tone.wav")} playAudio /></Centre>],
+  ["MirroredSpectrum", <Centre key="ms"><MirroredSpectrum src={staticFile("sample-tone.wav")} color="#fff" /></Centre>],
   ["NoiseField", <NoiseField key="nf" />],
 ];
 
