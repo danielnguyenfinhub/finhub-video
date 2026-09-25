@@ -195,7 +195,18 @@ Whatever skill is driving (Remotion's, the editor skill, or a scene written by h
 
 `.claude/skills/vietnamese-finance-video-editor/` is the owner's own skill, not Remotion's: use it whenever Daniel asks to edit a new talking-head video. It holds the locked-core/new-design-every-video workflow, the design log (`public/videos/design-log.json`, through its `scripts/main.py`) and the compliance rules. Re-vendoring replaces only Remotion's skills and keeps this one.
 
-`.claude/` also holds 18 subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.
+### Harness: video production team
+
+**Goal:** a document or recording becomes a finished video that a second, independent reviewer has checked for compliance, with Daniel approving only the script.
+
+**Trigger:** when Daniel asks for a video from a document, a faceless video, or a video "with the team" / "with a compliance check", use the `video-production-team` skill. It runs three agents in `.claude/agents/`: `video-script-writer`, `video-editor` (which follows `vietnamese-finance-video-editor`) and `video-compliance-reviewer` (which follows `video-compliance-review`). A plain edit of a talking-head video can still use the editor skill alone.
+
+**Change log:**
+| Date | Change | Files | Why |
+|---|---|---|---|
+| 2026-09-26 | Initial team | the three agents, `video-production-team`, `video-compliance-review` | Independent compliance check; scripts written from documents |
+
+`.claude/` also holds 18 other subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.
 
 When upgrading Remotion, re-vendor the skills so guidance matches the installed version:
 
