@@ -24,81 +24,99 @@ independently compliance-checked video, having made one decision: approving the 
 |---|---|---|
 | `video-script-writer` | document → `script.json` (faceless only) | `vietnamese-finance-video-editor/references/faceless-script.md` |
 | `video-editor` | voice, design, stills, render | `vietnamese-finance-video-editor` skill |
-| `video-compliance-reviewer` | independent PASS / FIX / BLOCK, at script and final stage | `video-compliance-review` skill |
+| `video-compliance-reviewer` | independent PASS / FIX / BLOCK at script and final stage | `video-compliance-review` skill |
 
-**Execution mode: subagents**, called in sequence with the Agent tool (`subagent_type` = the
-agent name, `model: "opus"`). Why not an agent team: the flow is sequential with a human gate
-in the middle, and the reviewer must start from a clean context so it judges the artefacts,
-not the author's reasoning. Each agent reports back to you; you relay questions to Daniel.
+**Execution mode: subagents**, called one at a time with the Agent tool (`subagent_type` = the
+agent name, `model: "opus"`). The flow is sequential with Daniel's approval in the middle, and
+the reviewer must start from a clean context so it judges the files, not the author's reasoning.
+Each agent reports to you; you relay questions to Daniel.
 
-Agent files register when a session starts. If the Agent tool says an agent type isn't found
-(the files arrived mid-session), use `subagent_type: "general-purpose"` and start the prompt
-with "Read and adopt `.claude/agents/<name>.md` as your role"; give the reviewer only the
-read-only tools its file lists.
+If the Agent tool says an agent type isn't found (agent files register at session start), use
+`subagent_type: "general-purpose"` and open the prompt with "Read and adopt
+`.claude/agents/<name>.md` as your role". The reviewer's independence is then by instruction
+only; say so in the delivery report.
 
-A subagent doesn't see this conversation or `AGENTS.md`. Put everything it needs in its
-prompt: slug, mode, stage, file paths, and Daniel's feedback word for word.
+A subagent doesn't see this conversation or `AGENTS.md`. Put everything it needs in its prompt:
+slug, mode, stage, every file path, and Daniel's feedback word for word.
 
 ## Phase 0 — Context
 
-Work from the repository root. Pick the slug (kebab-case ASCII) and check
-`out/videos/<slug>/team/`:
+Work from the repository root. Get from Daniel:
+- **Faceless:** the document. Keep it **outside the repository** (or under `out/`, which is
+  git-ignored): the repository is public on GitHub, and `public/videos/` is committed.
+- **Talking-head:** the path of his recording (the phone original, not a proxy).
 
-- No folder → **new run**.
+Pick the slug (kebab-case ASCII) and check `out/videos/<slug>/team/`:
+- No folder → **new run**. Run `git status`; if there's uncommitted work, tell Daniel before
+  touching anything.
 - Folder exists and Daniel asks to change one part ("redo the script", "fix what compliance
   flagged", "change the ending") → **partial re-run**: start at the phase that owns that part,
   passing the previous files and the feedback.
-- Folder exists and Daniel brings a new document or recording for the same slug → **fresh run**:
-  move the folder to `out/videos/<slug>/team_prev/` first.
-
-Run `git status`; if there's uncommitted work, tell Daniel before touching anything.
+- Folder exists and Daniel brings a new document or recording → **fresh run**: move
+  `out/videos/<slug>/team/` to `out/videos/<slug>/team_prev_<YYYYMMDD-HHMM>/` and
+  `public/videos/<slug>/edit.json` to the same folder (an old `edit.json` keeps the old
+  video's cues and stats). Or use a new slug.
 
 ## Phase 1 — Script (faceless only; talking-head skips to Phase 3)
 
 1. `video-script-writer` with the document path, slug and any feedback.
-   - `blocked` (client data, no clear idea) → stop; tell Daniel what it found. Never work around client data.
+   - `blocked` (client data, no clear idea) → stop; tell Daniel what category of problem it
+     found and where. Never work around client data.
+   - `open_questions` → ask Daniel, pass his answers back to the writer.
 2. `video-compliance-reviewer`, stage `script`.
-   - **FIX** → back to the writer with the findings; re-review. At most 2 rounds, then show Daniel the open findings.
+   - **FIX** → back to the writer with the report path; re-review. At most 2 rounds, then show
+     Daniel the open findings.
    - **BLOCK** → stop; show Daniel the finding in plain words and what would clear it.
    - **PASS** → Phase 2.
 
 ## Phase 2 — Daniel approves the script (the only gate)
 
 Show Daniel the script as a readable list: each scene's Vietnamese, English and visual; the
-post copy; the character count; the reviewer's verify notes. Nothing is voiced and no credits
-are spent until he says yes. His edits go back to Phase 1 (writer, then reviewer).
+post copy; the voice engine and any paid step (fal.ai images, ElevenLabs); the reviewer's
+verify notes. Nothing is voiced and nothing is spent until he says yes. His edits go back to
+Phase 1 (writer, then reviewer).
 
 ## Phase 3 — Build
 
-`video-editor` with slug, mode (`faceless` or `talking-head`), and any feedback.
+`video-editor` with slug, mode (`faceless` or `talking-head`), the recording path
+(talking-head), the paths of `01_writer_notes.md` and `02_compliance_script.json` (faceless),
+and any feedback.
 - `open_questions` (a wrong number, an unsure cut) → ask Daniel, pass his answer back.
-- `failed` → retry once with the error; failing again, report the last 5 lines and stop.
+- `failed` → retry once with the error; failing again, report the last lines and stop.
 
 ## Phase 4 — Final review
 
-`video-compliance-reviewer`, stage `final`, with the editor's report path.
-- **FIX** → back to the editor with the findings; re-review. At most 2 rounds.
-- **BLOCK** → stop; tell Daniel what blocks posting and what would clear it.
+`video-compliance-reviewer`, stage `final`, with the editor's report path and (faceless) the
+script-stage report path.
+- **FIX** → route each finding by its `owner`: `editor` → Phase 3 with the report path;
+  `writer` → Phase 1, then Daniel re-approves (Phase 2) and the editor re-voices (Phase 3);
+  `Daniel` → ask him (re-record, cut, or accept with a note). Then re-review. At most 2
+  rounds per owner.
+- **BLOCK** → if the cause is the editor's (a missing still, a render error, an untouched
+  flag) send it to Phase 3 once; otherwise stop and tell Daniel what blocks posting and what
+  would clear it.
 - **PASS** → Phase 5.
 
 ## Phase 5 — Deliver
 
-Send Daniel the phone copy and thumbnail (SendUserFile). Report in plain words: verdict, what
-the reviewer asked him to check himself (`verify_for_daniel`), anything left out, and one next
-step. Then ask once whether anything should change in the video or the team.
+Send Daniel the phone copy and thumbnail with SendUserFile; if that tool isn't available, give
+the file paths. Report in plain words: verdict, what the reviewer asked him to check himself
+(`verify_for_daniel`), anything left out, and one next step. Then ask once whether anything
+should change in the video or the team.
 
 ## Files
 
-All team files live in `out/videos/<slug>/team/` (git-ignored, kept as the audit trail):
+Team files live in `out/videos/<slug>/team/`. `out/` is git-ignored, so this trail exists
+only on the machine that ran the job; copy the folder elsewhere if it must be kept.
 
 | File | Written by |
 |---|---|
 | `01_writer_notes.md` | script writer |
-| `02_compliance_script.json` | reviewer, script stage |
+| `02_compliance_script.json`, `guard-script.log` | reviewer, script stage |
 | `03_editor_report.json` | editor |
-| `04_compliance_final.json` | reviewer, final stage |
+| `04_compliance_final.json`, `guard-final.log`, `card.png` | reviewer, final stage |
 
-The video itself follows the editor skill's paths (`public/videos/<slug>/`, `out/videos/<slug>/`).
+The video follows the editor skill's paths (`public/videos/<slug>/`, `out/videos/<slug>/`).
 
 ## Errors
 
@@ -107,13 +125,4 @@ The video itself follows the editor skill's paths (`public/videos/<slug>/`, `out
 | An agent returns malformed or no JSON | Re-run it once with the error; then stop and report |
 | Reviewer and editor disagree on a finding | Don't pick a side; show Daniel both, with the rule cited |
 | Two FIX rounds didn't clear a finding | Stop the loop; show Daniel the open finding |
-| Any agent reports client data | Stop the whole run; tell Daniel |
-
-## Test scenarios
-
-- **Normal (faceless):** a lender policy PDF → writer PASSes dry run → reviewer PASS → Daniel
-  approves → editor renders → reviewer PASS → phone copy delivered with verify notes.
-- **Error (script):** a script scene says "chắc chắn được duyệt" or quotes "từ 5,79%" with no
-  comparison rate → reviewer BLOCK → run stops before any voicing; Daniel sees the line and the fix.
-- **Partial re-run:** "compliance flagged the ending, fix it" → Phase 0 finds the team folder →
-  editor gets `04_compliance_final.json` → reviewer re-checks, marking the old finding resolved.
+| Any agent reports client data | Stop the whole run; tell Daniel the category and location, never the value |

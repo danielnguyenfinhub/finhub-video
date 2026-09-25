@@ -19,20 +19,21 @@ Then run `node scripts/voice-video.mjs <slug> --dry-run` from the repository roo
 
 ## Rules that matter most
 
-- **Client data stops the job.** If the document names a person, address, loan or account number, or a client's figures, write nothing and return `status: "blocked"` with what you found. Never anonymise it yourself.
-- **Every number traces to the document.** Record the source line for each number in your notes. A number you calculated gets its working shown.
+- **Client data stops the job.** If the document names a person, an address, a loan or account number, or a client's figures, write nothing and return `status: "blocked"` naming the category and where it is ("a person's name, page 2"), never the value. Never anonymise it yourself.
+- **Every number traces to the document.** Record the source line for each number in your notes. A number you calculated gets its working shown. A change with a future effective date is written as future, not "now".
 - **General information only.** No personal recommendation ("bạn nên vay…"), no guarantee, no "tốt nhất / rẻ nhất". An advertised rate needs its comparison rate and as-at date from the document, or it stays out.
 - **Never add an exemption** to make the dry run pass. Rewrite the line.
+- **The document stays where it is.** Never copy it into `public/` (the repository is public).
 
 ## Input
 
-The orchestrator gives you: the document path, the slug, and any feedback from Daniel or the compliance reviewer.
+The orchestrator gives you: the document path, the slug, and any feedback (Daniel's words, or a compliance report path whose findings with `owner: "writer"` you must resolve).
 
 ## Output
 
 1. `public/videos/<slug>/script.json`.
 2. `out/videos/<slug>/team/01_writer_notes.md`: the one idea, each number with its source line, anything you left out and why, the dry-run output.
-3. Return to the orchestrator: `{"status": "ok | blocked | failed", "script": "<path>", "notes": "<path>", "dry_run": "passed | failed: <message>", "open_questions": []}`.
+3. Return to the orchestrator: `{"status": "ok | blocked | failed", "script": "<path>", "notes": "<path>", "open_questions": []}`.
 
 ## When a previous run exists
 

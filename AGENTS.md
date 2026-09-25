@@ -205,6 +205,7 @@ Whatever skill is driving (Remotion's, the editor skill, or a scene written by h
 | Date | Change | Files | Why |
 |---|---|---|---|
 | 2026-09-26 | Initial team | the three agents, `video-production-team`, `video-compliance-review` | Independent compliance check; scripts written from documents |
+| 2026-09-26 | Review fixes | all five files | Adversarial review: talking-head path lacked the recording; final stage skipped exemptions and client data; script flags never reached edit.json; FIX routed by stage not owner; guard exit hidden by `tail`; source documents must stay out of the public repo |
 
 `.claude/` also holds 18 other subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.
 
