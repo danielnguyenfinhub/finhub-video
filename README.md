@@ -132,7 +132,22 @@ It needs `.env.local` in this folder (never committed; create it yourself):
 ```dotenv
 ELEVENLABS_API_KEY=your-key
 ELEVENLABS_VOICE_LIBRARY=sbaSITtJLv4yb3vIi67Z
+PIXABAY_API_KEY=your-pixabay-key # stock footage, tried first (pixabay.com/api/docs)
+PEXELS_API_KEY=your-pexels-key   # stock footage, second choice (pexels.com/api)
+FAL_KEY=your-fal-key             # AI images for gaps stock can't fill (fal.ai)
 ```
+
+For a gap scene, use `"footage"` (a 2–5 word stock search) or `"ai"` (an image description; about US$0.03 per image with fal.ai FLUX), never both.
+
+**Elements first, footage fills the gaps.**
+- **Elements** carry data, comparisons and key points. They are charts, `compare` / `bars` / `points` panels and bank logos.
+- **Footage** fills the other scenes. Give only those scenes a short English `"footage"` search, such as `"house keys couple"`. Portrait Pexels clips then play behind the captions, tinted navy, changing at least every 5 s.
+- **Veil:** a navy veil hides the footage whenever an element is on screen.
+- **Cache:** downloads are cached in `voice/footage/`.
+
+**Post copy (optional).** The `"post"` field holds a title, a caption and hashtags for the upload.
+
+The rules Claude follows when writing the script are in `.claude/skills/vietnamese-finance-video-editor/references/faceless-script.md`.
 
 A `"voice"` in `script.json` overrides the voice for one video.
 

@@ -42,6 +42,9 @@ import {
 } from "./Stage";
 
 const RAMP_FRAMES = 8;
+const FOOTAGE_OPACITY = 0.55;
+const VEIL_OPACITY = 0.92;
+const PANEL_TOP = SAFE.top + 150;
 const BIG = 92;
 const SMALL = 58;
 // Lower band: clear of the English line, which is bottom-anchored at
@@ -120,6 +123,24 @@ const Cover: React.FC<CoverProps> = ({ title, subtitle, keywords }) => {
 const Talk: React.FC<TalkProps> = ({ seg, src, look, foreground, behind }) => (
   <AbsoluteFill>
     <FacelessBackdrop />
+    {/* source.mp4's picture: Pexels footage when script.json had "terms",
+        otherwise plain navy. Muted and see-through, so the navy tints the
+        footage and text on top stays readable. */}
+    <PacedVideo
+      seg={seg}
+      src={src}
+      muted
+      backdrop="none"
+      style={{ opacity: FOOTAGE_OPACITY }}
+    />
+    {/* A soft navy band behind the caption area: bright stock clips
+        otherwise wash out the not-yet-spoken words. */}
+    <AbsoluteFill
+      style={{
+        background:
+          "linear-gradient(180deg, transparent 22%, rgba(6,19,42,0.55) 38%, rgba(6,19,42,0.6) 78%, transparent 92%)",
+      }}
+    />
     {behind}
     {/* The voice. foreground.webm is fully transparent: no one on screen. */}
     <PacedVideo
@@ -197,15 +218,11 @@ const Page: React.FC<{
   );
 };
 
-const Captions: React.FC<{
-  reel: Reel;
-  keywords: string[];
-  talkFrames: number;
-}> = ({ reel, keywords, talkFrames }) => {
+// Per talk frame: 1 while an element (hook, chart, logo, panel) holds the
+// stage, ramped RAMP_FRAMES each way so changes glide instead of jumping.
+const useBusyLevel = (reel: Reel, talkFrames: number): number[] => {
   const { fps } = useVideoConfig();
-  // 1 while the stage is busy, ramped RAMP_FRAMES each way so the captions
-  // glide between the stage and the lower band instead of jumping.
-  const level = useMemo(() => {
+  return useMemo(() => {
     const l = new Array<number>(talkFrames + 1).fill(0);
     for (const [a, b] of busyFrames(reel, fps))
       for (let f = Math.max(0, a); f < Math.min(l.length, b); f++) l[f] = 1;
@@ -215,6 +232,29 @@ const Captions: React.FC<{
       l[f] = Math.max(l[f], l[f + 1] - step);
     return l;
   }, [reel, fps, talkFrames]);
+};
+
+// Daniel's rule: elements explain, footage only fills the gaps. While an
+// element holds the stage, a navy veil hides the footage behind it.
+const FootageVeil: React.FC<{ level: number[] }> = ({ level }) => {
+  const frame = useCurrentFrame();
+  return (
+    <AbsoluteFill
+      style={{
+        background:
+          "linear-gradient(170deg, #0B1F3D 0%, #0B2F5E 60%, #07172E 100%)",
+        opacity: (level[frame] ?? 0) * VEIL_OPACITY,
+      }}
+    />
+  );
+};
+
+const Captions: React.FC<{
+  reel: Reel;
+  keywords: string[];
+  level: number[];
+}> = ({ reel, keywords, level }) => {
+  const { fps } = useVideoConfig();
   const pages = captionPages({
     captions: reel.timeline.captions,
     combineWithinMs: 1100,
@@ -241,16 +281,21 @@ const Captions: React.FC<{
   );
 };
 
-const Overlay: React.FC<OverlayProps> = ({ reel, keywords, talkFrames }) => (
-  <>
-    <MotionTrack reel={reel} panelOffset={SAFE.top - 110} />
-    <StageLayer reel={reel} />
-    <ChapterPills reel={reel} />
-    <Captions reel={reel} keywords={keywords} talkFrames={talkFrames} />
-    <EnglishLine reel={reel} />
-    <LogoMark talkFrames={talkFrames} />
-  </>
-);
+const Overlay: React.FC<OverlayProps> = ({ reel, keywords, talkFrames }) => {
+  const level = useBusyLevel(reel, talkFrames);
+  return (
+    <>
+      <FootageVeil level={level} />
+      {/* Panels start below the LogoMark tile (SAFE.top + 120). */}
+      <MotionTrack reel={reel} panelOffset={PANEL_TOP - 110} />
+      <StageLayer reel={reel} />
+      <ChapterPills reel={reel} />
+      <Captions reel={reel} keywords={keywords} level={level} />
+      <EnglishLine reel={reel} />
+      <LogoMark talkFrames={talkFrames} />
+    </>
+  );
+};
 
 export const faceless: Design = {
   id: "faceless",

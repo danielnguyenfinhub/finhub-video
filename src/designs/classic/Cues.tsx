@@ -23,6 +23,7 @@ import {
   Compare,
   Kinetic,
   Panel,
+  Points,
   useExit,
   type CueOf,
   type Rel,
@@ -226,6 +227,8 @@ const CueView: React.FC<{ cue: Cue; rel: Rel }> = ({ cue, rel }) => {
       return <Emoji cue={cue} />;
     case "lenders":
       return <Lenders cue={cue} />;
+    case "points":
+      return <Points cue={cue} rel={rel} />;
   }
 };
 
@@ -263,6 +266,12 @@ const sfxFor = (reel: Reel): Sfx[] => [
         return [{ atMs: c.fromMs, file: "vine-boom", volume: 0.3 }];
       case "venn":
         return [{ atMs: c.fromMs + 700, file: "whoosh", volume: 0.3 }];
+      case "points":
+        return c.items.map((it) => ({
+          atMs: it.atMs,
+          file: "mouse-click",
+          volume: 0.4,
+        }));
       default:
         return [];
     }

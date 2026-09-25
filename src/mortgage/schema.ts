@@ -85,6 +85,14 @@ const lenders = z.strictObject({
   title: text.optional(),
 });
 
+// Key points, numbered, each revealed as it is said.
+const points = z.strictObject({
+  kind: z.literal("points"),
+  ...span,
+  title: text,
+  items: z.array(beat).min(2).max(5),
+});
+
 const cue = z
   .discriminatedUnion("kind", [
     kinetic,
@@ -94,6 +102,7 @@ const cue = z
     venn,
     emoji,
     lenders,
+    points,
   ])
   .refine((c) => c.toMs > c.fromMs, "cue toMs must be after fromMs");
 
@@ -262,6 +271,8 @@ export const onScreenCopy = (edit: EditJson): Record<string, string[]> => {
         return [];
       case "lenders":
         return [c.title ?? ""];
+      case "points":
+        return [c.title, ...c.items.map((i) => i.text)];
     }
   };
   const fields: Record<string, string[]> = {

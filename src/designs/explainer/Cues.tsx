@@ -4,12 +4,7 @@
 import { fitText } from "@remotion/layout-utils";
 import { Audio } from "@remotion/media";
 import { evolvePath } from "@remotion/paths";
-import {
-  Box,
-  Circle,
-  CrossedOff,
-  Highlight,
-} from "@remotion/rough-notation";
+import { Box, Circle, CrossedOff, Highlight } from "@remotion/rough-notation";
 import type React from "react";
 import {
   AbsoluteFill,
@@ -29,7 +24,7 @@ import {
   type Tone,
 } from "../../mortgage/schema";
 import { FONT, clamp, pop } from "../../mortgage/style";
-import { useExit, type CueOf, type Rel } from "../classic/Infographics";
+import { Points, useExit, type CueOf, type Rel } from "../classic/Infographics";
 import { INK, MARKER, NOTE } from "./Paper";
 
 // brand.good/bad are for dark backgrounds; these are the ink versions that
@@ -480,7 +475,12 @@ const Venn: React.FC<{ cue: CueOf<"venn"> }> = ({ cue }) => {
   return (
     <IndexCard>
       <div
-        style={{ position: "relative", width: 740, height: 440, margin: "0 auto" }}
+        style={{
+          position: "relative",
+          width: 740,
+          height: 440,
+          margin: "0 auto",
+        }}
       >
         <svg width={740} height={440} style={{ position: "absolute" }}>
           <path
@@ -578,6 +578,9 @@ const CueView: React.FC<{ cue: Cue; rel: Rel }> = ({ cue, rel }) => {
       return <Emoji cue={cue} />;
     case "lenders":
       return <Lenders cue={cue} />;
+    // No paper-style version yet: the classic navy panel.
+    case "points":
+      return <Points cue={cue} rel={rel} />;
   }
 };
 

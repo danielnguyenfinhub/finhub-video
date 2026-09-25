@@ -6,7 +6,11 @@
 //
 // Reads public/videos/<slug>/script.json:
 //   { "title": "...", "voice": "<optional voice id>",
-//     "scenes": [ { "vi": "Vietnamese narration", "en": "English line" } ] }
+//     "scenes": [ { "vi": "Vietnamese narration", "en": "English line",
+//                   "footage": "optional 2-5 word English stock search",
+//                   "ai": "optional image description (fal.ai), instead" } ],
+//     "post": { "title": "...", "caption": "...", "hashtags": ["#..."] } }
+// How to write one: .claude/skills/vietnamese-finance-video-editor/references/faceless-script.md
 // --dry-run: RG 234 check + character count (ElevenLabs bills per character),
 // no API call. Show this to Daniel for approval before a real run.
 //
@@ -26,17 +30,20 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { aiClip, stockClips } from "./visuals.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MODEL_ID = "eleven_v3"; // speaks Vietnamese; eleven_multilingual_v2 doesn't
 const FPS = 30;
 const GAP_MS = 400; // silence between scenes
 const BACKDROP = "0x0B1F3D"; // brand navy; never seen, the design draws its own
+const CLIP_MAX_S = 5; // longest a single stock clip stays on screen
 
 const fail = (msg) => {
   console.error(`voice-video: ${msg}`);
   process.exit(1);
 };
+
 const run = (cmd, args, what) => {
   try {
     return execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -63,8 +70,25 @@ if (!Array.isArray(script.scenes) || script.scenes.length === 0) fail('script.js
 const scenes = script.scenes.map((s, i) => {
   if (typeof s?.vi !== "string" || !s.vi.trim()) fail(`scenes[${i}].vi is empty.`);
   if (typeof s?.en !== "string" || !s.en.trim()) fail(`scenes[${i}].en is empty.`);
-  return { vi: s.vi.trim().normalize("NFC"), en: s.en.trim().normalize("NFC") };
+  for (const field of ["footage", "ai"])
+    if (s[field] !== undefined && (typeof s[field] !== "string" || !s[field].trim()))
+      fail(`scenes[${i}].${field} must be non-empty English text.`);
+  // OpenMontage's rule: never mix stock and AI within one scene.
+  if (s.footage && s.ai) fail(`scenes[${i}] has both "footage" and "ai"; pick one.`);
+  return {
+    vi: s.vi.trim().normalize("NFC"),
+    en: s.en.trim().normalize("NFC"),
+    footage: s.footage?.trim() ?? "",
+    ai: s.ai?.trim() ?? "",
+  };
 });
+// Daniel's rule: elements (charts, comparisons, key points) explain; stock or
+// AI visuals only fill the gaps. A scene with neither gets the plain navy
+// frame, and its edit.json element holds the stage.
+const withFootage = scenes.some((s) => s.footage || s.ai);
+// Optional post copy for the upload (title, caption ending in a call to
+// action, hashtags); it reaches clients too, so RG 234 scans it below.
+const post = script.post ?? null;
 
 // RG 234 before any credits are spent: the narration and the English lines
 // reach clients just like on-screen copy. compliance.ts is bundled because Node
@@ -79,7 +103,12 @@ const { assertCompliantCopy } = await import(
 );
 try {
   assertCompliantCopy(
-    { narration: scenes.map((s) => s.vi), subtitles: scenes.map((s) => s.en), title: script.title },
+    {
+      narration: scenes.map((s) => s.vi),
+      subtitles: scenes.map((s) => s.en),
+      title: script.title,
+      post: post ? [post.title, post.caption, ...(post.hashtags ?? [])].filter(Boolean) : [],
+    },
     script.exemptions ?? [],
   );
 } catch (err) {
@@ -88,6 +117,14 @@ try {
 
 const chars = scenes.reduce((n, s) => n + s.vi.length, 0);
 console.log(`${scenes.length} scenes, ${chars} characters to voice. RG 234: passed.`);
+if (withFootage) {
+  console.log("Visuals:");
+  scenes.forEach((s, i) =>
+    console.log(`  ${i + 1}. ${s.footage ? `stock "${s.footage}"` : s.ai ? `AI image "${s.ai}"` : "element (edit.json)"}`),
+  );
+  const images = scenes.filter((s) => s.ai).length;
+  if (images) console.log(`fal.ai: ${images} image(s), about US$${(images * 0.03).toFixed(2)}.`);
+}
 if (dryRun) process.exit(0);
 
 for (const envFile of [".env.local", ".env"]) {
@@ -162,13 +199,71 @@ const pads = takes.map((_, i) => `[${i}:a]aresample=48000,apad=pad_dur=${GAP_MS 
 const joined = `${takes.map((_, i) => `[a${i}]`).join("")}concat=n=${takes.length}:v=0:a=1[out]`;
 run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", ...inputs, "-filter_complex", `${pads};${joined}`, "-map", "[out]", narration], "joining the narration");
 
-// The two videos the core needs, frame for frame the same length.
+// Gap-scene visuals (scripts/visuals.mjs): "footage" = a stock search
+// (Pixabay, then Pexels), "ai" = a fal.ai still with a slow zoom. A stock
+// scene longer than CLIP_MAX_S gets several clips so the picture changes at
+// least that often (rule 5b). Everything is cached under voice/footage/.
+let broll = null;
+if (withFootage) {
+  const footDir = join(voiceDir, "footage");
+  mkdirSync(footDir, { recursive: true });
+  // One seed per video, so its AI stills share a look (OpenMontage).
+  const seed = parseInt(createHash("sha1").update(script.title).digest("hex").slice(0, 8), 16);
+  const pieces = []; // { file, seconds }
+  try {
+    for (const [i, s] of scenes.entries()) {
+      const seconds = (takes[i].durMs + GAP_MS) / 1000;
+      if (s.ai) {
+        pieces.push({ file: await aiClip(s.ai, seconds, footDir, seed), seconds });
+        console.log(`visual ${i + 1}/${scenes.length}: AI image`);
+      } else if (s.footage) {
+        const n = Math.max(1, Math.ceil(seconds / CLIP_MAX_S));
+        const clips = await stockClips(s.footage, n, footDir);
+        for (let k = 0; k < n; k++) pieces.push({ file: clips[k % clips.length], seconds: seconds / n });
+        console.log(`visual ${i + 1}/${scenes.length}: "${s.footage}", ${n} clip(s)`);
+      } else {
+        pieces.push({ file: null, seconds }); // navy: an element fills this scene
+      }
+    }
+  } catch (err) {
+    fail(err.message);
+  }
+  const key = createHash("sha1").update(JSON.stringify(pieces)).digest("hex").slice(0, 12);
+  broll = join(voiceDir, `footage-${key}.mp4`);
+  if (!existsSync(broll)) {
+    // Each piece: looped if the clip is short, cut to its share of the scene,
+    // cropped to fill 1080x1920; then all joined in scene order.
+    const inputs = pieces.flatMap((p) =>
+      p.file
+        ? ["-stream_loop", "-1", "-i", p.file]
+        : ["-f", "lavfi", "-i", `color=c=${BACKDROP}:s=1080x1920:r=${FPS}`],
+    );
+    const fitted = pieces
+      .map((p, k) => `[${k}:v]trim=duration=${p.seconds.toFixed(3)},setpts=PTS-STARTPTS,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=${FPS},setsar=1[v${k}]`)
+      .join(";");
+    const joinedV = `${pieces.map((_, k) => `[v${k}]`).join("")}concat=n=${pieces.length}:v=1:a=0[out]`;
+    run("ffmpeg", [
+      "-y", "-hide_banner", "-loglevel", "error", ...inputs, "-filter_complex", `${fitted};${joinedV}`,
+      "-map", "[out]", "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", broll,
+    ], "joining the footage");
+  }
+}
+
+// The two videos the core needs, frame for frame the same length. With
+// footage, source.mp4's picture is the footage (the faceless design shows it
+// behind the stage); without, a plain navy frame.
 const frames = Math.ceil((offsetMs / 1000) * FPS);
 const seconds = (frames / FPS).toFixed(3);
+const picture = broll
+  ? ["-i", broll]
+  : ["-f", "lavfi", "-i", `color=c=${BACKDROP}:s=1080x1920:r=${FPS}`];
+const fit = broll
+  ? ["-vf", `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=${FPS},tpad=stop_mode=clone:stop_duration=10`]
+  : ["-tune", "stillimage"];
 run("ffmpeg", [
   "-y", "-hide_banner", "-loglevel", "error",
-  "-f", "lavfi", "-i", `color=c=${BACKDROP}:s=1080x1920:r=${FPS}`, "-i", narration,
-  "-t", seconds, "-c:v", "libx264", "-tune", "stillimage", "-g", "15", "-pix_fmt", "yuv420p",
+  ...picture, "-i", narration, "-map", "0:v", "-map", "1:a",
+  "-t", seconds, "-c:v", "libx264", ...fit, "-g", "15", "-pix_fmt", "yuv420p",
   "-c:a", "aac", "-b:a", "192k", "-af", "apad", join(dir, "source.mp4"),
 ], "writing source.mp4");
 run("ffmpeg", [
