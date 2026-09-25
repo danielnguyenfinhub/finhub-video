@@ -118,7 +118,7 @@ Give Claude a document (a lender policy update, an RBA announcement, a fact shee
 
 1. **Script.** Claude writes `public/videos/<slug>/script.json`: a title and scenes, each with the Vietnamese narration (`vi`) and an English line (`en`).
 2. **Approve.** Claude runs `node scripts/voice-video.mjs <slug> --dry-run`, which checks RG 234 and counts the characters to voice, then sends you the script. Nothing is voiced until you approve.
-3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene in **your own cloned voice** with OmniVoice, on this PC and free (see "Local voice" below), and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only re-voices that scene. Add `--engine elevenlabs` to use ElevenLabs instead (paid, much faster).
+3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene in **your own cloned voice** with OmniVoice, on this PC and free (see "Clone your voice" below), and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only re-voices that scene. Add `--engine elevenlabs` to use ElevenLabs instead (paid, much faster).
 4. **Edit and render** exactly as for a recorded video: Claude adds the hook, chapters and stats to `edit.json`, then runs `python scripts/render-video.py <slug>`.
 
 The `faceless` design fills the middle of the screen:
@@ -127,19 +127,31 @@ The `faceless` design fills the middle of the screen:
 - the bank's logo when a bank is named;
 - the English line along the bottom.
 
-### Local voice (OmniVoice, the default)
+### Clone your voice (OmniVoice, the default voice)
 
-[OmniVoice](https://github.com/k2-fsa/OmniVoice) (Apache 2.0) clones your voice from a few seconds of a recording and speaks Vietnamese. It runs on the laptop's CPU: about 20× slower than real time including the caption timings, so a 60-second video takes about 20 minutes to voice (measured 6 min for 18 s). `scripts/omnivoice-tts.py` does the work in OmniVoice's own Python; it also times every word with faster-whisper for the captions.
+Faceless videos can speak in **your own voice**. [OmniVoice](https://github.com/k2-fsa/OmniVoice) (Apache 2.0, bundled in `vendor/OmniVoice` as a git submodule) learns a voice from a few seconds of a recording and speaks Vietnamese, locally and free. It runs on the computer's CPU: about 20× slower than real time, so a 60-second video takes about 20 minutes to voice. Changing one scene later only re-voices that scene.
 
-One-time setup (already done on Daniel's PC):
-1. Clone OmniVoice to `C:\Users\Daniel\OmniVoice`, make a CPU environment there and install it:
-   `python -m venv .venv-cpu`, then with `.venv-cpu\Scripts\python.exe -m pip install`: `torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu`, then `-e . num2words faster-whisper truststore`. The first run downloads the 3.3 GB model. `truststore` is needed because Norton re-signs HTTPS on this PC.
-2. Make the voice profile from a clean 3–10 s clip of you speaking Vietnamese and its exact transcript:
-   `C:\Users\Daniel\OmniVoice\.venv-cpu\Scripts\python.exe scripts\omnivoice-tts.py clone <clip.wav> "<transcript>" C:\Users\Daniel\OmniVoice\voices\daniel.pt`
+**1. Set up once** (needs Python 3.10+, ffmpeg and about 10 GB of disk):
 
-**The profile is a copy of your voice. Keep it outside this repository, which is public;** the script refuses a profile inside it. Voiced audio (`public/videos/*/voice/`) is kept out of git too. Say in the post caption that the voice is AI-generated.
+```bash
+npm run setup-voice
+```
 
-Optional `.env.local` settings: `OMNIVOICE_PYTHON` and `OMNIVOICE_VOICE` (other locations), `OMNIVOICE_STEPS` (quality: 32 by default; 64 is about twice as slow).
+It fetches `vendor/OmniVoice` if needed, makes `.omnivoice/venv` (git-ignored), installs OmniVoice with faster-whisper, downloads the models and checks they load. Re-running it is safe.
+
+**2. Clone a voice** from any video or audio of the person talking (10 s or more of clear speech):
+
+```bash
+npm run clone-voice -- path/to/recording.mp4 --name daniel --consent
+```
+
+It picks the clearest 6–10 s sentence, transcribes it and saves `~/.finhub-voice/daniel.pt`, plus `daniel.wav` (the clip it learned from) and `daniel-sample.wav`. **Listen to the sample.** If it doesn't sound right, try a cleaner recording: one speaker, no music, a quiet room.
+
+**3. Voice a video:** `node scripts/voice-video.mjs <slug>` uses your profile automatically when it's the only one; with several, add `--voice <name>` (or `"voiceProfile": "<name>"` in script.json).
+
+**Consent and privacy.** Only clone your own voice, or a voice whose owner gave you written permission: `--consent` confirms that, and nothing is cloned without it. A profile is a reusable copy of someone's voice, so profiles live in `~/.finhub-voice/`, never in this public repository (the scripts refuse one inside it), and voiced audio (`public/videos/*/voice/`) is git-ignored. Say in each post that the voice is AI-generated.
+
+Optional `.env.local` settings: `OMNIVOICE_STEPS` (quality: 32 by default; 64 is about twice as slow), `OMNIVOICE_PYTHON` and `OMNIVOICE_VOICE` (other locations).
 
 ### ElevenLabs and footage keys
 
