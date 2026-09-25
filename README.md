@@ -118,7 +118,7 @@ Give Claude a document (a lender policy update, an RBA announcement, a fact shee
 
 1. **Script.** Claude writes `public/videos/<slug>/script.json`: a title and scenes, each with the Vietnamese narration (`vi`) and an English line (`en`).
 2. **Approve.** Claude runs `node scripts/voice-video.mjs <slug> --dry-run`, which checks RG 234 and counts the characters to voice, then sends you the script. Nothing is voiced until you approve.
-3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene in **your own cloned voice** with OmniVoice, on this PC and free (see "Clone your voice" below), and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only re-voices that scene. Add `--engine elevenlabs` to use ElevenLabs instead (paid, much faster).
+3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene with **Google's male voice Charon** (Gemini text-to-speech, `GEMINI_API_KEY` in `.env.local`; the same voice as the policy videos), and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only re-voices that scene. Add `--engine omnivoice` for a cloned voice (see "Clone your voice" below) or `--engine elevenlabs` for ElevenLabs. Every Charon take is checked: one cut short by Google is deleted and the run stops, so re-running voices it again. Gemini allows 50 (pro) + 100 (flash) takes a day, one per scene.
 4. **Edit and render** exactly as for a recorded video: Claude adds the hook, chapters and stats to `edit.json`, then runs `python scripts/render-video.py <slug>`.
 
 The `faceless` design fills the middle of the screen:
@@ -127,7 +127,7 @@ The `faceless` design fills the middle of the screen:
 - the bank's logo when a bank is named;
 - the English line along the bottom.
 
-### Clone your voice (OmniVoice, the default voice)
+### Clone your voice (OmniVoice, `--engine omnivoice`)
 
 Faceless videos can speak in **your own voice**. [OmniVoice](https://github.com/k2-fsa/OmniVoice) (Apache 2.0, bundled in `vendor/OmniVoice` as a git submodule) learns a voice from a few seconds of a recording and speaks Vietnamese, locally and free. It runs on the computer's CPU: about 20× slower than real time, so a 60-second video takes about 20 minutes to voice. Changing one scene later only re-voices that scene.
 
@@ -147,17 +147,18 @@ npm run clone-voice -- path/to/recording.mp4 --name daniel --consent
 
 It picks the clearest 6–10 s sentence, transcribes it and saves `~/.finhub-voice/daniel.pt`, plus `daniel.wav` (the clip it learned from) and `daniel-sample.wav`. **Listen to the sample.** If it doesn't sound right, try a cleaner recording: one speaker, no music, a quiet room.
 
-**3. Voice a video:** `node scripts/voice-video.mjs <slug>` uses your profile automatically when it's the only one; with several, add `--voice <name>` (or `"voiceProfile": "<name>"` in script.json).
+**3. Voice a video:** `node scripts/voice-video.mjs <slug> --engine omnivoice` uses your profile automatically when it's the only one; with several, add `--voice <name>` (or `"voiceProfile": "<name>"` in script.json).
 
 **Consent and privacy.** Only clone your own voice, or a voice whose owner gave you written permission: `--consent` confirms that, and nothing is cloned without it. A profile is a reusable copy of someone's voice, so profiles live in `~/.finhub-voice/`, never in this public repository (the scripts refuse one inside it), and voiced audio (`public/videos/*/voice/`) is git-ignored. Say in each post that the voice is AI-generated.
 
 Optional `.env.local` settings: `OMNIVOICE_STEPS` (quality: 32 by default; 64 is about twice as slow), `OMNIVOICE_PYTHON` and `OMNIVOICE_VOICE` (other locations).
 
-### ElevenLabs and footage keys
+### Voice and footage keys
 
 They need `.env.local` in this folder (never committed; create it yourself):
 
 ```dotenv
+GEMINI_API_KEY=your-key     # the Charon voice (default engine)
 ELEVENLABS_API_KEY=your-key # only for --engine elevenlabs
 ELEVENLABS_VOICE_LIBRARY=sbaSITtJLv4yb3vIi67Z
 PIXABAY_API_KEY=your-pixabay-key # stock footage, tried first (pixabay.com/api/docs)
