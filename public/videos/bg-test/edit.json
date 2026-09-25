@@ -1,0 +1,46 @@
+{
+  "notes": [
+    "4.1 Tỷ Đô - Con Số Người Úc Không Ngờ Tới: the approved TyDoReel v7 edit, expressed as template data.",
+    "remove[0] = the $1M example (misspoken figure '1.600'), cut at Daniel's request; remove[1] = 'Họ có,' false start before 'các ngân hàng có thể…'.",
+    "exemptions: the kinetic cue strikes out 'Lãi suất rẻ nhất' as the thing NOT to chase, a negation.",
+    "cut.stutters off: the approved edit keeps 'món món' (127240) in the audio; cutting it would also re-pace the next 47 s."
+  ],
+  "title": "4,1 Tỷ Đô - Con Số Người Úc Không Ngờ Tới",
+  "coverFrameMs": 5600,
+  "remove": [],
+  "cut": {
+    "stutters": false
+  },
+  "chapters": [],
+  "stats": [
+    {
+      "atMs": 4700,
+      "durMs": 3600,
+      "big": "$4,1 TỶ",
+      "label": "Phí người Úc trả ngân hàng trong 1 năm"
+    }
+  ],
+  "cues": [],
+  "cta": {
+    "question": "Bạn đang trả bao nhiêu phí cho ngân hàng?"
+  },
+  "compliance": {
+    "illustrativeNumbers": true
+  },
+  "exemptions": [
+    {
+      "field": "cues[1]",
+      "term": "lãi suất rẻ nhất",
+      "reason": "negation",
+      "note": "Struck through on screen: the cheapest rate is named as NOT the thing to chase (total cost is)."
+    },
+    {
+      "field": "cues[1]",
+      "term": "rẻ nhất",
+      "reason": "negation",
+      "note": "Same struck-through line: 'Lãi suất rẻ nhất' shown as what not to optimise for."
+    }
+  ],
+  "background": "brand",
+  "look": "warm"
+}

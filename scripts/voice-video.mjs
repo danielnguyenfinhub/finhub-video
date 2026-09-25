@@ -8,7 +8,8 @@
 //   { "title": "...", "voice": "<optional voice id>",
 //     "scenes": [ { "vi": "Vietnamese narration", "en": "English line",
 //                   "footage": "optional 2-5 word English stock search",
-//                   "ai": "optional image description (fal.ai), instead" } ],
+//                   "ai": "optional image description: paid fal.ai fallback,
+//                          used only if the free stock search finds nothing" } ],
 //     "post": { "title": "...", "caption": "...", "hashtags": ["#..."] } }
 // How to write one: .claude/skills/vietnamese-finance-video-editor/references/faceless-script.md
 // --dry-run: RG 234 check + character count (ElevenLabs bills per character),
@@ -73,8 +74,11 @@ const scenes = script.scenes.map((s, i) => {
   for (const field of ["footage", "ai"])
     if (s[field] !== undefined && (typeof s[field] !== "string" || !s[field].trim()))
       fail(`scenes[${i}].${field} must be non-empty English text.`);
-  // OpenMontage's rule: never mix stock and AI within one scene.
-  if (s.footage && s.ai) fail(`scenes[${i}] has both "footage" and "ai"; pick one.`);
+  // Free before paid (Daniel's rule): "ai" is only a fallback for when the
+  // free stock search finds nothing, so it needs a "footage" phrase to try
+  // first. A scene still shows one or the other, never both (OpenMontage).
+  if (s.ai && !s.footage)
+    fail(`scenes[${i}] has "ai" without "footage": try free stock first (add a footage phrase; "ai" is the paid fallback).`);
   return {
     vi: s.vi.trim().normalize("NFC"),
     en: s.en.trim().normalize("NFC"),
@@ -120,10 +124,13 @@ console.log(`${scenes.length} scenes, ${chars} characters to voice. RG 234: pass
 if (withFootage) {
   console.log("Visuals:");
   scenes.forEach((s, i) =>
-    console.log(`  ${i + 1}. ${s.footage ? `stock "${s.footage}"` : s.ai ? `AI image "${s.ai}"` : "element (edit.json)"}`),
+    console.log(
+      `  ${i + 1}. ${s.footage ? `free stock "${s.footage}"${s.ai ? " (paid AI fallback ready)" : ""}` : "element (edit.json, free)"}`,
+    ),
   );
   const images = scenes.filter((s) => s.ai).length;
-  if (images) console.log(`fal.ai: ${images} image(s), about US$${(images * 0.03).toFixed(2)}.`);
+  if (images)
+    console.log(`fal.ai: at most ${images} image(s), about US$${(images * 0.03).toFixed(2)}, only where stock finds nothing.`);
 }
 if (dryRun) process.exit(0);
 
@@ -213,14 +220,24 @@ if (withFootage) {
   try {
     for (const [i, s] of scenes.entries()) {
       const seconds = (takes[i].durMs + GAP_MS) / 1000;
-      if (s.ai) {
-        pieces.push({ file: await aiClip(s.ai, seconds, footDir, seed), seconds });
-        console.log(`visual ${i + 1}/${scenes.length}: AI image`);
-      } else if (s.footage) {
+      if (s.footage) {
+        // Free first (Daniel's rule): stock, and the paid AI image only when
+        // stock has nothing and the scene gave an "ai" fallback prompt.
         const n = Math.max(1, Math.ceil(seconds / CLIP_MAX_S));
-        const clips = await stockClips(s.footage, n, footDir);
-        for (let k = 0; k < n; k++) pieces.push({ file: clips[k % clips.length], seconds: seconds / n });
-        console.log(`visual ${i + 1}/${scenes.length}: "${s.footage}", ${n} clip(s)`);
+        let clips = null;
+        try {
+          clips = await stockClips(s.footage, n, footDir);
+        } catch (err) {
+          if (!s.ai) throw err;
+          console.log(`visual ${i + 1}/${scenes.length}: stock failed (${err.message}); using the paid AI fallback`);
+        }
+        if (clips) {
+          for (let k = 0; k < n; k++) pieces.push({ file: clips[k % clips.length], seconds: seconds / n });
+          console.log(`visual ${i + 1}/${scenes.length}: "${s.footage}", ${n} free clip(s)`);
+        } else {
+          pieces.push({ file: await aiClip(s.ai, seconds, footDir, seed), seconds });
+          console.log(`visual ${i + 1}/${scenes.length}: AI image (fal.ai, paid)`);
+        }
       } else {
         pieces.push({ file: null, seconds }); // navy: an element fills this scene
       }

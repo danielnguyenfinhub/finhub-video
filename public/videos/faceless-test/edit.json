@@ -1,0 +1,32 @@
+{
+  "notes": [
+    "Faceless: voiced by scripts/voice-video.mjs from script.json."
+  ],
+  "design": "faceless",
+  "title": "Phí ngân hàng: 3 điều nên biết",
+  "cut": {
+    "fillers": false,
+    "stutters": false,
+    "badWords": false
+  },
+  "pacing": {
+    "mode": "off"
+  },
+  "subtitles": [
+    {
+      "fromMs": 0,
+      "toMs": 3520,
+      "text": "Did you know Australians pay billions in bank fees every year?"
+    },
+    {
+      "fromMs": 3920,
+      "toMs": 10320,
+      "text": "For example, the average rate is around 6.2 percent, and ANZ just updated its fees."
+    },
+    {
+      "fromMs": 10720,
+      "toMs": 15680,
+      "text": "Review your loan once a year. Message Finance Hub for help."
+    }
+  ]
+}

@@ -27,6 +27,29 @@ const AI_MODEL = "fal-ai/flux/dev"; // ~US$0.03 per image (OpenMontage's estimat
 
 const hash = (s) => createHash("sha1").update(s).digest("hex").slice(0, 12);
 
+// Both APIs return popular clips even for nonsense searches, so "found
+// something" says nothing. A clip counts only if its own words (Pixabay tags,
+// the title in a Pexels link) share a word with the search; the first 5
+// letters are compared, so "bills"/"bill" and "documents"/"document" match.
+// ponytail: word overlap, not meaning; add a CLIP score (as OpenMontage does)
+// if relevant-looking but wrong clips keep getting through.
+const STOP = new Set(["and", "the", "with", "for", "from", "of", "in", "on", "at", "a", "an"]);
+const stems = (text) =>
+  new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter((w) => w.length >= 3 && !STOP.has(w))
+      .map((w) => w.slice(0, 5)),
+  );
+// How many search words the clip's own words share; a multi-word search
+// needs two ("couple reviewing documents" must not pass on "couple" alone).
+const overlap = (term, text) => {
+  const have = stems(text);
+  return [...stems(term)].filter((s) => have.has(s)).length;
+};
+const relevant = (term, text) => overlap(term, text) >= Math.min(2, stems(term).size);
+
 const download = async (url, path) => {
   if (existsSync(path)) return true;
   const res = await fetch(url);
@@ -53,16 +76,19 @@ const pixabay = async (term, need, key, dir) => {
     return (await res.json()).hits ?? [];
   });
   const files = hits
-    .filter((h) => (h.duration ?? 0) >= MIN_CLIP_S)
+    .filter((h) => (h.duration ?? 0) >= MIN_CLIP_S && relevant(term, h.tags ?? ""))
     .map((h) => {
       // Smallest file that is still >= 1080 wide (Pixabay's "large" is often
       // 4K, ~25 MB), else the best one above MIN_WIDTH.
       const sizes = ["small", "medium", "large"].map((k) => h.videos?.[k]).filter((v) => v?.url);
       const f = sizes.find((v) => v.width >= 1080) ?? [...sizes].reverse().find((v) => v.width >= MIN_WIDTH);
-      return f ? { id: `pixabay-${h.id}`, url: f.url, portrait: f.height > f.width } : null;
+      return f
+        ? { id: `pixabay-${h.id}`, url: f.url, portrait: f.height > f.width, score: overlap(term, h.tags ?? "") }
+        : null;
     })
     .filter(Boolean)
-    .sort((a, b) => Number(b.portrait) - Number(a.portrait));
+    // Best word match first, portrait before landscape at the same score.
+    .sort((a, b) => b.score - a.score || Number(b.portrait) - Number(a.portrait));
   const picks = [];
   for (const f of files) {
     if (picks.length >= need) break;
@@ -83,7 +109,7 @@ const pexels = async (term, need, key, dir) => {
   const picks = [];
   for (const v of videos) {
     if (picks.length >= need) break;
-    if ((v.duration ?? 0) < MIN_CLIP_S) continue;
+    if ((v.duration ?? 0) < MIN_CLIP_S || !relevant(term, v.url ?? "")) continue;
     const file = (v.video_files ?? [])
       .filter((f) => f.height > f.width && f.width >= 1080)
       .sort((a, b) => a.width - b.width)[0];

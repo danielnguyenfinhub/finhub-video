@@ -1,0 +1,150 @@
+{
+  "design": "explainer",
+  "title": "Trả lãi trước: lợi thế cho nhà đầu tư?",
+  "hook": {
+    "big": "TRẢ LÃI TRƯỚC",
+    "sub": "Interest in advance"
+  },
+  "look": "warm",
+  "remove": [
+    [
+      38020,
+      40700
+    ],
+    [
+      54780,
+      55400
+    ],
+    [
+      59900,
+      60500
+    ]
+  ],
+  "captionFixes": [
+    {
+      "from": "Về",
+      "to": "với"
+    },
+    {
+      "from": "chuyện.",
+      "to": "chuyện"
+    }
+  ],
+  "keywords": [
+    "interest in advance",
+    "claim",
+    "nhà đầu tư",
+    "bất động sản",
+    "trả trước"
+  ],
+  "pacing": {
+    "mode": "auto"
+  },
+  "chapters": [
+    {
+      "atMs": 20180,
+      "title": "Interest in advance là gì?",
+      "effect": "bookFlip"
+    },
+    {
+      "atMs": 50660,
+      "title": "Vì sao?",
+      "effect": "clockWipe"
+    },
+    {
+      "atMs": 64160,
+      "title": "Phù hợp với ai?",
+      "effect": "swap"
+    }
+  ],
+  "stats": [
+    {
+      "atMs": 55900,
+      "durMs": 3200,
+      "big": "Vừa bán BĐS?",
+      "label": "Claim lãi ngay năm nay"
+    }
+  ],
+  "cues": [
+    {
+      "kind": "compare",
+      "fromMs": 23580,
+      "toMs": 50080,
+      "question": {
+        "text": "Có nghĩa là sao?",
+        "atMs": 23580
+      },
+      "vsAtMs": 36560,
+      "cards": [
+        {
+          "title": "Trả lãi định kỳ",
+          "atMs": 29200,
+          "rows": [
+            {
+              "label": "Trả",
+              "value": "Từng kỳ",
+              "tone": "neutral",
+              "atMs": 32600
+            },
+            {
+              "label": "Claim",
+              "value": "Từng năm",
+              "tone": "neutral",
+              "atMs": 35040
+            }
+          ]
+        },
+        {
+          "title": "Trả lãi trước",
+          "atMs": 41140,
+          "highlightAtMs": 48720,
+          "rows": [
+            {
+              "label": "Trả",
+              "value": "Một lần",
+              "tone": "neutral",
+              "atMs": 46460
+            },
+            {
+              "label": "Claim",
+              "value": "Năm nay",
+              "tone": "neutral",
+              "atMs": 47420
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "verdict",
+      "fromMs": 66200,
+      "toMs": 70300,
+      "ok": true,
+      "text": "Nhà đầu tư"
+    },
+    {
+      "kind": "verdict",
+      "fromMs": 71900,
+      "toMs": 74300,
+      "ok": false,
+      "text": "Mua nhà để ở"
+    }
+  ],
+  "compliance": {
+    "illustrativeNumbers": false,
+    "conditionsNote": true,
+    "taxNote": true
+  },
+  "notes": [
+    "Re-edit 2026-09-25.",
+    "Direction EXPLAINER (explains a mechanism).",
+    "Design explainer + background brand (cut-out on brand backdrop in the taped photo card) + warm grade.",
+    "Axes: cover taped photo + marker title; captions marker-highlight, sentence-aware pages; framing cut-out on brand backdrop in photo card; graphics sticky notes/pencil/hand-drawn cues; transitions bookFlip/clockWipe/swap; texture lined paper + tape; sound pencil click + ding; cta paper contact card. main.py check: pass, 8/8 axes differ from ty-do and the earlier interest-in-advance plan.",
+    "Signature moments: hook TRẢ LÃI TRƯỚC; compare card (pay each period vs pay once, claim this year) across the explanation; Vừa bán BĐS? note at the why; verdict ✓ nhà đầu tư / ✗ mua nhà để ở.",
+    "Cuts: three restarts (38.0-40.7 claim tất cả những; 54.8-55.4 đang có thể bán; 59.9-60.5 họ có thể).",
+    "Caption fixes: Về->với (nói chuyện với broker), drop false full stop after chuyện.",
+    "No numbers spoken.",
+    "Tax talk throughout -> taxNote; lender feature -> conditionsNote.",
+    "Verify: 1) tax accuracy of the explanation (prepaid interest up to 12 months ahead, claimed in the year paid; Daniel says claim would otherwise come from next year end); 2) spoken thích hợp (suitable) twice, rất là tiện lợi."
+  ]
+}
