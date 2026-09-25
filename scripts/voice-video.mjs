@@ -2,10 +2,14 @@
 // reads, so the whole talking-head pipeline (cuts, RG 234, captions, auto
 // charts, bank logos, outro, render-video.py) runs unchanged.
 //
-//   node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs] [--voice <profile>]
+//   node scripts/voice-video.mjs <slug> [--dry-run] [--engine google|omnivoice|elevenlabs] [--voice <profile>]
 //
 // Engines ("engine" in script.json also works; the flag wins):
-//   omnivoice (default)  a cloned voice (npm run clone-voice), run locally and
+//   google (default)     Google Gemini TTS, male voice Charon ("informative"),
+//                        GEMINI_API_KEY in .env.local; GEMINI_VOICE / _MODEL
+//                        override. Caption timings from faster-whisper in the
+//                        system Python (the same one prep-video.py uses).
+//   omnivoice            a cloned voice (npm run clone-voice), run locally and
 //                        free by scripts/omnivoice-tts.py (about 20x slower
 //                        than real time on a laptop CPU, timings included).
 //                        --voice / "voiceProfile" picks the profile; with only
@@ -63,7 +67,7 @@ const run = (cmd, args, what) => {
   }
 };
 
-const USAGE = "usage: node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs] [--voice <profile>]";
+const USAGE = "usage: node scripts/voice-video.mjs <slug> [--dry-run] [--engine google|omnivoice|elevenlabs] [--voice <profile>]";
 const argv = process.argv.slice(2);
 const slug = argv.find((a, k) => !a.startsWith("--") && !["--engine", "--voice"].includes(argv[k - 1]));
 if (!slug) fail(USAGE);
@@ -140,8 +144,8 @@ try {
 }
 
 const chars = scenes.reduce((n, s) => n + s.vi.length, 0);
-const engine = engineFlag ?? script.engine ?? "omnivoice";
-if (!["omnivoice", "elevenlabs"].includes(engine)) fail(`unknown engine "${engine}". ${USAGE}`);
+const engine = engineFlag ?? script.engine ?? "google";
+if (!["google", "omnivoice", "elevenlabs"].includes(engine)) fail(`unknown engine "${engine}". ${USAGE}`);
 console.log(`${scenes.length} scenes, ${chars} characters to voice. RG 234: passed. Engine: ${engine}.`);
 if (withFootage) {
   console.log("Visuals:");
@@ -194,6 +198,75 @@ if (engine === "elevenlabs") {
       console.log(`scene ${i + 1}/${scenes.length}: cached`);
     }
     files.push({ audio, align });
+  }
+} else if (engine === "google") {
+  // Gemini TTS (the call finhub-policy-video already uses): raw 24 kHz 16-bit
+  // mono PCM back, so a WAV header is added here. It can cut a long take short
+  // at HTTP 200; scenes are 1-2 sentences, and the align step checks every
+  // take's last word and deletes a short one so a re-run voices it again.
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) fail("GEMINI_API_KEY is not set in .env.local.");
+  const voice = process.env.GEMINI_VOICE ?? "Charon";
+  const models = process.env.GEMINI_TTS_MODEL
+    ? [process.env.GEMINI_TTS_MODEL]
+    : ["gemini-2.5-pro-preview-tts", "gemini-2.5-flash-preview-tts"]; // flash when pro's daily cap is spent
+  // Style goes inline, in Vietnamese; no speed words (they stretch the take).
+  const STYLE = "Nói với giọng ấm áp, tự tin, tự nhiên: ";
+  const wav = (pcm, rate) => {
+    const h = Buffer.alloc(44);
+    h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8);
+    h.write("fmt ", 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
+    h.writeUInt32LE(rate, 24); h.writeUInt32LE(rate * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34);
+    h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
+    return Buffer.concat([h, pcm]);
+  };
+  const speak = async (text, i) => {
+    for (const model of models) {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: STYLE + text }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } },
+          },
+        }),
+      });
+      if (res.status === 429 && model !== models.at(-1)) continue; // daily cap: try the next model
+      if (!res.ok) fail(`Gemini TTS scene ${i + 1} (${model}): HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
+      const part = (await res.json()).candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+      if (!part) fail(`Gemini TTS scene ${i + 1}: the response had no audio.`);
+      const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType ?? "")?.[1] ?? 24000);
+      return wav(Buffer.from(part.inlineData.data, "base64"), rate);
+    }
+  };
+  files = scenes.map((s) => {
+    const hash = sha(`gemini|${voice}|${STYLE}|${s.vi}`);
+    return { audio: join(voiceDir, `${hash}.wav`), align: join(voiceDir, `${hash}.json`), text: s.vi };
+  });
+  const todo = [];
+  for (const [i, f] of files.entries()) {
+    if (existsSync(f.audio) && existsSync(f.align)) {
+      console.log(`scene ${i + 1}/${files.length}: cached`);
+      continue;
+    }
+    writeFileSync(f.audio, await speak(f.text, i));
+    console.log(`scene ${i + 1}/${files.length}: voiced (${voice})`);
+    todo.push(f);
+  }
+  if (todo.length) {
+    const jobs = join(bundleDir, "align-jobs.json");
+    const seconds = (file) =>
+      Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", file], "ffprobe").trim());
+    writeFileSync(jobs, JSON.stringify(todo.map(({ text, audio, align }) => ({ text, wav: audio, align, seconds: seconds(audio) }))));
+    const python = process.env.WHISPER_PYTHON ?? (process.platform === "win32" ? "python" : "python3");
+    console.log("Timing the captions (faster-whisper) ...");
+    const res = spawnSync(python, [join(ROOT, "scripts", "omnivoice-tts.py"), "align", jobs], {
+      stdio: "inherit",
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    if (res.status !== 0) fail(`caption timing stopped (exit ${res.status ?? res.error?.message}); see the message above.`);
   }
 } else {
   // OmniVoice runs in its own Python (torch, the model, faster-whisper for the

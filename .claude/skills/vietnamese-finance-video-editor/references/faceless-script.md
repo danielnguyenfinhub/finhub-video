@@ -1,6 +1,6 @@
 # Writing a faceless script (document → script.json)
 
-Daniel gives a document (a lender policy update, an RBA announcement, a fact sheet); you write `public/videos/<slug>/script.json`. `scripts/voice-video.mjs` voices it in Daniel's own cloned voice (OmniVoice, local; `--engine elevenlabs` for ElevenLabs) and builds the video. Daniel approves the script **before** anything is voiced.
+Daniel gives a document (a lender policy update, an RBA announcement, a fact sheet); you write `public/videos/<slug>/script.json`. `scripts/voice-video.mjs` voices it with Google's male voice Charon (Gemini TTS; `--engine omnivoice` for Daniel's cloned voice, `--engine elevenlabs` for ElevenLabs) and builds the video. Daniel approves the script **before** anything is voiced.
 
 The writing rules below are MoneyPrinterTurbo's (Daniel liked how it writes scripts; `app/services/llm.py`), adapted to Finance Hub, RG 234 and the golden rules.
 

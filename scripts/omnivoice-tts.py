@@ -34,6 +34,7 @@ except ImportError:
 
 SAMPLE_RATE = 24000
 MIN_MATCH = 0.6  # below this share of words recognised, timings are guessed
+MAX_WPS = 4.5  # script words per second above which a take was cut short
 
 
 def fail(msg: str) -> None:
@@ -56,7 +57,8 @@ def norm(word: str) -> str:
 def word_times(script_words: list[str], heard: list[tuple[str, float, float]], total: float):
     """Give every script word a (start, end): matched from what Whisper heard,
     the rest spread by length between their matched neighbours. Returns the
-    times and the share of script words matched."""
+    times, the share of script words matched, and whether the last script
+    word was heard (a take cut short by the voice service fails that)."""
     times: list[tuple[float, float] | None] = [None] * len(script_words)
     matcher = SequenceMatcher(a=[norm(w) for w in script_words], b=[norm(w) for w, _, _ in heard], autojunk=False)
     for block in matcher.get_matching_blocks():
@@ -64,6 +66,7 @@ def word_times(script_words: list[str], heard: list[tuple[str, float, float]], t
             _, start, end = heard[block.b + k]
             times[block.a + k] = (start, end)
     matched = sum(t is not None for t in times) / max(1, len(script_words))
+    last_heard = bool(times) and times[-1] is not None
 
     i = 0
     while i < len(times):
@@ -83,7 +86,7 @@ def word_times(script_words: list[str], heard: list[tuple[str, float, float]], t
             times[k] = (cursor, cursor + span)
             cursor += span
         i = j
-    return times, matched
+    return times, matched, last_heard
 
 
 def char_alignment(text: str, times: list[tuple[float, float]]) -> dict:
@@ -227,13 +230,45 @@ def speak(jobs_path: str, voice_path: str, num_step: int) -> None:
         audio = model.generate(text=job["text"], voice_clone_prompt=prompt, language="vi", num_step=num_step)[0]
         total = len(audio) / SAMPLE_RATE
         sf.write(job["wav"], audio, SAMPLE_RATE)
-
-        segments, _ = whisper.transcribe(job["wav"], language="vi", word_timestamps=True)
-        heard = [(w.word.strip(), w.start, w.end) for s in segments for w in (s.words or [])]
-        times, matched = word_times(job["text"].split(), heard, total)
-        Path(job["align"]).write_text(json.dumps(char_alignment(job["text"], times)), encoding="utf-8")
+        matched, _ = time_audio(whisper, job, total)
         note = "" if matched >= MIN_MATCH else f" WARNING: only {matched:.0%} of words recognised, caption timing is approximate"
         print(f"{n}/{len(jobs)}: {total:.1f}s voiced in {time.perf_counter() - t0:.0f}s, {matched:.0%} words timed{note}", flush=True)
+
+
+def time_audio(whisper, job: dict, total: float) -> tuple[float, bool]:
+    """Write job["align"] for job["wav"]; returns (share of words matched,
+    whether the script's last word was heard)."""
+    segments, _ = whisper.transcribe(job["wav"], language="vi", word_timestamps=True)
+    heard = [(w.word.strip(), w.start, w.end) for s in segments for w in (s.words or [])]
+    times, matched, last_heard = word_times(job["text"].split(), heard, total)
+    Path(job["align"]).write_text(json.dumps(char_alignment(job["text"], times)), encoding="utf-8")
+    return matched, last_heard
+
+
+def align(jobs_path: str) -> None:
+    """Caption timings for audio voiced elsewhere (Gemini TTS): jobs also carry
+    "seconds" (the take's length). Runs in any Python with faster-whisper.
+    A take whose last word isn't heard was cut short by the service: its
+    files are deleted and the run fails, so a re-run voices it again."""
+    from faster_whisper import WhisperModel
+
+    jobs = json.loads(Path(jobs_path).read_text(encoding="utf-8"))
+    whisper = WhisperModel("large-v3", device="cpu", compute_type="int8")
+    cut = []
+    for n, job in enumerate(jobs, 1):
+        total = float(job["seconds"])
+        matched, last_heard = time_audio(whisper, job, total)
+        wps = len(job["text"].split()) / max(total, 0.1)
+        print(f"{n}/{len(jobs)}: {total:.1f}s, {matched:.0%} words timed, {wps:.1f} words/s", flush=True)
+        # Cut short = the ending isn't heard AND too many script words for the
+        # audio's length (Charon speaks ~3.1-3.8 words/s). An ending Whisper
+        # writes as digits ("phần trăm" -> "%") fails the first test only.
+        if not last_heard and wps > MAX_WPS:
+            cut.append(n)
+            for f in (job["wav"], job["align"]):
+                Path(f).unlink(missing_ok=True)
+    if cut:
+        fail(f"take(s) {cut} end before the script does (the voice service cut them short). Re-run to voice them again.")
 
 
 def selftest() -> None:
@@ -241,7 +276,9 @@ def selftest() -> None:
     ones share the gap by length, and alignment has one entry per character."""
     text = "Lãi suất 6,2 phần trăm, ANZ."
     heard = [("Lãi", 0.0, 0.3), ("suất", 0.3, 0.6), ("6,2%", 0.6, 1.2), ("ANZ.", 1.5, 2.0)]
-    times, matched = word_times(text.split(), heard, 2.0)
+    times, matched, last = word_times(text.split(), heard, 2.0)
+    assert last, "ANZ. was heard, so the last word counts as heard"
+    assert not word_times(["một", "hai", "ba"], [("một", 0.0, 0.4)], 1.0)[2], "a missing ending is caught"
     assert times[0] == (0.0, 0.3) and times[1] == (0.3, 0.6), times
     assert times[5] == (1.5, 2.0), times  # "ANZ." matched despite punctuation
     assert times[2] == (0.6, 1.2), times  # "6,2" matches "6,2%" once punctuation is ignored
@@ -271,6 +308,8 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     if args == ["selftest"]:
         selftest()
+    elif len(args) == 2 and args[0] == "align":
+        align(args[1])
     elif args == ["check"]:
         check()
     elif len(args) == 3 and args[0] == "clone-from":
