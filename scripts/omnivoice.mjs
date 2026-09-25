@@ -15,12 +15,18 @@ export const VENV = join(ROOT, ".omnivoice", "venv");
 export const VOICES = join(homedir(), ".finhub-voice");
 const bin = (venv) => (process.platform === "win32" ? join(venv, "Scripts", "python.exe") : join(venv, "bin", "python"));
 export const VENV_PYTHON = bin(VENV);
+// Written by setup-voice only after its last step (the models load), and
+// removed when it starts: the venv's python.exe exists minutes before
+// OmniVoice is installed, and a half-built venv used to break voicing.
+export const READY = join(ROOT, ".omnivoice", "READY");
 
 /** OmniVoice's Python, or null when it isn't set up. */
 export const omnivoicePython = () =>
-  [process.env.OMNIVOICE_PYTHON, VENV_PYTHON, bin(join(homedir(), "OmniVoice", ".venv-cpu"))].find(
-    (p) => p && existsSync(p),
-  ) ?? null;
+  [
+    process.env.OMNIVOICE_PYTHON,
+    existsSync(READY) ? VENV_PYTHON : null,
+    bin(join(homedir(), "OmniVoice", ".venv-cpu")),
+  ].find((p) => p && existsSync(p)) ?? null;
 
 export const profileNames = () =>
   existsSync(VOICES) ? readdirSync(VOICES).filter((f) => f.endsWith(".pt")).map((f) => f.slice(0, -3)) : [];

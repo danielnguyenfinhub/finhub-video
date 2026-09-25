@@ -7,9 +7,12 @@
 // models (about 6 GB, once) and checks they load. Safe to re-run.
 // Needs Python 3.10+ and ffmpeg on PATH, and git for the submodule.
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { ROOT, VENDOR, VENV, VENV_PYTHON } from "./omnivoice.mjs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { READY, ROOT, VENDOR, VENV, VENV_PYTHON } from "./omnivoice.mjs";
+
+// Not ready until the last step passes: voice-video skips a venv without it.
+rmSync(READY, { force: true });
 
 const fail = (msg) => {
   console.error(`setup-voice: ${msg}`);
@@ -42,4 +45,6 @@ pip("Installing PyTorch (CPU)", ["torch==2.8.0", "torchaudio==2.8.0", ...cpuInde
 pip("Installing OmniVoice and faster-whisper", ["-e", VENDOR, "num2words", "faster-whisper", "truststore"]);
 
 step("Downloading the models and checking they load", VENV_PYTHON, [join(ROOT, "scripts", "omnivoice-tts.py"), "check"]);
+mkdirSync(dirname(READY), { recursive: true });
+writeFileSync(READY, `${new Date().toISOString()}\n`);
 console.log("\nDone. Next: npm run clone-voice -- <a recording of you> --name <your-name> --consent");
