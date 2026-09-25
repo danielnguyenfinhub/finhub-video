@@ -269,25 +269,39 @@ const sfxFor = (reel: Reel): Sfx[] => [
   }),
 ];
 
-export const MotionTrack: React.FC<{ reel: Reel }> = ({ reel }) => {
+// `panelOffset` moves only the cue panels (they sit at top 110 in classic);
+// the film grain and light leaks stay full-frame. Designs built to the 4:5
+// safe band pass SAFE.top - 110.
+export const MotionTrack: React.FC<{ reel: Reel; panelOffset?: number }> = ({
+  reel,
+  panelOffset = 0,
+}) => {
   const { fps } = useVideoConfig();
   const outFrame = outFrameOf(reel.timeline, fps);
   return (
     <>
       <FilmFinish />
-      {(reel.edit.cues ?? []).map((c) => {
-        const from = outFrame(c.fromMs);
-        return (
-          <Sequence
-            key={`${c.kind}${c.fromMs}`}
-            from={from}
-            durationInFrames={Math.max(1, outFrame(c.toMs) - from)}
-            layout="none"
-          >
-            <CueView cue={c} rel={(ms) => outFrame(ms) - from} />
-          </Sequence>
-        );
-      })}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          transform: panelOffset ? `translateY(${panelOffset}px)` : undefined,
+        }}
+      >
+        {(reel.edit.cues ?? []).map((c) => {
+          const from = outFrame(c.fromMs);
+          return (
+            <Sequence
+              key={`${c.kind}${c.fromMs}`}
+              from={from}
+              durationInFrames={Math.max(1, outFrame(c.toMs) - from)}
+              layout="none"
+            >
+              <CueView cue={c} rel={(ms) => outFrame(ms) - from} />
+            </Sequence>
+          );
+        })}
+      </div>
       {/* One WebGL light leak per chapter cut; at most one mounted at a time. */}
       {(reel.edit.chapters ?? []).map((c, i) => (
         <Sequence

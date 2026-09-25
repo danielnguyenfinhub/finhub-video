@@ -21,6 +21,7 @@ import {
   HookTitle,
   MoneyRain,
 } from "./Frame";
+import { MirroredSpectrum } from "../../elements/MirroredSpectrum";
 import { Outro } from "./Outro";
 
 const HOOK_FRAMES = 105;
@@ -61,6 +62,26 @@ const Talk: React.FC<TalkProps> = ({
           transformOrigin: "50% 30%",
         }}
       />
+      {/* Daniel's voice as mirrored bars low on the frame, following the
+          paced source; white with a shadow so it reads over the footage. */}
+      <div
+        style={{
+          position: "absolute",
+          left: 120,
+          top: 1640,
+          opacity: 0.85,
+          filter: "drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5))",
+        }}
+      >
+        <MirroredSpectrum
+          src={src}
+          frame={seg.srcFrom + frame * seg.rate}
+          color="#fff"
+          width={840}
+          height={150}
+          bars={41}
+        />
+      </div>
     </AbsoluteFill>
   );
 };

@@ -88,6 +88,32 @@ cinematic / mono) for the footage grade.
 - `@remotion/google-fonts` — a display face only if its `subsets` include
   "vietnamese" (check `getInfo()`); load with `loadFont({ subsets: ["vietnamese"] })`.
 
+## Element libraries — ready components to copy and adapt
+Check these before building an effect from scratch. Both live in `.claude/elements/`,
+outside the build; copy what you use into `src/designs/<id>/` (or `src/elements/`).
+- **Remotion Elements** — `.claude/elements/CATALOG.md`: 41 blocks (captions, audio
+  visuals, backgrounds, data, lower thirds, maps, overlays). Copy the `.tsx` and
+  `initial-props.ts` if present.
+- **remocn** — `.claude/elements/remocn/CATALOG.md`: 300+ items, each with a "use when"
+  line: kinetic text (rolling numbers, number wheel, marker highlight, typewriter),
+  transitions (whip pan, zoom blur, page turn), 23 shader backgrounds, effects (confetti,
+  grain, VHS), charts, 100 icons (dollar, house, wallet, trending) and 5 full templates.
+  Files sit at their install paths (`components/remocn/*`, `lib/remocn*/*`) and import
+  each other via `@/components/remocn/...` / `@/lib/remocn-*`: copy the element plus
+  every file it imports and rewrite those imports to relative paths. Its npm packages
+  are installed; the tree type-checks clean.
+
+Adapting any element (not optional):
+- Font → Be Vietnam Pro (`useReelFont`); their Inter/Manrope/Montserrat load `latin`
+  only, so Vietnamese diacritics break.
+- Colours → `src/brand/theme.ts` tokens, never the demo palette.
+- Remove any `<Audio>` the element brings (it doubles Daniel's voice); drive audio
+  visuals from the paced source frame.
+- Keep it inside the 1080×1920 safe zones and off Daniel's face for > ~3 s.
+- Every hard-coded string goes through the RG 234 guard like any design copy.
+- Items marked "⚠ third-party brand UI" in the remocn catalog (ChatGPT, Claude, GitHub,
+  X, iMessage, Telegram…) are motion reference only — never shown in a FinHub video.
+
 ## Starter projects to mine for scene ideas (read, adapt, re-colour)
 In `starters/` (each its own project: `npm i` inside it to run one):
 `my-three` (3D scenes), `my-skia` (shaders), `my-audiogram` (waveform + captions),

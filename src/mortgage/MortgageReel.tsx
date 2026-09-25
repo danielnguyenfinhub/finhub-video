@@ -62,7 +62,12 @@ const MUSIC_RAMP_FRAMES = 10;
 const MUSIC_FADE_IN_FRAMES = 15;
 const MUSIC_FADE_OUT_FRAMES = 45;
 
-export const mortgageReelSchema = z.object({ slug: z.string() });
+// `design` overrides edit.json's, so one video can be previewed in every
+// template (`--props={"slug":"ty-do","design":"newsroom"}`) without editing it.
+export const mortgageReelSchema = z.object({
+  slug: z.string(),
+  design: z.string().optional(),
+});
 export type MortgageReelProps = z.infer<typeof mortgageReelSchema> & {
   reel: Reel | null;
 };
@@ -86,8 +91,10 @@ export const buildReel = (
   editJson: unknown,
   words: unknown,
   slug: string,
+  designOverride?: string,
 ): { reel: Reel; durationInFrames: number } => {
-  const edit = parseEdit(editJson, slug);
+  const parsed = parseEdit(editJson, slug);
+  const edit = designOverride ? { ...parsed, design: designOverride } : parsed;
   // Throws for an unknown name, listing the designs there are.
   const design = getDesign(edit.design ?? DEFAULT_DESIGN);
   if (!Array.isArray(words) || words.length === 0)
@@ -116,13 +123,24 @@ export const buildReel = (
 export const calculateMortgageReelMetadata: CalculateMetadataFunction<
   MortgageReelProps
 > = async ({ props }) => {
-  const { slug } = props;
-  const [editJson, words] = await Promise.all([
+  const { slug, design } = props;
+  const [editJson, words, cutOut] = await Promise.all([
     fetchJson(slug, "edit.json"),
     fetchJson(slug, "words.json"),
+    fetch(staticFile(`videos/${slug}/foreground.webm`), { method: "HEAD" }),
   ]);
-  const { reel, durationInFrames } = buildReel(editJson, words, slug);
-  return { durationInFrames, defaultOutName: slug, props: { slug, reel } };
+  // Golden rule: the background is always removed, so the cut-out must exist.
+  if (!cutOut.ok)
+    throw new Error(
+      `MortgageReel "${slug}": public/videos/${slug}/foreground.webm is missing. ` +
+        `Run \`npm run review\`, open http://localhost:4100/matte.html?slug=${slug} and wait for "Saved".`,
+    );
+  const { reel, durationInFrames } = buildReel(editJson, words, slug, design);
+  return {
+    durationInFrames,
+    defaultOutName: slug,
+    props: { slug, design, reel },
+  };
 };
 
 // edit.json's music, looped under the whole video and ducked under speech. The
@@ -185,9 +203,7 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
   const { edit, timeline } = reel;
   const design = getDesign(edit.design ?? DEFAULT_DESIGN);
   const src = staticFile(`videos/${slug}/source.mp4`);
-  const foreground = edit.background
-    ? staticFile(`videos/${slug}/foreground.webm`)
-    : undefined;
+  const foreground = staticFile(`videos/${slug}/foreground.webm`);
   const keywords = [...KEYWORDS, ...(edit.keywords ?? [])];
   const talk = timeline.talkFrames;
   return (
@@ -217,6 +233,20 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
                 src={src}
                 look={edit.look}
                 foreground={foreground}
+                behind={
+                  design.Behind ? (
+                    // A negative `from` puts the layer on the talk timeline
+                    // (frame 0 = first word) inside this segment's sequence.
+                    <Sequence from={-seg.outFrom} layout="none">
+                      <design.Behind
+                        reel={reel}
+                        keywords={keywords}
+                        talkFrames={talk}
+                        src={src}
+                      />
+                    </Sequence>
+                  ) : null
+                }
               />
             </TransitionSeries.Sequence>
             {seg.transitionAfter ? (
@@ -256,7 +286,12 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
         durationInFrames={talk - OUTRO_TRANSITION}
         layout="none"
       >
-        <design.Overlay reel={reel} keywords={keywords} talkFrames={talk} />
+        <design.Overlay
+          reel={reel}
+          keywords={keywords}
+          talkFrames={talk}
+          src={src}
+        />
       </Sequence>
     </AbsoluteFill>
   );

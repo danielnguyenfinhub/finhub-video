@@ -31,6 +31,8 @@ composition (Studio → "Elements"), which is how each was verified.
 | `PulseBadge` | badge that pulses every N frames | `Loop` |
 | `AudioRing` | frequency ring around a logo/face | `@remotion/media-utils` `useAudioData`, `visualizeAudio` |
 | `FrequencyBars` | equaliser bars with falling peak markers; silent unless `playAudio` (the voice is already playing) | `useAudioData`, `visualizeAudio` |
+| `Oscilloscope` | live waveform line of the voice; `frame` = moment in the audio, so it follows the paced cut (explainer design, under the captions) | `useWindowedAudioData`, `getWaveformPortion`, `createSmoothSvgPath` |
+| `MirroredSpectrum` | frequency bars mirrored from the centre, same `frame` rule (classic design, low on the frame) | `useWindowedAudioData`, `visualizeAudio` |
 | `NoiseField` | breathing dot-grid background | `@remotion/noise` `noise3D` |
 | `starWipe` | custom transition presentation: next scene grows from a star | `@remotion/transitions`, `@remotion/shapes` `makeStar`, `@remotion/paths` `translatePath` |
 
