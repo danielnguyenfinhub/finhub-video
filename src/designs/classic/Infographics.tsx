@@ -433,3 +433,74 @@ export const Bars: React.FC<{ cue: CueOf<"bars">; rel: Rel }> = ({ cue, rel }) =
     </Panel>
   );
 };
+
+// Key points: a numbered list, each point popping in as it is said; the one
+// being said glows amber, the ones before it settle to white.
+export const Points: React.FC<{ cue: CueOf<"points">; rel: Rel }> = ({
+  cue,
+  rel,
+}) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const starts = cue.items.map((it) => rel(it.atMs));
+  return (
+    <Panel>
+      <div
+        style={{
+          fontSize: 46,
+          fontWeight: 900,
+          color: brand.highlight,
+          marginBottom: 14,
+          lineHeight: 1.25,
+        }}
+      >
+        {cue.title}
+      </div>
+      {cue.items.map((it, i) => {
+        const p = pop(frame, fps, starts[i]);
+        const current = frame >= starts[i] && (i === starts.length - 1 || frame < starts[i + 1]);
+        return (
+          <div
+            key={it.atMs}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 20,
+              padding: "12px 0",
+              borderTop: "2px solid rgba(255,255,255,0.12)",
+              opacity: p,
+              transform: `translateX(${interpolate(p, [0, 1], [-60, 0])}px)`,
+            }}
+          >
+            <div
+              style={{
+                flex: "0 0 64px",
+                height: 64,
+                borderRadius: "50%",
+                background: current ? brand.highlight : "rgba(255,255,255,0.14)",
+                color: current ? brand.primary : "#fff",
+                fontSize: 36,
+                fontWeight: 900,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {i + 1}
+            </div>
+            <div
+              style={{
+                fontSize: 40,
+                fontWeight: current ? 900 : 700,
+                lineHeight: 1.3,
+                color: current ? "#fff" : DIM,
+              }}
+            >
+              {it.text}
+            </div>
+          </div>
+        );
+      })}
+    </Panel>
+  );
+};

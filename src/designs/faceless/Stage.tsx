@@ -68,6 +68,11 @@ export const busyFrames = (reel: Reel, fps: number): [number, number][] => [
         Math.round((m.endMs / 1000) * fps),
       ] as [number, number],
   ),
+  // edit.json cues (compare, bars, points…): the panels are the visual.
+  ...(reel.edit.cues ?? []).map((c) => {
+    const at = outFrameOf(reel.timeline, fps);
+    return [at(c.fromMs), at(c.toMs)] as [number, number];
+  }),
 ];
 
 const StageBox: React.FC<{ children: React.ReactNode }> = ({ children }) => {

@@ -37,6 +37,7 @@ References (read the one you need, when you need it):
 - `references/edit-json.md` — every edit.json field
 - `references/editing-principles.md` — craft: hooks, pacing, keyword highlighting
 - `references/landmines.md` — failures already hit once; read before Step 1
+- `references/faceless-script.md` — document → script.json (voice, footage, post copy) for a faceless video
 
 ## Iron rules (bridges — cliffs both sides)
 
