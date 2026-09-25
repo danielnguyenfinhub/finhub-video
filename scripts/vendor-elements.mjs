@@ -46,8 +46,12 @@ const parseFrontmatter = (mdx) => {
   return fields;
 };
 
-rmSync(target, { recursive: true, force: true });
+// remocn/ is vendored separately (remocn.dev registry), so keep it.
+const KEEP = "remocn";
 mkdirSync(target, { recursive: true });
+for (const entry of readdirSync(target)) {
+  if (entry !== KEEP) rmSync(join(target, entry), { recursive: true, force: true });
+}
 
 const categories = readdirSync(source, { withFileTypes: true })
   .filter((e) => e.isDirectory())
@@ -107,6 +111,14 @@ const catalogMd = [
       "",
     ];
   }),
+  ...(existsSync(join(target, KEEP, "CATALOG.md"))
+    ? [
+        "## remocn (300+ more)",
+        "",
+        "Animations, transitions, shaders, kinetic text, UI mock-ups, 100 icons and 5 full templates from remocn.dev — see [remocn/CATALOG.md](remocn/CATALOG.md).",
+        "",
+      ]
+    : []),
 ].join("\n");
 
 writeFileSync(join(target, "CATALOG.md"), catalogMd);

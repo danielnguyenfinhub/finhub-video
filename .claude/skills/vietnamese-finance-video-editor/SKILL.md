@@ -32,7 +32,8 @@ repository root. Composition
 References (read the one you need, when you need it):
 - `references/design-architecture.md` — core/design contract; the one-time bootstrap
 - `references/design-space.md` — the 8 design axes, directions, signature moments
-- `references/toolkit.md` — every installed Remotion package: when it earns its place
+- `references/toolkit.md` — every installed Remotion package, plus the element
+  libraries in `.claude/elements/`: when each earns its place, how to adapt an element
 - `references/edit-json.md` — every edit.json field
 - `references/editing-principles.md` — craft: hooks, pacing, keyword highlighting
 - `references/landmines.md` — failures already hit once; read before Step 1
@@ -79,7 +80,10 @@ miễn phí, đảm bảo …) in the verify list — never silently cut them.
 - **Use the toolkit generously, but every effect earns its place**: it makes the point
   clearer, or it holds attention at a retention moment (the hook, a number, a topic
   change, the conclusion). Decoration that covers Daniel's face for > ~3 s is a defect.
-- **Reuse before building**: remix an existing design in `src/designs/`, or lift a scene
+- **Reuse before building**: remix an existing design in `src/designs/`; pick a ready
+  element from `.claude/elements/CATALOG.md` (Remotion Elements) or
+  `.claude/elements/remocn/CATALOG.md` (300+ remocn animations, transitions, shaders,
+  kinetic text, icons, templates) and adapt it (toolkit.md → "Element libraries"); or lift a scene
   idea from the starter projects (`my-three`, `my-skia`, `my-audiogram`, `my-code-hike`,
   `my-tiktok`, `my-prompt-to-motion-graphics`, `my-music-visualization`, `my-overlay`)
   in `starters/` (each its own project: `npm i` inside it to run one),
@@ -214,6 +218,8 @@ Report to Daniel in plain language, backed by this structure (`templates/output.
 | Sending the 1080p file to the phone | Over 30 MB | Send the phone copy |
 
 ## Change log
+- 25/09/2026 — v3.1.0: designs draw on the element libraries in `.claude/elements/`
+  (Remotion Elements + remocn); adaptation rules in toolkit.md → "Element libraries".
 - 24/09/2026 — v3.0.1: moved into `danielnguyenfinhub/finhub-video` (paths from the repo
   root; `main.py` finds the design log itself); the stutter-across-a-sentence-end fix is
   now in the core.
