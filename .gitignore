@@ -23,3 +23,4 @@ remotion-video-skill.zip
 __pycache__/
 /public/videos/*/foreground.webm
 /public/videos/*/foreground.webm.part
+/public/videos/*/voice/
