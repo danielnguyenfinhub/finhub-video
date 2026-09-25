@@ -7,6 +7,8 @@ imports resolve against this folder. To use one, copy it plus the files it impor
 then adapt like the Remotion Elements (see ../CATALOG.md): Be Vietnam Pro, `src/brand/theme.ts`
 colours, 1080×1920 safe zones.
 
+Whole-video structures (which elements to put in which beat): `recipes/FINHUB.md`, then `recipes/anatomy.md` and `recipes/archetypes/`.
+
 All npm packages these elements need are installed in finhub-video (added 2026-09-25).
 `shader-gem-smoke` expects `public/prisma/symbol-light.svg` (a Prisma logo, not copied) — pass your own image.
 Type-check (tsc against finhub tsconfig, `@/*` → this folder): 0 errors.

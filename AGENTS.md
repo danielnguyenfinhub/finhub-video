@@ -190,6 +190,8 @@ Client-side rendering (`@remotion/web-renderer`, used in `WebRendererScene` and 
 
 `.claude/skills/` contains the official Remotion agent skills (vendored from Remotion's `packages/skills`, matching the pinned Remotion version). Start with `remotion-best-practices` — it routes to the specific skill for the task (creating compositions, markup/animation, captions, maps, rendering, Studio). Follow them when writing any Remotion markup.
 
+Whatever skill is driving (Remotion's, the editor skill, or a scene written by hand), build from the element libraries before writing an effect from scratch: `.claude/elements/CATALOG.md` and `.claude/elements/remocn/CATALOG.md` for components, and `.claude/elements/remocn/recipes/FINHUB.md` for whole-video structures (remocn's composition recipes mapped to FinHub content, with the FinHub overrides). This rule lives here rather than inside the Remotion skills because re-vendoring replaces those.
+
 `.claude/skills/vietnamese-finance-video-editor/` is the owner's own skill, not Remotion's: use it whenever Daniel asks to edit a new talking-head video. It holds the locked-core/new-design-every-video workflow, the design log (`public/videos/design-log.json`, through its `scripts/main.py`) and the compliance rules. Re-vendoring replaces only Remotion's skills and keeps this one.
 
 `.claude/` also holds 18 subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.

@@ -103,6 +103,12 @@ outside the build; copy what you use into `src/designs/<id>/` (or `src/elements/
   every file it imports and rewrite those imports to relative paths. Its npm packages
   are installed; the tree type-checks clean.
 
+- **remocn recipes** — `.claude/elements/remocn/recipes/FINHUB.md` first: whole-video
+  structures (6-beat anatomy; pricing-reveal, year-in-review, feature-announcement,
+  changelog, product-demo, testimonial-reel, logo-bumper) mapped to FinHub content,
+  with FinHub overrides (portrait canvas, real figures only, comparison rate). Use one
+  to shape a design's graphic beats; it never replaces the locked core.
+
 Adapting any element (not optional):
 - Font → Be Vietnam Pro (`useReelFont`); their Inter/Manrope/Montserrat load `latin`
   only, so Vietnamese diacritics break.
