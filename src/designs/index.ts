@@ -5,6 +5,7 @@ import { checklist } from "./checklist";
 import { classic } from "./classic";
 import { datalab } from "./datalab";
 import { editorial } from "./editorial";
+import { faceless } from "./faceless";
 import { explainer } from "./explainer";
 import { kitchen } from "./kitchen";
 import { neon } from "./neon";
@@ -28,6 +29,8 @@ const DESIGNS: Record<string, Design> = {
   reaction,
   checklist,
   scenario,
+  // A voiced script with no one on screen (scripts/voice-video.mjs).
+  faceless,
   kitchen,
   series,
 };

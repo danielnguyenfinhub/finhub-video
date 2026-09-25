@@ -73,16 +73,24 @@ const spokenNumbers = (reel: Reel) => {
       big += caps[++j].text.trim();
     }
     const next = caps[j + 1]?.text.trim() ?? "";
+    // "6,2 phần trăm" is said, "6,2%" is shown.
+    const percent =
+      next.toLowerCase() === "phần" &&
+      /^trăm(?!\p{L})/iu.test(caps[j + 2]?.text.trim() ?? "");
     // ponytail: a bare small count ("1 năm", "2 người") is not a figure
     // unless a money/percent unit follows; add units above when one slips through.
-    const bare = /^\d{1,2}$/.test(clean(big)) && !UNIT.test(next);
+    const bare = /^\d{1,2}$/.test(clean(big)) && !UNIT.test(next) && !percent;
     if (!bare) {
       const around = caps
         .slice(Math.max(0, i - 3), Math.min(caps.length, j + 4))
         .map((c) => c.text)
         .join("")
         .trim();
-      out.push({ big: clean(big), label: around, startMs: caps[i].startMs });
+      out.push({
+        big: clean(big) + (percent ? "%" : ""),
+        label: around,
+        startMs: caps[i].startMs,
+      });
     }
     i = j;
   }

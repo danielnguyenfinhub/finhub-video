@@ -156,6 +156,9 @@ export const editSchema = z.strictObject({
   background: z.enum(["brand"]).optional(),
   captionFixes: z.array(z.strictObject({ from: text, to: text })).optional(),
   keywords: z.array(text).optional(),
+  // English line under the Vietnamese captions, one per scene, in source ms.
+  // Written by scripts/voice-video.mjs from script.json (faceless videos).
+  subtitles: z.array(z.strictObject({ fromMs: ms, toMs: ms, text })).optional(),
   // Caption look in the classic design: "outline" (bold white words with an
   // outline, the default) or "box" (a white rounded box hugging each line).
   captionStyle: z.enum(["outline", "box"]).optional(),
@@ -269,6 +272,7 @@ export const onScreenCopy = (edit: EditJson): Record<string, string[]> => {
       : [],
     chapters: (edit.chapters ?? []).map((c) => c.title),
     stats: (edit.stats ?? []).flatMap((s) => [s.big, s.label]),
+    subtitles: (edit.subtitles ?? []).map((s) => s.text),
     cta: [edit.cta?.question ?? DEFAULT_CTA_QUESTION, CTA_BUTTON],
   };
   (edit.cues ?? []).forEach((c, i) => {
