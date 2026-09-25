@@ -1,6 +1,6 @@
 # Writing a faceless script (document → script.json)
 
-Daniel gives a document (a lender policy update, an RBA announcement, a fact sheet); you write `public/videos/<slug>/script.json`. `scripts/voice-video.mjs` voices it with ElevenLabs and builds the video. Daniel approves the script **before** any credits are spent.
+Daniel gives a document (a lender policy update, an RBA announcement, a fact sheet); you write `public/videos/<slug>/script.json`. `scripts/voice-video.mjs` voices it in Daniel's own cloned voice (OmniVoice, local; `--engine elevenlabs` for ElevenLabs) and builds the video. Daniel approves the script **before** anything is voiced.
 
 The writing rules below are MoneyPrinterTurbo's (Daniel liked how it writes scripts; `app/services/llm.py`), adapted to Finance Hub, RG 234 and the golden rules.
 
@@ -12,7 +12,7 @@ The writing rules below are MoneyPrinterTurbo's (Daniel liked how it writes scri
 ## The narration (`scenes[].vi`)
 
 - **Get straight to the point.** Never open with "Xin chào", "welcome to this video" or "hôm nay mình sẽ nói về". The first sentence is the hook: a number, a surprise or a question, readable in under 3 s.
-- **Write only what is spoken.** No titles, no markdown, no labels such as "Narrator:" or "Cảnh 1:", no stage directions. ElevenLabs reads every character.
+- **Write only what is spoken.** No titles, no markdown, no labels such as "Narrator:" or "Cảnh 1:", no stage directions. The voice engine reads every character.
 - **Keep scenes short.** Each scene is one idea in 1–2 short sentences, about 5–12 s spoken, or about 15–35 Vietnamese words. A typical video has 5–9 scenes.
 - **Write numbers the way they are said**, so the golden rules can chart them:
   - use "6,2 phần trăm", which is shown as "6,2%";

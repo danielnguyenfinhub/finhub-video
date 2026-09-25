@@ -51,8 +51,8 @@ never replaces the locked core (cuts, captions, compliance card).
   Testimonials must be real, unedited and consented.
 - **Brand mock-ups**: third-party UI cards (GitHub stars, X, ChatGPT…) the recipes name
   are reference only; substitute a FinHub-owned visual.
-- **Audio**: recipes never add sound; keep it that way (Daniel's voice or the ElevenLabs
-  track is the only voice; sfx per the design).
+- **Audio**: recipes never add sound; keep it that way (Daniel's recorded voice or his
+  cloned OmniVoice narration is the only voice; sfx per the design).
 
 ## remocn component conventions (from its skill)
 

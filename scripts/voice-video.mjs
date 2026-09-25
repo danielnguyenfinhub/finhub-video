@@ -1,8 +1,14 @@
-// Faceless video: voice an approved script with ElevenLabs and lay down the
-// files MortgageReel reads, so the whole talking-head pipeline (cuts, RG 234,
-// captions, auto charts, bank logos, outro, render-video.py) runs unchanged.
+// Faceless video: voice an approved script and lay down the files MortgageReel
+// reads, so the whole talking-head pipeline (cuts, RG 234, captions, auto
+// charts, bank logos, outro, render-video.py) runs unchanged.
 //
-//   node scripts/voice-video.mjs <slug> [--dry-run]
+//   node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs]
+//
+// Engines ("engine" in script.json also works; the flag wins):
+//   omnivoice (default)  Daniel's own cloned voice, run locally and free by
+//                        scripts/omnivoice-tts.py (about 20x slower than real
+//                        time on the laptop CPU, timings included). Setup: README "Local voice".
+//   elevenlabs           the ElevenLabs API (paid, fast), eleven_v3.
 //
 // Reads public/videos/<slug>/script.json:
 //   { "title": "...", "voice": "<optional voice id>",
@@ -13,23 +19,23 @@
 //     "post": { "title": "...", "caption": "...", "hashtags": ["#..."] } }
 // How to write one: .claude/skills/vietnamese-finance-video-editor/references/faceless-script.md
 // --dry-run: RG 234 check + character count (ElevenLabs bills per character),
-// no API call. Show this to Daniel for approval before a real run.
+// nothing voiced. Show this to Daniel for approval before a real run.
 //
 // Writes to public/videos/<slug>/:
-//   voice/<hash>.mp3|.json  one cached take per scene (same text + voice =
-//                           no new credits on a re-run)
+//   voice/<hash>.mp3|.wav|.json  one cached take per scene (same text + voice
+//                           + engine = nothing re-voiced on a re-run)
 //   source.mp4              navy frame + the narration (the core's audio)
 //   foreground.webm         fully transparent, same frames (no one on screen)
-//   words.json              word timings from ElevenLabs' character alignment
+//   words.json              word timings from the engine's character alignment
 //   edit.json               a starter if missing (design "faceless"); if it
 //                           exists, only its `subtitles` are refreshed
 //
 // The API key is read here only (see AGENTS.md "Third-party API keys").
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { aiClip, stockClips } from "./visuals.mjs";
 
@@ -53,9 +59,13 @@ const run = (cmd, args, what) => {
   }
 };
 
-const [slug, flag] = process.argv.slice(2);
-if (!slug) fail("usage: node scripts/voice-video.mjs <slug> [--dry-run]");
-const dryRun = flag === "--dry-run";
+const USAGE = "usage: node scripts/voice-video.mjs <slug> [--dry-run] [--engine omnivoice|elevenlabs]";
+const argv = process.argv.slice(2);
+const slug = argv.find((a, k) => !a.startsWith("--") && argv[k - 1] !== "--engine");
+if (!slug) fail(USAGE);
+const dryRun = argv.includes("--dry-run");
+const engineFlag = argv.includes("--engine") ? argv[argv.indexOf("--engine") + 1] : undefined;
+if (argv.includes("--engine") && (!engineFlag || engineFlag.startsWith("--"))) fail(`--engine needs a value. ${USAGE}`);
 const dir = join(ROOT, "public", "videos", slug);
 const scriptPath = join(dir, "script.json");
 if (!existsSync(scriptPath)) fail(`public/videos/${slug}/script.json not found.`);
@@ -120,7 +130,9 @@ try {
 }
 
 const chars = scenes.reduce((n, s) => n + s.vi.length, 0);
-console.log(`${scenes.length} scenes, ${chars} characters to voice. RG 234: passed.`);
+const engine = engineFlag ?? script.engine ?? "omnivoice";
+if (!["omnivoice", "elevenlabs"].includes(engine)) fail(`unknown engine "${engine}". ${USAGE}`);
+console.log(`${scenes.length} scenes, ${chars} characters to voice. RG 234: passed. Engine: ${engine}.`);
 if (withFootage) {
   console.log("Visuals:");
   scenes.forEach((s, i) =>
@@ -140,38 +152,77 @@ for (const envFile of [".env.local", ".env"]) {
     break;
   }
 }
-const apiKey = process.env.ELEVENLABS_API_KEY;
-const voice = script.voice ?? process.env.ELEVENLABS_VOICE_LIBRARY;
-if (!apiKey) fail("ELEVENLABS_API_KEY is not set in .env.local.");
-if (!voice) fail('No voice: set ELEVENLABS_VOICE_LIBRARY in .env.local or "voice" in script.json.');
-
 const voiceDir = join(dir, "voice");
 mkdirSync(voiceDir, { recursive: true });
-const takes = [];
-for (const [i, s] of scenes.entries()) {
-  const hash = createHash("sha1").update(`${voice}|${MODEL_ID}|${s.vi}`).digest("hex").slice(0, 12);
-  const mp3 = join(voiceDir, `${hash}.mp3`);
-  const align = join(voiceDir, `${hash}.json`);
-  if (!existsSync(mp3) || !existsSync(align)) {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps`, {
-      method: "POST",
-      headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ text: s.vi, model_id: MODEL_ID }),
-    });
-    if (!res.ok) fail(`ElevenLabs scene ${i + 1}: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
-    const body = await res.json();
-    if (!body.audio_base64 || !body.alignment?.characters)
-      fail(`ElevenLabs scene ${i + 1}: response had no audio or alignment.`);
-    writeFileSync(mp3, Buffer.from(body.audio_base64, "base64"));
-    writeFileSync(align, JSON.stringify(body.alignment));
-    console.log(`scene ${i + 1}/${scenes.length}: voiced`);
-  } else {
-    console.log(`scene ${i + 1}/${scenes.length}: cached`);
+const sha = (s) => createHash("sha1").update(s).digest("hex").slice(0, 12);
+let files; // per scene: { audio, align }, voiced or cached
+
+if (engine === "elevenlabs") {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const voice = script.voice ?? process.env.ELEVENLABS_VOICE_LIBRARY;
+  if (!apiKey) fail("ELEVENLABS_API_KEY is not set in .env.local.");
+  if (!voice) fail('No voice: set ELEVENLABS_VOICE_LIBRARY in .env.local or "voice" in script.json.');
+  files = [];
+  for (const [i, s] of scenes.entries()) {
+    const hash = sha(`${voice}|${MODEL_ID}|${s.vi}`);
+    const audio = join(voiceDir, `${hash}.mp3`);
+    const align = join(voiceDir, `${hash}.json`);
+    if (!existsSync(audio) || !existsSync(align)) {
+      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}/with-timestamps`, {
+        method: "POST",
+        headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ text: s.vi, model_id: MODEL_ID }),
+      });
+      if (!res.ok) fail(`ElevenLabs scene ${i + 1}: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
+      const body = await res.json();
+      if (!body.audio_base64 || !body.alignment?.characters)
+        fail(`ElevenLabs scene ${i + 1}: response had no audio or alignment.`);
+      writeFileSync(audio, Buffer.from(body.audio_base64, "base64"));
+      writeFileSync(align, JSON.stringify(body.alignment));
+      console.log(`scene ${i + 1}/${scenes.length}: voiced`);
+    } else {
+      console.log(`scene ${i + 1}/${scenes.length}: cached`);
+    }
+    files.push({ audio, align });
   }
-  const durMs =
-    1000 * Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", mp3], "ffprobe").trim());
-  takes.push({ mp3, alignment: JSON.parse(readFileSync(align, "utf8")), durMs });
+} else {
+  // OmniVoice runs in its own Python (torch, the model, faster-whisper for the
+  // caption timings), loaded once for every scene that isn't cached yet.
+  const python = process.env.OMNIVOICE_PYTHON ?? join(homedir(), "OmniVoice", ".venv-cpu", "Scripts", "python.exe");
+  const profile = resolve(process.env.OMNIVOICE_VOICE ?? join(homedir(), "OmniVoice", "voices", "daniel.pt"));
+  const steps = Number(process.env.OMNIVOICE_STEPS ?? 32);
+  if (!existsSync(python)) fail(`OmniVoice's Python not found at ${python}. See README "Local voice", or set OMNIVOICE_PYTHON.`);
+  if (!existsSync(profile)) fail(`No voice profile at ${profile}. Make it once: see README "Local voice".`);
+  const inRepo = relative(ROOT, profile);
+  if (inRepo && !inRepo.startsWith("..") && !isAbsolute(inRepo))
+    fail("The voice profile is a copy of Daniel's voice and this repository is public: move it outside the repo.");
+  if (!Number.isInteger(steps) || steps < 8) fail(`OMNIVOICE_STEPS must be a whole number of at least 8, got "${process.env.OMNIVOICE_STEPS}".`);
+
+  // Same text + same profile + same quality = the cached take is reused.
+  const voiceKey = sha(readFileSync(profile));
+  files = scenes.map((s) => {
+    const hash = sha(`omnivoice|${voiceKey}|${steps}|${s.vi}`);
+    return { audio: join(voiceDir, `${hash}.wav`), align: join(voiceDir, `${hash}.json`), text: s.vi };
+  });
+  const todo = files.filter((f) => !existsSync(f.audio) || !existsSync(f.align));
+  console.log(`${files.length - todo.length} cached, ${todo.length} to voice (about ${Math.ceil(todo.reduce((n, f) => n + f.text.length, 0) / 15 * 20 / 60)} min).`);
+  if (todo.length) {
+    const jobs = join(bundleDir, "omnivoice-jobs.json");
+    writeFileSync(jobs, JSON.stringify(todo.map(({ text, audio, align }) => ({ text, wav: audio, align }))));
+    const res = spawnSync(python, [join(ROOT, "scripts", "omnivoice-tts.py"), "speak", jobs, profile, String(steps)], {
+      stdio: "inherit",
+      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    if (res.status !== 0) fail(`OmniVoice stopped (exit ${res.status ?? res.error?.message}); see its message above. Nothing was changed in the video.`);
+    for (const f of todo) if (!existsSync(f.audio) || !existsSync(f.align)) fail(`OmniVoice didn't write ${f.audio}.`);
+  }
 }
+
+const takes = files.map(({ audio, align }) => ({
+  audio,
+  alignment: JSON.parse(readFileSync(align, "utf8")),
+  durMs: 1000 * Number(run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", audio], "ffprobe").trim()),
+}));
 
 // Characters -> words. A word runs from its first character's start to its last
 // character's end; punctuation stays on the word (the timeline reads "." as a
@@ -197,11 +248,11 @@ for (const [i, t] of takes.entries()) {
   subtitles.push({ fromMs: Math.round(offsetMs), toMs: Math.round(offsetMs + t.durMs), text: scenes[i].en });
   offsetMs += t.durMs + GAP_MS;
 }
-if (words.length === 0) fail("ElevenLabs returned no words.");
+if (words.length === 0) fail(`${engine} returned no words.`);
 
 // Narration: every take padded with GAP_MS of silence, joined in order.
 const narration = join(voiceDir, "narration.wav");
-const inputs = takes.flatMap((t) => ["-i", t.mp3]);
+const inputs = takes.flatMap((t) => ["-i", t.audio]);
 const pads = takes.map((_, i) => `[${i}:a]aresample=48000,apad=pad_dur=${GAP_MS / 1000}[a${i}]`).join(";");
 const joined = `${takes.map((_, i) => `[a${i}]`).join("")}concat=n=${takes.length}:v=0:a=1[out]`;
 run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", ...inputs, "-filter_complex", `${pads};${joined}`, "-map", "[out]", narration], "joining the narration");

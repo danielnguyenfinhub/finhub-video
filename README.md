@@ -117,8 +117,8 @@ Before rendering, `node scripts/export-srt.mjs my-slug` lists every automatic cu
 Give Claude a document (a lender policy update, an RBA announcement, a fact sheet; never a client's file) and ask for a faceless video.
 
 1. **Script.** Claude writes `public/videos/<slug>/script.json`: a title and scenes, each with the Vietnamese narration (`vi`) and an English line (`en`).
-2. **Approve.** Claude runs `node scripts/voice-video.mjs <slug> --dry-run`, which checks RG 234 and counts the characters ElevenLabs will bill, then sends you the script. Nothing is voiced until you approve.
-3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene with ElevenLabs and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only pays for that scene.
+2. **Approve.** Claude runs `node scripts/voice-video.mjs <slug> --dry-run`, which checks RG 234 and counts the characters to voice, then sends you the script. Nothing is voiced until you approve.
+3. **Voice.** `node scripts/voice-video.mjs <slug>` voices each scene in **your own cloned voice** with OmniVoice, on this PC and free (see "Local voice" below), and makes the files the template needs: `source.mp4` (the narration), a transparent `foreground.webm` (no one on screen), `words.json` (word timings) and a starter `edit.json` with `"design": "faceless"`. Scenes already voiced are cached, so changing one scene only re-voices that scene. Add `--engine elevenlabs` to use ElevenLabs instead (paid, much faster).
 4. **Edit and render** exactly as for a recorded video: Claude adds the hook, chapters and stats to `edit.json`, then runs `python scripts/render-video.py <slug>`.
 
 The `faceless` design fills the middle of the screen:
@@ -127,10 +127,26 @@ The `faceless` design fills the middle of the screen:
 - the bank's logo when a bank is named;
 - the English line along the bottom.
 
-It needs `.env.local` in this folder (never committed; create it yourself):
+### Local voice (OmniVoice, the default)
+
+[OmniVoice](https://github.com/k2-fsa/OmniVoice) (Apache 2.0) clones your voice from a few seconds of a recording and speaks Vietnamese. It runs on the laptop's CPU: about 20× slower than real time including the caption timings, so a 60-second video takes about 20 minutes to voice (measured 6 min for 18 s). `scripts/omnivoice-tts.py` does the work in OmniVoice's own Python; it also times every word with faster-whisper for the captions.
+
+One-time setup (already done on Daniel's PC):
+1. Clone OmniVoice to `C:\Users\Daniel\OmniVoice`, make a CPU environment there and install it:
+   `python -m venv .venv-cpu`, then with `.venv-cpu\Scripts\python.exe -m pip install`: `torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cpu`, then `-e . num2words faster-whisper truststore`. The first run downloads the 3.3 GB model. `truststore` is needed because Norton re-signs HTTPS on this PC.
+2. Make the voice profile from a clean 3–10 s clip of you speaking Vietnamese and its exact transcript:
+   `C:\Users\Daniel\OmniVoice\.venv-cpu\Scripts\python.exe scripts\omnivoice-tts.py clone <clip.wav> "<transcript>" C:\Users\Daniel\OmniVoice\voices\daniel.pt`
+
+**The profile is a copy of your voice. Keep it outside this repository, which is public;** the script refuses a profile inside it. Voiced audio (`public/videos/*/voice/`) is kept out of git too. Say in the post caption that the voice is AI-generated.
+
+Optional `.env.local` settings: `OMNIVOICE_PYTHON` and `OMNIVOICE_VOICE` (other locations), `OMNIVOICE_STEPS` (quality: 32 by default; 64 is about twice as slow).
+
+### ElevenLabs and footage keys
+
+They need `.env.local` in this folder (never committed; create it yourself):
 
 ```dotenv
-ELEVENLABS_API_KEY=your-key
+ELEVENLABS_API_KEY=your-key # only for --engine elevenlabs
 ELEVENLABS_VOICE_LIBRARY=sbaSITtJLv4yb3vIi67Z
 PIXABAY_API_KEY=your-pixabay-key # stock footage, tried first (pixabay.com/api/docs)
 PEXELS_API_KEY=your-pexels-key   # stock footage, second choice (pexels.com/api)
