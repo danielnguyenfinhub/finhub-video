@@ -419,7 +419,6 @@ function FollowButton({
   layout: { x: number; y: number; w: number; h: number };
   pressScale: number;
 }) {
-  const _followed = followStateAt(frame, speed);
   const flip = interpolate(
     frame * speed,
     [CLICK_FRAME, CLICK_FRAME + 10],
