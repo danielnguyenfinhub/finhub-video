@@ -7,9 +7,9 @@ imports resolve against this folder. To use one, copy it plus the files it impor
 then adapt like the Remotion Elements (see ../CATALOG.md): Be Vietnam Pro, `src/brand/theme.ts`
 colours, 1080×1920 safe zones.
 
-Packages not yet in finhub-video: `@fontsource/manrope`, `@fontsource/inter`, `date-fns`, `lucide-react`, `culori`, `@paper-design/shaders-react`, `opentype.js`, `@fontsource/roboto-mono` — install only when you use an element that needs one.
+All npm packages these elements need are installed in finhub-video (added 2026-09-25).
 `shader-gem-smoke` expects `public/prisma/symbol-light.svg` (a Prisma logo, not copied) — pass your own image.
-Type-check (tsc against finhub tsconfig, `@/*` → this folder): all internal imports resolve. Besides the missing packages, finhub is stricter than remocn, so `stretch-in`, `lib/remocn-ui/color.ts`, the `brand-guidelines`/`release-teaser` `motion.ts` and `x-follow-card` need small type fixes once copied into `src/`.
+Type-check (tsc against finhub tsconfig, `@/*` → this folder): 0 errors.
 
 ## ai
 
