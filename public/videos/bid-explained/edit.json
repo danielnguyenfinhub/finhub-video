@@ -1,0 +1,123 @@
+{
+  "notes": [
+    "Faceless: voiced by scripts/voice-video.mjs from script.json.",
+    "Hook, points and compare panel text are the reviewed wording from out/videos/bid-explained/team/01_writer_notes.md (rounds 1-2). Source: MFAA BID on a Page, Jan 2021."
+  ],
+  "design": "faceless",
+  "title": "Môi giới vay phải làm gì cho bạn?",
+  "cut": {
+    "fillers": false,
+    "stutters": false,
+    "badWords": false
+  },
+  "pacing": {
+    "mode": "off"
+  },
+  "subtitles": [
+    {
+      "fromMs": 0,
+      "toMs": 4011,
+      "text": "Under Australian law, mortgage brokers must act in your interests."
+    },
+    {
+      "fromMs": 4411,
+      "toMs": 10862,
+      "text": "It's called the BID, and it applies every time a broker helps you with consumer credit, including a home loan."
+    },
+    {
+      "fromMs": 11262,
+      "toMs": 20473,
+      "text": "They must understand your situation and goals, treat cost as a priority, and usually show you more than one option."
+    },
+    {
+      "fromMs": 20873,
+      "toMs": 29884,
+      "text": "They must also explain why a recommendation suits you, and tell you about government schemes you may be eligible for."
+    },
+    {
+      "fromMs": 30284,
+      "toMs": 35615,
+      "text": "If there is a conflict of interest, your interests must come before the broker's."
+    },
+    {
+      "fromMs": 36015,
+      "toMs": 40546,
+      "text": "And no contract or disclaimer can take this duty away."
+    },
+    {
+      "fromMs": 40946,
+      "toMs": 45837,
+      "text": "Questions about your loan? Message Finance Hub for help."
+    }
+  ],
+  "music": {
+    "file": "music/calm-morning-keys.mp3"
+  },
+  "hook": {
+    "big": "MÔI GIỚI VAY PHẢI LÀM GÌ?",
+    "sub": "Theo luật Úc"
+  },
+  "cues": [
+    {
+      "kind": "points",
+      "fromMs": 11262,
+      "toMs": 29884,
+      "title": "Môi giới vay phải:",
+      "items": [
+        {
+          "text": "Hiểu hoàn cảnh & mục tiêu",
+          "atMs": 13142
+        },
+        {
+          "text": "Ưu tiên xem xét chi phí",
+          "atMs": 16042
+        },
+        {
+          "text": "Thường có hơn một lựa chọn",
+          "atMs": 18422
+        },
+        {
+          "text": "Giải thích vì sao phù hợp",
+          "atMs": 21653
+        },
+        {
+          "text": "Cho biết về chương trình của Chính phủ",
+          "atMs": 24973
+        }
+      ]
+    },
+    {
+      "kind": "compare",
+      "fromMs": 30284,
+      "toMs": 35615,
+      "vsAtMs": 33944,
+      "cards": [
+        {
+          "title": "Quyền lợi của bạn",
+          "atMs": 31784,
+          "highlightAtMs": 33424,
+          "rows": [
+            {
+              "label": "Khi có xung đột",
+              "value": "Ưu tiên",
+              "tone": "good",
+              "atMs": 33424
+            }
+          ]
+        },
+        {
+          "title": "Quyền lợi môi giới",
+          "atMs": 34124,
+          "rows": [
+            {
+              "label": "Khi có xung đột",
+              "value": "Đứng sau",
+              "tone": "neutral",
+              "atMs": 34664
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

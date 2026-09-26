@@ -88,6 +88,12 @@ cinematic / mono) for the footage grade.
 - `@remotion/google-fonts` — a display face only if its `subsets` include
   "vietnamese" (check `getInfo()`); load with `loadFont({ subsets: ["vietnamese"] })`.
 
+## Borrowed from HyperFrames (Apache-2.0)
+- `BehindWord` (`src/elements/BehindWord.tsx`): a hero keyword behind Daniel, from a design's `Behind` layer. A signature moment, at most a few per video.
+- Music on the beat: `scripts/analyze-beats.py` → `public/music/<name>.audiomap.json`; `src/elements/beats.ts` `snapToBeat` / `useAudioMap` land stats, cuts and charts on beats.
+- New caption looks: `.claude/elements/hyperframes/CAPTION-IDEAS.md` (35 named styles, ideas only).
+- `render-video.py` runs `scripts/preflight.mjs` first: fix what it reports rather than working around it.
+
 ## Element libraries — ready components to copy and adapt
 Check these before building an effect from scratch. Both live in `.claude/elements/`,
 outside the build; copy what you use into `src/designs/<id>/` (or `src/elements/`).

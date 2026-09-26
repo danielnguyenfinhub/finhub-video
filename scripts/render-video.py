@@ -107,6 +107,9 @@ def main() -> None:
         raise SystemExit(
             f"{cut_out} is missing. Run `npm run review`, open "
             f'http://localhost:4100/matte.html?slug={slug} and wait for "Saved".')
+    # Fonts without Vietnamese marks, misplaced or overlapping cues: stop now,
+    # before a several-minute render (scripts/preflight.mjs).
+    run(["node", str(ROOT / "scripts" / "preflight.mjs"), slug], "preflight checks")
     out_dir = ROOT / "out" / "videos" / slug
     out_dir.mkdir(parents=True, exist_ok=True)
     full = out_dir / f"{slug}.mp4"

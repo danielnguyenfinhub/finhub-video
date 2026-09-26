@@ -96,7 +96,8 @@
     "lint": "eslint src && tsc",
     "review": "node review/build.mjs",
     "setup-voice": "node scripts/setup-omnivoice.mjs",
-    "clone-voice": "node scripts/clone-voice.mjs"
+    "clone-voice": "node scripts/clone-voice.mjs",
+    "preflight": "node scripts/preflight.mjs"
   },
   "sideEffects": [
     "*.css"
