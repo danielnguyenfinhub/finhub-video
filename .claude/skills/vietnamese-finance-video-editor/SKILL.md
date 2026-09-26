@@ -117,6 +117,8 @@ Directions and their axis options: `references/design-space.md`.
 ## Workflow
 
 Before each step state what you will do, what you expect, and what you do if it differs.
+The full production order for both pipelines (edit footage, faceless), with every command and
+gate, is `references/runbook.md`; the steps below are the talking-head core it follows.
 
 **Step 0 — Reason first.** State the video file, slug (kebab-case ASCII), topic in one
 line, new or re-edit. Read `references/landmines.md` and the design log. Run
