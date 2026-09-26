@@ -36,6 +36,8 @@ import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
 import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
+import { RealEstateInvesting } from "./showcase/realestateinvesting/RealEstateInvesting";
+import { TravelRouteMap } from "./showcase/travelroutemap/TravelRouteMap";
 import { BMS_DURATION, BmsCellBalancing } from "./showcase/bmscellbalancing/BmsCellBalancing";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 import { NewsHeadlineHighlight, newsHeadlineDefaultProps, newsHeadlineSchema } from "./showcase/newsheadline/NewsHeadlineHighlight";
@@ -146,6 +148,8 @@ export const RemotionRoot: React.FC = () => {
         {/* Transparent: render as ProRes 4444 with alpha (command in CtaOverlay.tsx). */}
         <Composition id="CtaOverlay" component={CtaOverlay} schema={ctaOverlaySchema} defaultProps={ctaOverlayDefaultProps} durationInFrames={180} fps={30} width={1920} height={1080} />
         <Composition id="BarLineChart" component={BarLineChart} durationInFrames={120} fps={30} width={1920} height={1080} />
+        <Composition id="RealEstateInvesting" component={RealEstateInvesting} durationInFrames={600} fps={30} width={1080} height={1920} />
+        <Composition id="TravelRouteMap" component={TravelRouteMap} durationInFrames={450} fps={30} width={1920} height={1080} />
         <Composition id="BmsCellBalancing" component={BmsCellBalancing} durationInFrames={BMS_DURATION} fps={30} width={1280} height={720} />
       </Folder>
       <Folder name="Utilities">
