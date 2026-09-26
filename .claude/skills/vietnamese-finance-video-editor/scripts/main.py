@@ -6,6 +6,11 @@
   python main.py add <entry.json>    append a rendered video's entry
   python main.py selftest            prove the variety rule
 
+Novelty applies to SKIN only (WP5): at least 4 of the 7 skin axes differ from
+each of the last 3 videos. Grammar (the graphics axis: how numbers,
+comparisons, steps and eligibility are shown) may repeat, and should, for the
+same data shape. The split matches src/designs/*/template.json.
+
 axes.json: {"axes": {<8 axes>}} or the 8 axes directly.
 entry.json: {"slug", "date", "design", "direction", "axes", "reused"}.
 Log path: public/videos/design-log.json in the repository this skill sits in
@@ -21,7 +26,11 @@ from pathlib import Path
 from typing import Any
 
 AXES = ["cover", "captions", "framing", "graphics", "transitions", "texture", "sound", "cta"]
-MIN_CHANGED = 4
+# The template manifests' skinAxes; "graphics" is grammar (manifest "grammar").
+SKIN_AXES = ["cover", "captions", "framing", "transitions", "texture", "sound", "cta"]
+GRAMMAR_AXES = [a for a in AXES if a not in SKIN_AXES]
+# At least half of the skin axes, rounded up: 4 of 7.
+MIN_CHANGED = -(-len(SKIN_AXES) // 2)
 LOOKBACK = 3
 # Never repeat these from the previous video.
 FRESH_AXES = ["cover", "captions"]
@@ -89,7 +98,7 @@ def variety(axes: dict[str, str], entries: list[dict[str, Any]]) -> dict[str, An
     ok = True
     for e in recent:
         prev = e.get("axes", {})
-        changed = [a for a in AXES if norm(axes[a]) != norm(prev.get(a, ""))]
+        changed = [a for a in SKIN_AXES if norm(axes[a]) != norm(prev.get(a, ""))]
         passed = len(changed) >= MIN_CHANGED
         ok = ok and passed
         report.append({"slug": e.get("slug"), "axes_changed": len(changed),
@@ -100,8 +109,9 @@ def variety(axes: dict[str, str], entries: list[dict[str, Any]]) -> dict[str, An
         repeats = [a for a in FRESH_AXES if norm(axes[a]) == norm(last.get(a, ""))]
         ok = ok and not repeats
     return {"pass": ok, "vs_recent": report, "repeats_previous": repeats,
-            "rule": f">= {MIN_CHANGED} of 8 axes differ from each of the last {LOOKBACK}; "
-                    f"never repeat the previous {' or '.join(FRESH_AXES)}"}
+            "rule": f">= {MIN_CHANGED} of {len(SKIN_AXES)} skin axes differ from each of the "
+                    f"last {LOOKBACK}; never repeat the previous {' or '.join(FRESH_AXES)}; "
+                    f"grammar ({', '.join(GRAMMAR_AXES)}) may repeat"}
 
 
 def read_json(p: str) -> dict[str, Any]:
@@ -113,14 +123,21 @@ def read_json(p: str) -> dict[str, Any]:
 
 def selftest() -> None:
     new = dict(CLASSIC_AXES, cover="whiteboard sketch", captions="typewriter",
-               framing="cut-out over designed backdrop", graphics="hand-drawn diagrams")
-    assert variety(new, SEED)["pass"], "4 changed axes incl. cover+captions must pass"
+               framing="cut-out over designed backdrop", texture="paper grain")
+    assert variety(new, SEED)["pass"], "4 changed skin axes incl. cover+captions must pass"
+    assert new["graphics"] == CLASSIC_AXES["graphics"], "grammar repeats in the passing case"
     three = dict(CLASSIC_AXES, cover="x", captions="y", framing="z")
-    assert not variety(three, SEED)["pass"], "3 changed axes must fail"
-    same_cover = dict(new, cover=CLASSIC_AXES["cover"], texture="paper grain")
+    assert not variety(three, SEED)["pass"], "3 changed skin axes must fail"
+    skin_repeat = dict(three, graphics="hand-drawn diagrams")
+    r = variety(skin_repeat, SEED)
+    assert not r["pass"] and r["vs_recent"][0]["axes_changed"] == 3, \
+        "a new grammar does not buy novelty: repeating skin fails"
+    same_cover = dict(new, cover=CLASSIC_AXES["cover"], sound="pen tap")
     r = variety(same_cover, SEED)
     assert not r["pass"] and r["repeats_previous"] == ["cover"], "repeated cover must fail"
     assert variety(new, [])["pass"], "an empty log passes"
+    old_entry = {"slug": "old", "axes": dict(CLASSIC_AXES)}  # 8-axis entry, pre-WP5
+    assert not variety(dict(CLASSIC_AXES), [old_entry])["pass"], "old log entries still load"
     print("selftest ok")
 
 

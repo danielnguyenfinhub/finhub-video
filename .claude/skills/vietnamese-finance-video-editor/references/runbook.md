@@ -19,7 +19,7 @@ check.
 - **[TODAY]** marks a step that works on `main` now.
 - **[BUILD WPn]** marks a step that needs tooling from the action plan. Until that work package is
   merged, use the **Until built** line. Merged: WP1 (fact ledger), WP2 (library), WP3 (visuals),
-  WP4 (multi-clip), WP6 (brief and selector), WP9 (token diet). Still to build: WP5, WP7. When one
+  WP4 (multi-clip), WP5 (reading floor, grammar vs skin), WP6 (brief and selector), WP9 (token diet). Still to build: WP7. When one
   merges, change its tag here to **[TODAY]** and delete its *Until built* line.
 
 **Rules on every run.** Keep command output short: pipe commands through `| tail -n 5`. Check stills,
@@ -71,7 +71,7 @@ Run A1.3 in parallel with A2–A4. It doesn't depend on the edit.
 |---|---|---|---|---|---|
 | A3.1 | Daniel named a template? | — | If yes, use it; the choice is logged as an override (`select-template.mjs <slug> --pick <id>` once WP6 merges). Skip to A3.4 | — | — |
 | A3.2 | Selector **[TODAY]** | Claude | `node scripts/select-template.mjs <slug>` | `out/videos/<slug>/selection.json` (top 3 and scores) | Take the top pick unless a hard reason is written down |
-| A3.3 | Variety check | Claude | `python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>`. After WP5, novelty applies to **skin** only (cover, texture, transitions, treatment, sound). Keep **grammar** (how numbers, comparisons and steps are shown; caption position) consistent | Check output | Pass, or change skin axes; never edit the log to pass |
+| A3.3 | Variety check | Claude | `python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>`. Novelty applies to **skin** only (≥ 4 of 7: cover, captions style, framing, transitions, texture, sound, cta). Keep **grammar** (the graphics axis: how numbers, comparisons and steps are shown; caption position) consistent per data shape | Check output | Pass, or change skin axes; never edit the log to pass |
 | A3.4 | Set design | Claude | `"design": "<id>"` in `edit.json` | — | — |
 
 ### A4. Graphics, B-roll and hook (the build)
@@ -96,7 +96,7 @@ makes a point clearer. Anything else is cut.
 
 | # | Step | Who | Run / do | Makes | Gate |
 |---|---|---|---|---|---|
-| A5.1 | Caption check | Claude | `node scripts/check-caption-pages.mjs <slug>` for this video's caption pages. `node scripts/check-caption-fixes.mjs` only when `src/mortgage/timeline.ts` was changed (it self-tests the caption-fix logic on a synthetic transcript; exit 1 = failure) | Report | No page over the reading-time floor (floor built in WP5); diacritics intact |
+| A5.1 | Caption check | Claude | `node scripts/check-caption-pages.mjs <slug>` for this video's caption pages. `node scripts/check-caption-fixes.mjs` only when `src/mortgage/timeline.ts` was changed (it self-tests the caption-fix logic on a synthetic transcript; exit 1 = failure) Then `node scripts/check-golden.mjs <slug>` lists cards and cues held to the reading floor and any it could not hold, and caption pages faster than it | Report | No SHORT card or cue; slow caption pages are speech-bound (fix by pacing or paging, or accept); diacritics intact |
 | A5.2 | Cut list review | Claude | `node scripts/export-srt.mjs <slug>` lists every automatic cut (ờ/ừm, stutters) | Cut list | Read it against the words: no sentence meaning changed |
 | A5.3 | Music | Claude | `music` from `public/music/` only (licensed). The render ducks it under the voice and normalises to −14 LUFS | — | — |
 
@@ -186,5 +186,5 @@ on voice or images.
 
 ## Which steps still need building
 
-**WP5** (reading-time floor, grammar vs skin; A3.3 and A5.1) · **WP7** (promotion; A4.9). The *Until built* lines keep production running meanwhile, and each one
+**WP7** (promotion; A4.9). The *Until built* lines keep production running meanwhile, and each one
 names exactly what is skipped.
