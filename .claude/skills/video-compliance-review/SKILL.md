@@ -24,7 +24,7 @@ Inputs: `public/videos/<slug>/script.json`, the source document, `out/videos/<sl
 
 1. **Automatic guard.** Run `node scripts/voice-video.mjs <slug> --dry-run`. A failure is a BLOCK finding with the message.
 2. **Client data.** Any person's name (other than Daniel Nguyen), address, loan or account number, or a real client's figures, in the script or the document excerpt used → BLOCK.
-3. **Every number.** Trace each figure to the document (the writer's notes give the source line). Recompute any arithmetic. Untraceable or wrong → BLOCK. Rounded in a way that changes the message → FIX.
+3. **Every claim.** Read `public/videos/<slug>/facts.json` (the ledger; a legacy slug without one falls back to the writer's notes). Trace each figure, rule, condition and definition a scene states, including numbers spelled out in words, to its cited fact's `verbatim` text in the document. Recompute any arithmetic. Untraceable, not what the verbatim says, or wrong → BLOCK. Rounded in a way that changes the message → FIX.
 4. **Promise without a banned word.** Read each scene for meaning: "chắc chắn", "không bao giờ bị từ chối", "ai cũng vay được", "tiết kiệm ngay X đô", implied approval or implied savings → FIX with a rewrite.
 5. **Advice vs information.** A personal recommendation ("bạn nên…", "hãy chọn…", "đừng vay…" aimed at the viewer's own situation) → FIX. General statements ("nhiều người chọn…", "nên xem lại khoản vay mỗi năm") are fine.
 6. **Advertised rate.** Any interest rate presented as available (a lender's rate, "từ X%") needs a comparison rate and an as-at date in the source document; it must reach `edit.json` `compliance.advertisedRate` at build. Missing → BLOCK. A cash rate or a market average quoted as news is not an advertised rate.
