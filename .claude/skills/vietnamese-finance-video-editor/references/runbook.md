@@ -19,7 +19,7 @@ check.
 - **[TODAY]** marks a step that works on `main` now.
 - **[BUILD WPn]** marks a step that needs tooling from the action plan. Until that work package is
   merged, use the **Until built** line. Merged: WP1 (fact ledger), WP2 (library), WP3 (visuals),
-  WP4 (multi-clip), WP5 (reading floor, grammar vs skin), WP6 (brief and selector), WP9 (token diet). Still to build: WP7. When one
+  WP4 (multi-clip), WP5 (reading floor, grammar vs skin), WP6 (brief and selector), WP7 (promotion, PR #46), WP9 (token diet). Nothing left to build. When one
   merges, change its tag here to **[TODAY]** and delete its *Until built* line.
 
 **Rules on every run.** Keep command output short: pipe commands through `| tail -n 5`. Check stills,
@@ -186,5 +186,4 @@ on voice or images.
 
 ## Which steps still need building
 
-**WP7** (promotion; A4.9). The *Until built* lines keep production running meanwhile, and each one
-names exactly what is skipped.
+None: every work package listed above is built and merged.
