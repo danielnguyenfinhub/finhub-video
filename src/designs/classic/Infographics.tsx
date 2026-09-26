@@ -188,7 +188,9 @@ const Row: React.FC<{
   );
 };
 
-const STACK_AT = 20;
+// 17: with the VS badge in its own column a card has ~350 px for a row, so
+// "Trả/tháng (đô) 3.388" (19) no longer fits on one line.
+const STACK_AT = 17;
 
 export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
   cue,
@@ -206,8 +208,10 @@ export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
   );
   return (
     <Panel style={{ padding: 26 }}>
-      <div style={{ display: "flex", gap: 22, position: "relative" }}>
-        {cue.cards.map((card) => {
+      {/* card | VS | card: the badge has its own column (order 1) so it can
+          never sit over a card's value. */}
+      <div style={{ display: "flex", gap: 14 }}>
+        {cue.cards.map((card, i) => {
           const p = pop(frame, fps, rel(card.atMs));
           const lit =
             card.highlightAtMs !== undefined &&
@@ -217,6 +221,7 @@ export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
               key={card.title}
               style={{
                 flex: 1,
+                order: i * 2,
                 minWidth: 0,
                 padding: "22px 24px",
                 borderRadius: 24,
@@ -252,12 +257,11 @@ export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
         })}
         <div
           style={{
-            position: "absolute",
-            left: "50%",
-            top: 120,
-            width: 96,
+            order: 1,
+            flex: "0 0 96px",
+            alignSelf: "flex-start",
+            marginTop: 120,
             height: 96,
-            marginLeft: -48,
             borderRadius: "50%",
             background: brand.accent,
             color: brand.primary,

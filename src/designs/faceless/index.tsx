@@ -11,7 +11,6 @@ import {
   Img,
   Sequence,
   interpolate,
-  spring,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -47,9 +46,13 @@ const VEIL_OPACITY = 0.92;
 const PANEL_TOP = SAFE.top + 150;
 const BIG = 92;
 const SMALL = 58;
-// Lower band: clear of the English line, which is bottom-anchored at
-// SAFE.bottom and up to three lines (~165 px at 36 px, lineHeight 1.35) tall.
-const LOW_BOTTOM = 1920 - SAFE.bottom + 210;
+// Lower band: a one-line dropped page sits wholly under the stage (so under
+// a figure's label, which FigureHero keeps inside STAGE) and 18 px clear of
+// the English line, bottom-anchored at SAFE.bottom and up to three lines
+// (~165 px at 36 px, lineHeight 1.35) tall.
+// ponytail: a two-line dropped page rises ~60 px into the stage's bottom;
+// cap the page to one line if a long page ever meets a stat label.
+const LOW_BOTTOM = 1920 - (STAGE.bottom + 14 + Math.ceil(SMALL * 1.3));
 
 const Cover: React.FC<CoverProps> = ({ title, subtitle, keywords }) => {
   const frame = useCurrentFrame();
@@ -192,11 +195,8 @@ const Page: React.FC<{
     >
       {page.tokens.map((t, i) => {
         const start = Math.round(((t.fromMs - page.startMs) / 1000) * fps);
-        const pop = spring({
-          frame: frame - start,
-          fps,
-          config: { damping: 12, stiffness: 200 },
-        });
+        // On the line (dimmed) until spoken, then a small hop up and back.
+        const hop = interpolate(frame - start, [0, 5, 12], [0, -14, 0], clamp);
         const spoken = nowMs >= t.fromMs;
         return (
           <span key={t.fromMs}>
@@ -206,7 +206,7 @@ const Page: React.FC<{
                 display: "inline-block",
                 color: hit.has(i) ? brand.highlight : "#fff",
                 opacity: spoken ? 1 : 0.35,
-                transform: `translateY(${interpolate(pop, [0, 1], [18, 0], clamp)}px)`,
+                transform: `translateY(${hop}px)`,
               }}
             >
               {t.text.trim()}

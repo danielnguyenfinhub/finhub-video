@@ -15,6 +15,7 @@ import {
 } from "remotion";
 import { brand } from "../../brand/theme";
 import { captionPages } from "../../mortgage/captionPages";
+import { SAFE } from "../../mortgage/golden";
 import type { Reel } from "../../mortgage/schema";
 import { FONT, emphasised, reelFontReady } from "../../mortgage/style";
 
@@ -90,12 +91,15 @@ const PillPage: React.FC<{ page: TikTokPage; keywords: string[] }> = ({
   return (
     <div
       style={{
+        // Grows up from SAFE.bottom, clear of Daniel's mouth.
         position: "absolute",
         left: 80,
         right: 80,
-        top: 1250,
+        top: 0,
+        height: SAFE.bottom,
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-end",
       }}
     >
       <div

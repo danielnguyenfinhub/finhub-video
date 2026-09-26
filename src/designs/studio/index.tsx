@@ -22,8 +22,10 @@ import type {
   OverlayProps,
   TalkProps,
 } from "../../mortgage/design";
+import { SAFE } from "../../mortgage/golden";
+import { LogoMark } from "../../mortgage/LogoMark";
 import { PacedVideo } from "../../mortgage/PacedVideo";
-import { FONT, clamp, retryVideoFetch } from "../../mortgage/style";
+import { FONT, retryVideoFetch } from "../../mortgage/style";
 import { toOutMs } from "../../mortgage/timeline";
 import { chapterTransition } from "../../mortgage/transitions";
 import { MotionTrack } from "../classic/Cues";
@@ -148,7 +150,9 @@ const Talk: React.FC<TalkProps> = ({ seg, index, src, look, foreground }) => {
         foreground={foreground}
         style={{
           transform: `scale(${base + punch})`,
-          transformOrigin: "50% 30%",
+          // Zoom around his mouth (not his forehead), so a punch-in never
+          // pushes the mouth down into the caption band above SAFE.bottom.
+          transformOrigin: "50% 60%",
         }}
       />
       {/* Bottom shade so captions and the voice note read over any footage. */}
@@ -184,10 +188,9 @@ const Overlay: React.FC<OverlayProps> = ({
   src,
 }) => {
   const { fps } = useVideoConfig();
-  const frame = useCurrentFrame();
   return (
     <>
-      <MotionTrack reel={reel} />
+      <MotionTrack reel={reel} panelOffset={SAFE.top - 110} />
       {(reel.edit.stats ?? []).map((s) => (
         <At
           key={s.atMs}
@@ -218,9 +221,7 @@ const Overlay: React.FC<OverlayProps> = ({
       <Sequence from={HOOK_FRAMES} durationInFrames={Math.round(4 * fps)}>
         <NameTag name={NAME} role={ROLE} frames={Math.round(4 * fps)} />
       </Sequence>
-      <div style={{ opacity: interpolate(frame, [0, 8], [0, 1], clamp) }}>
-        <LogoBadge />
-      </div>
+      <LogoMark talkFrames={talkFrames} />
     </>
   );
 };
