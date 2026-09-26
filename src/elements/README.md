@@ -31,8 +31,8 @@ composition (Studio → "Elements"), which is how each was verified.
 | `PulseBadge` | badge that pulses every N frames | `Loop` |
 | `AudioRing` | frequency ring around a logo/face | `@remotion/media-utils` `useAudioData`, `visualizeAudio` |
 | `FrequencyBars` | equaliser bars with falling peak markers; silent unless `playAudio` (the voice is already playing) | `useAudioData`, `visualizeAudio` |
-| `Oscilloscope` | live waveform line of the voice; `frame` = moment in the audio, so it follows the paced cut (explainer design, under the captions) | `useWindowedAudioData`, `getWaveformPortion`, `createSmoothSvgPath` |
-| `MirroredSpectrum` | frequency bars mirrored from the centre, same `frame` rule (classic design, low on the frame) | `useWindowedAudioData`, `visualizeAudio` |
+| `Oscilloscope` | live waveform line of the voice; `frame` = moment in the audio, so it follows the paced cut (explainer design, under the captions) | `useCoveredAudioData` (useWindowedAudioData that holds the frame until its window is in), `getWaveformPortion`, `createSmoothSvgPath` |
+| `MirroredSpectrum` | frequency bars mirrored from the centre, same `frame` rule (classic design, low on the frame) | `useCoveredAudioData`, `visualizeAudio` |
 | `NoiseField` | breathing dot-grid background | `@remotion/noise` `noise3D` |
 | `starWipe` | custom transition presentation: next scene grows from a star | `@remotion/transitions`, `@remotion/shapes` `makeStar`, `@remotion/paths` `translatePath` |
 | `BehindWord` | a spoken keyword drawn huge behind Daniel (render it from a design's `Behind` layer; his cut-out covers part of it); `pickBehindWords()` shows which words it will use. Needs a cut-out, so it isn't in `ElementCatalog` | `@remotion/layout-utils` `fitText`, `spring` |

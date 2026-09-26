@@ -42,6 +42,8 @@ import {
   kineticMarketingDefaultProps,
   kineticMarketingSchema,
 } from "./showcase/kineticmarketing/KineticMarketing";
+import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
+import { BMS_DURATION, BmsCellBalancing } from "./showcase/bmscellbalancing/BmsCellBalancing";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 
 // A single-frame <Still> for a poster image (`npx remotion still Poster`).
@@ -147,6 +149,8 @@ export const RemotionRoot: React.FC = () => {
         {/* Remotion prompt-gallery builds, used as swappable video hooks. */}
         <Composition id="ShapeToWords" component={ShapeToWords} schema={shapeToWordsSchema} defaultProps={shapeToWordsDefaultProps} durationInFrames={300} fps={30} width={1920} height={1080} />
         <Composition id="KineticMarketing" component={KineticMarketing} schema={kineticMarketingSchema} defaultProps={kineticMarketingDefaultProps} calculateMetadata={calculateKineticMarketingMetadata} durationInFrames={300} fps={30} width={1920} height={1080} />
+        <Composition id="BarLineChart" component={BarLineChart} durationInFrames={120} fps={30} width={1920} height={1080} />
+        <Composition id="BmsCellBalancing" component={BmsCellBalancing} durationInFrames={BMS_DURATION} fps={30} width={1280} height={720} />
       </Folder>
       <Folder name="Utilities">
         {/* Not part of any reel — a one-off source generator for

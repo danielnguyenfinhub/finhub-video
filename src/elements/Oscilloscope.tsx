@@ -9,11 +9,11 @@ import { Audio } from "@remotion/media";
 import {
   createSmoothSvgPath,
   getWaveformPortion,
-  useWindowedAudioData,
 } from "@remotion/media-utils";
 import type React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand/theme";
+import { useCoveredAudioData } from "./useCoveredAudioData";
 
 export const Oscilloscope: React.FC<{
   src: string;
@@ -39,7 +39,7 @@ export const Oscilloscope: React.FC<{
   const current = useCurrentFrame();
   const { fps } = useVideoConfig();
   const at = frame ?? current;
-  const { audioData, dataOffsetInSeconds } = useWindowedAudioData({
+  const { audioData, dataOffsetInSeconds } = useCoveredAudioData({
     fps,
     frame: Math.round(at),
     src,
