@@ -176,7 +176,7 @@ For a gap scene, use `"footage"` (a 2–5 word stock search) or `"ai"` (an image
 - **Elements** carry data, comparisons and key points. They are charts, `compare` / `bars` / `points` panels and bank logos.
 - **Footage** fills the other scenes. Give only those scenes a short English `"footage"` search, such as `"house keys couple"`. Portrait Pexels clips then play behind the captions, tinted navy, changing at least every 5 s.
 - **Veil:** a navy veil hides the footage whenever an element is on screen.
-- **Cache:** downloads are cached in `voice/footage/`.
+- **Library:** every clip and AI image is saved once in `public/library/` and reused by keyword before any new download (`node scripts/library.mjs find <words>`, `stats`); `voice/footage/` keeps only the search results.
 
 **Post copy (optional).** The `"post"` field holds a title, a caption and hashtags for the upload.
 

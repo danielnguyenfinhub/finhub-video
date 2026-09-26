@@ -100,7 +100,13 @@ Clips come from Pixabay first, then Pexels. Both are free for commercial use wit
 - `PIXABAY_API_KEY` and/or `PEXELS_API_KEY` for stock clips.
 - `FAL_KEY` for AI images.
 
-Every search, clip and image is cached in `voice/footage/`, so a re-run costs nothing.
+**Library first.** The footage phrase doubles as the library keyword: `scripts/library.mjs` looks it
+up (and an `ai` prompt) in `public/library/` before any search, and reuses a hit with no network
+call. Only a miss searches, downloads or generates, and the file goes into the library for the next
+video. `--dry-run` shows `library hit` or `would download` / `would generate` per scene. Only an
+exact keyword or a `synonyms.json` match is reused automatically; a clip that merely shares words
+shows as `library candidate (stem)` and is not used until you add the phrase to its keywords. The
+search results stay cached in `voice/footage/`.
 
 ## Post copy (`post`, optional)
 

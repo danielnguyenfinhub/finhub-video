@@ -45,6 +45,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkFacts, readLedger } from "./facts.mjs";
+import { find } from "./library.mjs";
 import { omnivoicePython, resolveProfile } from "./omnivoice.mjs";
 import { aiClip, stockClips } from "./visuals.mjs";
 
@@ -169,6 +170,24 @@ if (withFootage) {
   const images = scenes.filter((s) => s.ai).length;
   if (images)
     console.log(`fal.ai: at most ${images} image(s), about US$${(images * 0.03).toFixed(2)}, only where stock finds nothing.`);
+  // Library first (scripts/library.mjs), no network: every scene showing a
+  // hit proves the run needs no stock or AI call. A stem match is only a
+  // candidate: the real run treats it as a miss until its keyword is added.
+  console.log("Library:");
+  const rel = (p) => relative(ROOT, p).replace(/\\/g, "/");
+  const show = (hits, miss) => {
+    const hit = hits.find((h) => h.match !== "stem");
+    if (hit) return `library hit: ${rel(hit.path)}`;
+    const c = hits[0];
+    if (!c) return miss;
+    const k = c.meta.keywords ?? {};
+    return `${miss}; library candidate (stem): ${rel(c.path)}, keyword "${k.en?.[0] ?? k.vi?.[0] ?? k.synonyms?.[0] ?? ""}"; add the keyword to reuse it`;
+  };
+  scenes.forEach((s, i) => {
+    if (s.footage) console.log(`  ${i + 1}. stock "${s.footage}": ${show(find(s.footage, { kind: "stock-video" }), "would download")}`);
+    if (s.ai)
+      console.log(`  ${i + 1}. ai: ${show([...find(s.ai, { kind: "ai-image" }), ...find(s.footage, { kind: "ai-image" })], "would generate")}`);
+  });
 }
 if (dryRun) process.exit(0);
 
@@ -356,7 +375,8 @@ run("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", ...inputs, "-filter_c
 // Gap-scene visuals (scripts/visuals.mjs): "footage" = a stock search
 // (Pixabay, then Pexels), "ai" = a fal.ai still with a slow zoom. A stock
 // scene longer than CLIP_MAX_S gets several clips so the picture changes at
-// least that often (rule 5b). Everything is cached under voice/footage/.
+// least that often (rule 5b). Assets come from and go into public/library/
+// (scripts/library.mjs); voice/footage/ keeps search caches and zoom clips.
 let broll = null;
 if (withFootage) {
   const footDir = join(voiceDir, "footage");
@@ -373,7 +393,7 @@ if (withFootage) {
         const n = Math.max(1, Math.ceil(seconds / CLIP_MAX_S));
         let clips = null;
         try {
-          clips = await stockClips(s.footage, n, footDir);
+          clips = await stockClips(s.footage, n, footDir, { slug });
         } catch (err) {
           if (!s.ai) throw err;
           console.log(`visual ${i + 1}/${scenes.length}: stock failed (${err.message}); using the paid AI fallback`);
@@ -382,7 +402,7 @@ if (withFootage) {
           for (let k = 0; k < n; k++) pieces.push({ file: clips[k % clips.length], seconds: seconds / n });
           console.log(`visual ${i + 1}/${scenes.length}: "${s.footage}", ${n} free clip(s)`);
         } else {
-          pieces.push({ file: await aiClip(s.ai, seconds, footDir, seed), seconds });
+          pieces.push({ file: await aiClip(s.ai, seconds, footDir, seed, { slug, keyword: s.footage }), seconds });
           console.log(`visual ${i + 1}/${scenes.length}: AI image (fal.ai, paid)`);
         }
       } else {

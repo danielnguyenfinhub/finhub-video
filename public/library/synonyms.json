@@ -1,0 +1,30 @@
+{
+  "_note": "STARTING LIST, seeded 2026-09-26 from the footage phrases in public/videos/*/script.json. The Vietnamese terms are a first pass for Daniel to correct. Each group is one idea: a library search for any term in a group also finds entries tagged with any other term in it.",
+  "groups": [
+    {
+      "en": ["business meeting office"],
+      "synonyms": ["business meeting", "office meeting", "meeting in office"],
+      "vi": ["cuộc họp văn phòng", "họp kinh doanh"]
+    },
+    {
+      "en": ["couple meeting financial adviser"],
+      "synonyms": ["couple meeting financial advisor", "couple meeting broker", "couple with adviser"],
+      "vi": ["vợ chồng gặp cố vấn tài chính", "vợ chồng gặp môi giới"]
+    },
+    {
+      "en": ["signing documents"],
+      "synonyms": ["document signing", "signing contract", "signing paperwork"],
+      "vi": ["ký giấy tờ", "ký hợp đồng"]
+    },
+    {
+      "en": ["smartphone message"],
+      "synonyms": ["phone message", "texting on phone", "text message"],
+      "vi": ["nhắn tin điện thoại", "tin nhắn"]
+    },
+    {
+      "en": ["bills calculator kitchen table"],
+      "synonyms": ["paying bills", "household budget", "calculator bills kitchen"],
+      "vi": ["hóa đơn và máy tính trên bàn bếp", "tính toán chi tiêu gia đình"]
+    }
+  ]
+}
