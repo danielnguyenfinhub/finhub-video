@@ -35,6 +35,8 @@ composition (Studio → "Elements"), which is how each was verified.
 | `MirroredSpectrum` | frequency bars mirrored from the centre, same `frame` rule (classic design, low on the frame) | `useWindowedAudioData`, `visualizeAudio` |
 | `NoiseField` | breathing dot-grid background | `@remotion/noise` `noise3D` |
 | `starWipe` | custom transition presentation: next scene grows from a star | `@remotion/transitions`, `@remotion/shapes` `makeStar`, `@remotion/paths` `translatePath` |
+| `BehindWord` | a spoken keyword drawn huge behind Daniel (render it from a design's `Behind` layer; his cut-out covers part of it); `pickBehindWords()` shows which words it will use. Needs a cut-out, so it isn't in `ElementCatalog` | `@remotion/layout-utils` `fitText`, `spring` |
+| `beats.ts` | `useAudioMap("music/<name>.mp3")` loads the track's beat map from `scripts/analyze-beats.py`; `snapToBeat(ms, beats)` moves a moment onto the nearest beat (within 150 ms) | `useDelayRender`, `staticFile` |
 
 Script: `node scripts/export-chapters.mjs <slug>` prints a YouTube/Facebook
 chapter list (timed on the rendered video) from `edit.json` chapters.
