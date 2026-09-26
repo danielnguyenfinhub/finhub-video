@@ -8,14 +8,14 @@ prompt into Claude Code, and it becomes a composition in `src/showcase/` that we
 
 | # | Prompt | Finance Hub use | Status |
 |---|---|---|---|
-| 1 | [Travel Route on Map with 3D landmarks](https://www.remotion.dev/prompts/travel-route-on-map-with-3d-landmarks) | Suburb or property location videos | |
+| 1 | [Travel Route on Map with 3D landmarks](https://www.remotion.dev/prompts/travel-route-on-map-with-3d-landmarks) | Suburb or property location videos | `TravelRouteMap`, in progress |
 | 2 | [News article headline highlight](https://www.remotion.dev/prompts/news-article-headline-highlight) | RBA and lender news | |
 | 3 | [Product Demo for Presscut](https://www.remotion.dev/prompts/product-demo-for-presscut) | | |
 | 4 | [Launch Video on X](https://www.remotion.dev/prompts/launch-video-on-x) | | |
 | 5 | [Cinematic Tech Intro](https://www.remotion.dev/prompts/cinematic-tech-intro) | | |
 | 6 | [Transparent Call-To-Action overlay](https://www.remotion.dev/prompts/transparent-call-to-action-overlay) | End-of-video CTA | |
 | 7 | [Rocket Launches Timeline](https://www.remotion.dev/prompts/rocket-launches-timeline) | | |
-| 8 | [Real Estate Investing](https://www.remotion.dev/prompts/real-estate-investing) | Property investing explainers | |
+| 8 | [Real Estate Investing](https://www.remotion.dev/prompts/real-estate-investing) | Property investing explainers | `RealEstateInvesting`, in progress |
 | 9 | [Three.js "Top 20 Games Sold" Ranking](https://www.remotion.dev/prompts/threejs-top-20-games-sold-ranking-1) | | |
 | 10 | [Promotion video for VVTerm](https://www.remotion.dev/prompts/promotion-video-for-vvterm) | | |
 | 11 | [Music CD store promo](https://www.remotion.dev/prompts/music-cd-store-promo) | | |
