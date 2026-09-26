@@ -5,8 +5,9 @@
 //   where facePolicy allows · every hard-coded string in `copy` and RG 234-clean ·
 //   brand colours only (a literal must be white/black at any alpha or a colour
 //   src/brand/theme.ts defines, unless the line says `// theme-exempt: <why>`).
-// Only when all pass: template.json gets uses 0, lastUsed null (and the preview
-// path), and the selector's pool is re-read to confirm the design is in it.
+// Only when all pass: template.json gets "promoted": "<YYYY-MM-DD>", uses 0,
+// lastUsed null (and the preview path), and the selector's pool is re-read to
+// confirm the design is in it. The selector ranks promoted designs first.
 //   node scripts/promote-design.mjs <id> [--public-dir <dir>] [--designs-dir <dir>] [--skip-lint] [--dry-run]
 // --dry-run runs every check and writes nothing. --public-dir is read only (the stills read edit.json there; the design is forced
 // with the `design` prop, so nothing is written into it). --designs-dir and
@@ -16,7 +17,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { MANIFEST_FIELDS, loadManifests } from "./select-template.mjs";
+import { MANIFEST_FIELDS, OPTIONAL_FIELDS, loadManifests } from "./select-template.mjs";
 
 const root = join(import.meta.dirname, "..");
 const REPO_DESIGNS = join(root, "src", "designs");
@@ -45,9 +46,9 @@ export const manifestProblems = (t, id) => {
       : typeof v === s);
   };
   for (const [k, spec] of Object.entries(MANIFEST_FIELDS)) {
-    // Promotion sets these two, so a new manifest may leave them out.
+    // Promotion sets these, so a new manifest may leave them out.
     if (!(k in t)) {
-      if (k !== "uses" && k !== "lastUsed") out.push(`missing field "${k}"`);
+      if (!OPTIONAL_FIELDS.includes(k)) out.push(`missing field "${k}"`);
     } else if (!ok(t[k], spec)) out.push(`field "${k}" should be ${JSON.stringify(spec)}, is ${JSON.stringify(t[k])}`);
   }
   if (t.id !== undefined && t.id !== id) out.push(`field "id" is "${t.id}", folder is "${id}"`);
@@ -254,6 +255,8 @@ export async function promote(id, opts = {}) {
   }
   t.uses = 0;
   t.lastUsed = null;
+  t.promoted = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local (Sydney) date
+  delete t.promotedNote; // a grandfather note no longer applies once it has passed
   writeFileSync(manifestPath, `${JSON.stringify(t, null, 2)}\n`);
   const pooled = loadManifests(designsDir).find((m) => m.id === id);
   if (!pooled) fail("pool", `select-template.mjs loadManifests() does not list "${id}"`);
@@ -285,5 +288,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(`promote ${id}: NOT promoted, ${failures.length} failed check(s)`);
     process.exit(1);
   }
-  console.log(args.includes("--dry-run") ? `promote ${id}: would promote (dry run)` : `promote ${id}: promoted (uses 0, lastUsed null)`);
+  console.log(args.includes("--dry-run") ? `promote ${id}: would promote (dry run)` : `promote ${id}: promoted (promoted today, uses 0, lastUsed null)`);
 }

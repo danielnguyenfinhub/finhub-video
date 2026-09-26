@@ -86,6 +86,8 @@ const good = await promote("good", opts);
 check("good: promoted", good.promoted, good.failures.join(" | "));
 const saved = JSON.parse(readFileSync(join(dir, "good", "template.json"), "utf8"));
 check("good: uses 0, lastUsed null", saved.uses === 0 && saved.lastUsed === null, JSON.stringify(saved));
+check("good: promoted date written", /^\d{4}-\d{2}-\d{2}$/.test(saved.promoted ?? ""), JSON.stringify(saved));
+check("partial: no promoted date", !readFileSync(join(dir, "partial", "template.json"), "utf8").includes('"promoted"'));
 check("good: in the selector pool", loadManifests(dir).some((t) => t.id === "good"));
 
 if (failed) process.exit(1);

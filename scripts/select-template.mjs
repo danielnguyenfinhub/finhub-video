@@ -2,11 +2,13 @@
 // out/videos/<slug>/selection.json (it runs brief.mjs first).
 //   node scripts/select-template.mjs <slug> [--public-dir <dir>]   (passed on to brief.mjs)
 //   node scripts/select-template.mjs <slug> --pick <id> --reason "<why>"   (Daniel's override)
-// Hard filters (aspect, language, card length, hold time, face) drop a design
-// outright; the rest are scored with config/selector.json (untuned weights):
+// Hard filters (aspect, language, card length per kind, hold time, face) drop a
+// design outright; the rest are scored with config/selector.json (untuned weights):
 //   intent·IntentMatch + shape·DataShapeFit + comp·ComprehensionPrior
 //   + asset·AssetReady − rec·SkinRecency − cost·RenderCost
-// Ties go to the cheaper render, then the design used least recently.
+// Ties go to the cheaper render, then the design used least recently. A design
+// promote-design.mjs has passed (template.json "promoted") ranks above every one
+// it has not; those are still ranked, marked "unproven", and --pick takes any.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -31,14 +33,25 @@ export const MANIFEST_FIELDS = {
   skinAxes: "object",
   aspects: "string[]",
   languages: "string[]",
-  maxChars: { vi: "number", en: "number" },
+  // Per language: a number for every kind of text, or one per kind (KINDS).
+  maxChars: { vi: "number|object", en: "number|object" },
   minHoldMs: "number",
   facePolicy: ["face-required", "face-optional", "faceless"],
   renderCost: Object.keys(readJson(join(root, "config", "selector.json")).cost),
   preview: "string|null",
   uses: "number",
   lastUsed: "string|null",
+  promoted: "string", // YYYY-MM-DD promote-design.mjs passed it; absent = unproven
+  promotedNote: "string",
 };
+// Fields a manifest may leave out (promotion writes them).
+export const OPTIONAL_FIELDS = ["uses", "lastUsed", "promoted", "promotedNote"];
+
+// Kinds of on-screen text; brief.mjs measures each separately (longestCard.vi).
+export const KINDS = ["hook", "chapter", "stat", "cue"];
+const charsOf = (v, kind) => (typeof v === "number" ? v : (v?.[kind] ?? 0));
+const limitOf = (m, kind) => (typeof m === "number" ? m : (m?.[kind] ?? Infinity));
+export const unprovenWhy = (id) => `not promoted yet: run node scripts/promote-design.mjs ${id}`;
 
 // Why a design cannot make this video, or null when it can.
 const excluded = (t, b) => {
@@ -46,9 +59,13 @@ const excluded = (t, b) => {
   const lang = b.languages.find((l) => !t.languages.includes(l));
   if (lang) return `no ${lang} on screen`;
   for (const l of ["vi", "en"])
-    if (b.longestCard[l] > t.maxChars[l]) return `card ${b.longestCard[l]} chars > ${l} max ${t.maxChars[l]}`;
+    for (const k of KINDS) {
+      const n = charsOf(b.longestCard[l], k);
+      const max = limitOf(t.maxChars[l], k);
+      if (n > max) return `${k} ${n} chars > ${l} ${k} max ${max}`;
+    }
   if (b.shortestHoldMs !== null && b.shortestHoldMs < t.minHoldMs)
-    return `a cue holds ${b.shortestHoldMs} ms < min ${t.minHoldMs} ms`;
+    return `a card is held ${b.shortestHoldMs} ms < min ${t.minHoldMs} ms`;
   const faces = b.mode === "B" ? ["faceless", "face-optional"] : ["face-required", "face-optional"];
   if (!faces.includes(t.facePolicy)) return `${t.facePolicy}, video is ${b.mode === "B" ? "faceless" : "on camera"}`;
   return null;
@@ -84,11 +101,20 @@ export function rank(brief, manifests, history, cfg) {
   for (const t of manifests) {
     const why = excluded(t, brief);
     if (why) dropped[t.id] = why;
-    else out.push({ id: t.id, ...parts(t, brief, history, cfg) });
+    else out.push({ id: t.id, ...parts(t, brief, history, cfg), ...(!t.promoted && { unproven: unprovenWhy(t.id) }) });
   }
-  out.sort((a, b) => b.score - a.score || a.cost - b.cost || lastUsed(a.id).localeCompare(lastUsed(b.id)));
+  out.sort((a, b) => !!a.unproven - !!b.unproven || b.score - a.score || a.cost - b.cost || lastUsed(a.id).localeCompare(lastUsed(b.id)));
   return { ranked: out, dropped };
 }
+
+/** Daniel's --pick: any design, recorded with its rank and why it would not have been picked. */
+export const overrideOf = (pick, reason, { ranked, dropped }, manifests) => ({
+  id: pick,
+  reason,
+  rank: ranked.findIndex((r) => r.id === pick) + 1 || null,
+  ...(dropped[pick] && { filteredOut: dropped[pick] }),
+  ...(!manifests.find((t) => t.id === pick)?.promoted && { unproven: unprovenWhy(pick) }),
+});
 
 function main() {
   const [slug, ...rest] = process.argv.slice(2);
@@ -115,12 +141,7 @@ function main() {
 
   const { ranked, dropped } = rank(brief, manifests, history, cfg);
   const top = ranked.slice(0, 3);
-  const override = pick && {
-    id: pick,
-    reason,
-    rank: ranked.findIndex((r) => r.id === pick) + 1 || null,
-    ...(dropped[pick] && { filteredOut: dropped[pick] }),
-  };
+  const override = pick && overrideOf(pick, reason, { ranked, dropped }, manifests);
   const line = (v) => JSON.stringify(v);
   const text = [
     "{",
@@ -139,7 +160,7 @@ function main() {
   const dir = join(root, "out", "videos", slug);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "selection.json"), `${text}\n`);
-  console.log(`select ${slug}: ${top.map((r) => `${r.id} ${r.score}`).join(" · ")}${override ? ` · Daniel picked ${pick}` : ""}`);
+  console.log(`select ${slug}: ${top.map((r) => `${r.id} ${r.score}${r.unproven ? " (unproven)" : ""}`).join(" · ")}${override ? ` · Daniel picked ${pick}` : ""}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

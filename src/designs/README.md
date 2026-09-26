@@ -117,3 +117,5 @@ or `toOutMs` (timeline.ts). Reel data: `reel.edit` (edit.json), `reel.timeline.c
   lint, renders the preview and Mode A/B stills, checks `copy` (every hard-coded string,
   RG 234) and theme-only colours (`// theme-exempt: <why>` on a line allows one), and
   only then makes it a template the selector can pick. It lists every failure at once.
+  A pass writes `"promoted": "<YYYY-MM-DD>"` into `template.json`; the selector ranks every
+  promoted design above every unpromoted one, which it lists as `unproven`.

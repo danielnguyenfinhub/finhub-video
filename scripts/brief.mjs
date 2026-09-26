@@ -36,7 +36,7 @@ const policyHits = (text) =>
 const longest = (texts) => Math.max(0, ...texts.map((t) => [...t].length));
 
 // Ranked intents (first = primary); mirrors the editor skill's decision tree.
-const intentsOf = (c, stats, text, durationS) => {
+export const intentsOf = (c, stats, text, durationS) => {
   const perMin = durationS ? (c.numbers * 60) / durationS : 0;
   const out = [];
   if (count(NEWS_RE, text) >= 2) out.push("news");
@@ -45,7 +45,7 @@ const intentsOf = (c, stats, text, durationS) => {
   if (c.comparisons >= 2) out.push("compare");
   if (count(WARN_RE, text) >= 2) out.push("warn");
   if (c.hookAsks) out.push("qa"); // the premise is one question (chatstory's brief)
-  out.push("explain");
+  if (!out.length) out.push("explain"); // only when nothing more specific matched
   return out;
 };
 
@@ -72,7 +72,13 @@ async function main() {
     cues.filter((c) => c.kind === "points").reduce((n, c) => n + (c.items?.length ?? 0), 0) +
     (edit.chapters ?? []).filter((c) => /^\s*(bước|step|\d)/iu.test(nfc(c.title))).length;
   const comparisons = cues.filter((c) => COMPARE_CUES.includes(c.kind)).length;
-  const cards = cardTexts({ hook: edit.hook, chapters: edit.chapters, stats: edit.stats, cues });
+  // Longest string per kind, so a template's per-kind maxChars compares like with like.
+  const longestVi = {
+    hook: longest(cardTexts(edit.hook)),
+    chapter: longest(cardTexts(edit.chapters)),
+    stat: longest(cardTexts(edit.stats)),
+    cue: longest(cardTexts(cues)),
+  };
   const hookAsks = /\?\s*$/.test(nfc(edit.hook?.big));
 
   let text, numbers, banks, eligibility, durationS, longestEn;
@@ -121,7 +127,7 @@ async function main() {
     durationS,
     aspect: "9:16", // ponytail: every render is 1080x1920; read edit.json when another aspect exists.
     languages: faceless ? ["vi", "en"] : ["vi"],
-    longestCard: { vi: longest(cards), en: longestEn },
+    longestCard: { vi: longestVi, en: longestEn },
     shortestHoldMs: holds.length ? Math.min(...holds) : null,
     assets: {
       foreground: existsSync(join(pub, recordingPath(slug, edit.source, "foreground.webm"))),
@@ -135,7 +141,9 @@ async function main() {
   console.log(`brief ${slug}: ${brief.intent} · ${brief.dataShapes.join(", ")} · ${durationS}s -> out/videos/${slug}/brief.json`);
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
-});
+// Exports above are for scripts/check-selector.mjs; run only as the entry point.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((err) => {
+    console.error(err.message);
+    process.exit(1);
+  });
