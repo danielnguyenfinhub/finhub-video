@@ -1,10 +1,12 @@
 // What a video is about, as numbers the template selector can score:
-//   node scripts/brief.mjs <slug>   -> out/videos/<slug>/brief.json
+//   node scripts/brief.mjs <slug> [--public-dir <dir>]   -> out/videos/<slug>/brief.json
+// --public-dir: where the media (recordings, voice) lives when it is not in this
+// checkout's public/ (a worktree); edit.json and script.json still come from here.
 // Mode A (Daniel on camera): words.json + edit.json. Mode B (faceless, the
 // slug has script.json): script.json + facts.json, plus words.json once voiced.
 // Number and bank detection is check-golden.mjs's (golden.ts), not a copy.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { FPS, buildTimeline, figuresOf, lenderMentionsOf, reelOf, words } from "./check-golden.mjs";
 import { POLICY_RE, readLedger } from "./facts.mjs";
@@ -48,9 +50,10 @@ const intentsOf = (c, stats, text, durationS) => {
 };
 
 async function main() {
-  const slug = process.argv[2];
-  if (!slug) throw new Error("Usage: node scripts/brief.mjs <slug>");
+  const [slug, dirFlag, dirArg] = process.argv.slice(2);
+  if (!slug) throw new Error("Usage: node scripts/brief.mjs <slug> [--public-dir <dir>]");
   const root = join(import.meta.dirname, "..");
+  const pub = resolve(dirFlag === "--public-dir" ? dirArg : join(root, "public"));
   const dir = join(root, "public", "videos", slug);
   const read = (path, what) => {
     try {
@@ -62,7 +65,7 @@ async function main() {
   const { recordingPath } = await import(pathToFileURL(join(root, "src", "mortgage", "recording.ts")).href);
   const edit = read(join(dir, "edit.json"), "edit.json");
   const faceless = existsSync(join(dir, "script.json"));
-  const wordsPath = join(root, "public", recordingPath(slug, edit.source, "words.json"));
+  const wordsPath = join(pub, recordingPath(slug, edit.source, "words.json"));
   const spoken = existsSync(wordsPath) ? read(wordsPath, "words.json") : null;
   const cues = edit.cues ?? [];
   const steps =
@@ -121,8 +124,8 @@ async function main() {
     longestCard: { vi: longest(cards), en: longestEn },
     shortestHoldMs: holds.length ? Math.min(...holds) : null,
     assets: {
-      foreground: existsSync(join(root, "public", recordingPath(slug, edit.source, "foreground.webm"))),
-      voice: existsSync(join(dir, "voice")),
+      foreground: existsSync(join(pub, recordingPath(slug, edit.source, "foreground.webm"))),
+      voice: existsSync(join(pub, "videos", slug, "voice")),
       script: faceless,
     },
   };
