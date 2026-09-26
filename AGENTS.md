@@ -61,6 +61,7 @@ The rest of the guide is in `docs/agents/`; read a file only when the task needs
 | Language: fonts, stacked marks, speech-to-text, voiceover | [language](docs/agents/language.md) |
 | Mediabunny, Remotion licence | [mediabunny-and-licence](docs/agents/mediabunny-and-licence.md) |
 | One `@remotion/*` package | grep `docs/findings.md`; never read it whole |
+| Remotion API docs and examples (4.0.529 — check the installed version first) | [docs/remotion/README](docs/remotion/README.md), then grep; never read the files whole |
 
 Read list per task, on top of this file. `refs/` is `.claude/skills/vietnamese-finance-video-editor/references/`; "remocn index" is `head -n 22 .claude/elements/remocn/CATALOG.md`, then grep.
 
