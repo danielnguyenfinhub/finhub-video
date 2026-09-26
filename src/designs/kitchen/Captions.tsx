@@ -37,7 +37,7 @@ const CaptionPage: React.FC<{ page: TikTokPage; keywords: string[] }> = ({
         alignItems: "center",
         // Anchor to the bottom of SAFE so the strip grows upward and its
         // bottom edge never crosses SAFE.bottom, whatever the page length.
-        bottom: 1920 - SAFE.bottom,
+        height: SAFE.bottom, // not bottom: AbsoluteFill sets height 100%, which wins
       }}
     >
       <div
