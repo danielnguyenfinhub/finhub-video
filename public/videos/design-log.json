@@ -32,5 +32,22 @@
       "cta": "paper contact card"
     },
     "reused": false
+  },
+  {
+    "slug": "bid-explained",
+    "date": "2026-09-26",
+    "design": "faceless",
+    "direction": "EXPLAINER (faceless)",
+    "axes": {
+      "cover": "navy card, logo tile + two-line title",
+      "captions": "centred karaoke words, drop to a lower band under panels; English line boxed at the bottom",
+      "framing": "faceless: stock footage dimmed on navy, navy veil under elements",
+      "graphics": "navy-glass points list (5) + compare cards with VS",
+      "transitions": "panel drop-in / fly-out, footage straight cuts",
+      "texture": "navy gradient veil over footage",
+      "sound": "Charon voice + calm piano bed (calm-morning-keys)",
+      "cta": "white contact card + compliance card"
+    },
+    "reused": true
   }
 ]
