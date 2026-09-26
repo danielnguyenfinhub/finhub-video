@@ -3,12 +3,12 @@
 //   lint · registered in src/designs/index.ts · template.json fields (the list
 //   select-template.mjs reads) · a preview still · a Mode A and a Mode B still
 //   where facePolicy allows · every hard-coded string in `copy` and RG 234-clean ·
-//   theme tokens only (no hex/rgb/hsl literals unless the line says
-//   `// theme-exempt: <why>`).
+//   brand colours only (a literal must be white/black at any alpha or a colour
+//   src/brand/theme.ts defines, unless the line says `// theme-exempt: <why>`).
 // Only when all pass: template.json gets uses 0, lastUsed null (and the preview
 // path), and the selector's pool is re-read to confirm the design is in it.
-//   node scripts/promote-design.mjs <id> [--public-dir <dir>] [--designs-dir <dir>] [--skip-lint]
-// --public-dir is read only (the stills read edit.json there; the design is forced
+//   node scripts/promote-design.mjs <id> [--public-dir <dir>] [--designs-dir <dir>] [--skip-lint] [--dry-run]
+// --dry-run runs every check and writes nothing. --public-dir is read only (the stills read edit.json there; the design is forced
 // with the `design` prop, so nothing is written into it). --designs-dir and
 // --skip-lint exist for scripts/check-promote.mjs; renders need the real registry,
 // so they are skipped under --designs-dir.
@@ -66,12 +66,26 @@ export const hardCodedStrings = (code) => {
   const found = new Set();
   for (const [, , s] of code.matchAll(/(["'`])((?:\\.|(?!\1)[^\\\n])*)\1/g))
     if (!s.includes("${") && /[^\x00-\x7F]/.test(s) && /\p{L}/u.test(s)) found.add(s.trim());
-  for (const [, s] of code.matchAll(/(?<![=-])>([^<>{}]*)[<{]/g))
+  // A tag's closing ">" touches its tag or starts a line; a comparison ">" has a space before it.
+  for (const [, s] of code.matchAll(/(?<![=-])(?:(?<=\S)|(?<=^[ \t]*))>([^<>{}]*)[<{]/gm))
     if (/\p{L}/u.test(s) && !/[();=]/.test(s)) found.add(s.trim());
   return [...found];
 };
 
-const COLOUR = /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{1,5})?\b|\b(?:rgba?|hsla?)\(/;
+const COLOUR = /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{1,5})?\b|\b(?:rgba?|hsla?)\([^)]*\)/g;
+// A colour literal as lower-case 6-digit hex of its rgb part (alpha ignored), or null (hsl).
+export const hexOf = (lit) => {
+  const h = lit.match(/^#([0-9a-f]+)$/i)?.[1];
+  if (h) return `#${(h.length <= 4 ? [...h.slice(0, 3)].map((c) => c + c).join("") : h.slice(0, 6)).toLowerCase()}`;
+  const rgb = lit.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  return rgb ? `#${rgb.slice(1, 4).map((n) => Number(n).toString(16).padStart(2, "0")).join("")}` : null;
+};
+// Brand colours only: pure white/black at any alpha, or a colour src/brand/theme.ts defines.
+const ALLOWED = new Set([
+  "#ffffff",
+  "#000000",
+  ...[...readFileSync(join(root, "src", "brand", "theme.ts"), "utf8").matchAll(COLOUR)].map(([m]) => hexOf(m)),
+]);
 
 const designFiles = (dir) =>
   readdirSync(dir, { recursive: true })
@@ -215,16 +229,22 @@ export async function promote(id, opts = {}) {
     for (const line of e.message.split("\n").filter((l) => l.includes(`design:${id}:`))) fail("RG 234", line.trim());
   }
 
-  // Colours: theme tokens only.
+  // Colours: brand only (theme.ts values, white, black).
   for (const f of files) {
     const raw = f.text.split("\n");
     uncomment(f.text).split("\n").forEach((code, i) => {
-      if (COLOUR.test(code) && !/theme-exempt:\s*\S/.test(raw[i]))
-        fail("colours", `${f.name}:${i + 1} literal colour \`${code.match(COLOUR)[0]}\`: use src/brand/theme.ts, or add // theme-exempt: <why>`);
+      if (/theme-exempt:\s*\S/.test(raw[i])) return;
+      for (const [m] of code.matchAll(COLOUR))
+        if (!ALLOWED.has(hexOf(m)))
+          fail("colours", `${f.name}:${i + 1} off-brand colour \`${m}\`: use a src/brand/theme.ts colour, white or black, or add // theme-exempt: <why>`);
     });
   }
 
   if (failures.length) return { failures, notes, promoted: false };
+  if (opts.dryRun) {
+    notes.push("dry run: every check passed, nothing written");
+    return { failures, notes, promoted: false };
+  }
 
   // Promote.
   if (renderedPreview) {
@@ -250,13 +270,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   };
   const id = args[0];
   if (!id || id.startsWith("--")) {
-    console.error("Usage: node scripts/promote-design.mjs <id> [--public-dir <dir>] [--designs-dir <dir>] [--skip-lint]");
+    console.error("Usage: node scripts/promote-design.mjs <id> [--public-dir <dir>] [--designs-dir <dir>] [--skip-lint] [--dry-run]");
     process.exit(1);
   }
   const { failures, notes } = await promote(id, {
     publicDir: flag("--public-dir"),
     designsDir: flag("--designs-dir"),
     skipLint: args.includes("--skip-lint"),
+    dryRun: args.includes("--dry-run"),
   });
   for (const n of notes) console.log(`note ${n}`);
   for (const f of failures) console.log(`FAIL ${f}`);
@@ -264,5 +285,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(`promote ${id}: NOT promoted, ${failures.length} failed check(s)`);
     process.exit(1);
   }
-  console.log(`promote ${id}: promoted (uses 0, lastUsed null)`);
+  console.log(args.includes("--dry-run") ? `promote ${id}: would promote (dry run)` : `promote ${id}: promoted (uses 0, lastUsed null)`);
 }
