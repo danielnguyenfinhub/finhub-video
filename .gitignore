@@ -21,6 +21,11 @@ remotion-video-skill.zip
 /public/videos/*/source.mp4
 /public/videos/*/original.*
 
+# Source library (scripts/library.mjs): binaries stay local, their
+# <file>.meta.json, index.json and synonyms.json are tracked.
+/public/library/*/*
+!/public/library/*/*.meta.json
+
 # Pixabay background music: the licence bars redistributing tracks on their
 # own, so they stay local. public/music/README.md lists where to get each one.
 /public/music/*.mp3

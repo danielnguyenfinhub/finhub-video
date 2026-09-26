@@ -111,7 +111,45 @@ per-slug transcripts, so Git records the move rather than a deletion.
 ## Not in scope (decided 2026-09-26)
 
 - **`out/` is not renamed to `outputs/`** (C8, declined).
-- **Stock footage** (`voice/footage/pexels-*.mp4`, C7) stays where it is.
+- **Stock footage** (`voice/footage/pexels-*.mp4`, C7) stays where it is. Superseded the same day
+  by WP2: see "Library" below.
+
+## Library (WP2, approved by Daniel 2026-09-26)
+
+Every downloaded or generated asset is saved once, found by keyword, and reused before any new
+call. `scripts/library.mjs` is the module and the CLI (`find`, `add`, `index`, `stats`).
+
+```text
+public/library/
+  <kind>/<keyword-slug>__<provider>__<hash8>.<ext>   the binary, git-ignored
+  <kind>/<same>.meta.json   tracked: keywords {en, vi, synonyms}, provider, model, prompt,
+                            seed, sourceUrl (query string stripped), author, licence, date,
+                            width, height, durationS, sha256, flags {peopleIdentifiable,
+                            textInImage, logoPresent: true/false/null}, expires?, usedIn,
+                            keywordsUnverified? (migration could not tie it to a scene)
+  index.json                tracked, rebuilt from the meta files, sorted keys and entries
+  synonyms.json             tracked EN <-> VI and synonym groups (a starting list)
+```
+
+`kind` is one of `stock-video`, `stock-image`, `ai-image`, `own-footage`, `music`.
+
+- **Find order:** exact keyword (or the exact AI prompt), then a `synonyms.json` group, then stem
+  overlap (`stems` from `scripts/visuals.mjs`, most of the query's stems must match). Entries whose
+  binary is not on disk, and stem or synonym matches on `keywordsUnverified` entries, never count.
+  Only exact and synonym hits are reused automatically; a stem hit is returned as
+  `match: "stem"`, shown in the dry run as a candidate, and the real run treats it as a miss.
+- **Only write path:** `library.add` is the one function that writes a binary. Same sha256 already
+  there: no second copy, keywords and `usedIn` merge. `stockClips` and `aiClip` look up the
+  library first; a hit copies nothing and appends the slug to `usedIn`; a miss downloads or
+  generates, then calls `add`. `voice/footage/` keeps only the provider search-result JSON (a query
+  cache) and the derived AI zoom clips.
+- **Dry run proves zero network:** `voice-video.mjs <slug> --dry-run` prints per scene
+  `library hit: <path>` or `would download` / `would generate`.
+- **Migration:** `scripts/migrate-footage-to-library.mjs [--media-root <public/>] [--apply]`, dry
+  run by default, dedupes by sha256, keywords from the scene whose footage phrase or AI prompt
+  produced the file (else the provider id and tags, flagged `keywordsUnverified`), `--apply` copies
+  through `add`, rebuilds the index and prints (does not run) the per-slug deletions. Idempotent.
+  Daniel runs `--apply` in the main checkout.
 
 ## Approval log
 
@@ -122,3 +160,4 @@ per-slug transcripts, so Git records the move rather than a deletion.
 | 2026-09-26 | Approved C1, C2, C6 with C4 and C5 inside; TyDoReel retired; C7 and C8 declined | Daniel |
 | 2026-09-26 | Resolver: one shared TypeScript function plus one Python function accepted (fewer copies than the draft's wording); transcripts stay tracked in Git under Daniel's "no functionality lost" rule | Claude (orchestrator) |
 | 2026-09-26 | Review round 1 (FIX): `prep-video.py` must stop, not silently reuse, when the recording exists and a file was given; no-file form creates a new edit of an existing recording | Claude (orchestrator), from quality-reviewer finding |
+| 2026-09-26 | Approved WP2 library: public/library/ git-ignored binaries with tracked metadata and index | Daniel |
