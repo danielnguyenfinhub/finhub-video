@@ -6,17 +6,20 @@ description: >-
   content: cover concept, caption style, framing, infographic language,
   transitions, texture, sound and CTA, built from the full Remotion toolkit (3D,
   shaders, drawn paths, cut-outs, transitions, sfx) on a locked core (FinHub
-  colours, fonts, logo, cuts, pacing, RG 234 guard, compliance card). ALWAYS use
-  when Daniel says: edit my video, edit this video, edit my mortgage video, new
-  talking-head video, make this video engaging, add captions to my video, subtitle
-  my Vietnamese video, cut the pauses, I recorded a video about [topic], make it
-  look different, new design for my video. Output: 1080p mp4, phone copy under 30
+  colours, fonts, logo, cuts, pacing, RG 234 guard, compliance card). It is the
+  standard the video-editor agent follows; Daniel's requests to edit or make a
+  video ("edit my video", "I recorded a video about…", "new design for my video")
+  start the video-production-team skill, which runs this one. Use it directly for
+  a single edit.json or design question, or when Daniel says to skip the team:
+  add captions, cut the pauses, make it look different. Output: 1080p mp4, phone copy under 30
   MB, thumbnail, .srt, design-log entry, verify list. NOT for lender-policy videos
   with stock footage → finhub-policy-video. NOT for footage-free motion graphics →
   finhub-rate-alert-reel. NOT for only a logo/intro/outro → finhub-branded-reel.
 ---
 
 # Vietnamese Finance Video Editor — locked core, new design every video
+
+**Team:** the full process for a talking-head or faceless video runs under the `video-production-team` skill; this skill is the standard its `video-editor` agent follows.
 
 **User story:** Daniel drops a Vietnamese talking-head video about a mortgage topic and
 gets back a finished, compliant video that looks like no previous one — designed from

@@ -18,9 +18,9 @@ check.
 - **Gate** is the condition to pass before moving on.
 - **[TODAY]** marks a step that works on `main` now.
 - **[BUILD WPn]** marks a step that needs tooling from the action plan. Until that work package is
-  merged, use the **Until built** line. Merged: WP1 (fact ledger), WP2 (library). Open PRs: WP3 visual
-  cues (#42), WP4 multi-clip (#40), WP6 selector (#43), WP9 token diet (#41). When one merges, change
-  its tag here to **[TODAY]** and delete its *Until built* line.
+  merged, use the **Until built** line. Merged: WP1 (fact ledger), WP2 (library), WP3 (visuals),
+  WP4 (multi-clip), WP6 (brief and selector), WP9 (token diet). Still to build: WP5, WP7. When one
+  merges, change its tag here to **[TODAY]** and delete its *Until built* line.
 
 **Rules on every run.** Keep command output short: pipe commands through `| tail -n 5`. Check stills,
 not full renders, until the final render. Use `--scale=0.5` for stills. State the count and cost before
@@ -51,8 +51,7 @@ graphics are never timed to text that later changes.
 | # | Step | Who | Run / do | Makes | Gate |
 |---|---|---|---|---|---|
 | A1.1 | Single recording **[TODAY]** | Claude | `python scripts/prep-video.py "<C:\path\video.mp4>" <slug> --recording <id>`. Run in the background. Add `--no-clean` for a studio-quality recording. For a re-edit of an existing recording: `python scripts/prep-video.py <slug> --recording <id>` (no file; writes only `edit.json`). If the recording already exists and a file is given, the script stops and lists the options | `public/recordings/<id>/source.mp4`, `words.json`; `public/videos/<slug>/edit.json` (starter); pace table in console | Script finishes; aspect ratio reported; a non-9:16 source is cover-cropped, so confirm the face stays in frame |
-| A1.2 | Multi-clip **[BUILD WP4]** | Claude | Prep each take with A1.1 first. Write `public/videos/<slug>/clips.json` (ordered `recording`, `inMs`, `outMs`, `role`: a-roll or b-roll), then `python scripts/prep-video.py <slug> --clips public/videos/<slug>/clips.json`. Per-take cut-outs are joined with the same spans; a take without one means the assembly needs its own matte (A1.3). Changing `clips.json` later shifts every time already in `edit.json` | Assembled recording `public/recordings/<slug>-assembly/` (proxy, merged `words.json` with clip boundaries); `edit.json` `source` points at it | Duration equals the sum of kept spans (±1 frame) |
-| | *Until built* | Claude | Prep the **main A-roll take only** with A1.1. List the other clips for Daniel as "not assembled: WP4". Do not hand-concatenate with ffmpeg outside the resolver | — | — |
+| A1.2 | Multi-clip **[TODAY]** | Claude | Prep each take with A1.1 first. Write `public/videos/<slug>/clips.json` (ordered `recording`, `inMs`, `outMs`, `role`: a-roll or b-roll), then `python scripts/prep-video.py <slug> --clips public/videos/<slug>/clips.json`. Per-take cut-outs are joined with the same spans; a take without one means the assembly needs its own matte (A1.3). Changing `clips.json` later shifts every time already in `edit.json` | Assembled recording `public/recordings/<slug>-assembly/` (proxy, merged `words.json` with clip boundaries); `edit.json` `source` points at it | Duration equals the sum of kept spans (±1 frame) |
 | A1.3 | Background removal **[TODAY]** (start early; it's the slowest step) | Claude + Daniel | `npm run review`, then open `http://localhost:4100/matte.html?slug=<slug>` in the Claude app browser and wait for **Saved**. Takes about 13× the video length. Skip if `public/recordings/<id>/foreground.webm` already exists | `foreground.webm` | File exists; render refuses to start without it |
 
 Run A1.3 in parallel with A2–A4. It doesn't depend on the edit.
@@ -64,16 +63,14 @@ Run A1.3 in parallel with A2–A4. It doesn't depend on the edit.
 | A2.1 | Read the transcript cheaply | Claude | Use the pace table from A1.1 plus `jq` over `words.json` for text only. Do not open the full JSON | — | — |
 | A2.2 | One-paragraph summary | Claude | Cover problem, example and conclusion. Mark: the hook sentence, topic changes, **every number** (recompute its maths), false starts and repeated takes, misheard words, RG 234 watch-words **spoken** (tốt nhất, rẻ nhất, miễn phí, đảm bảo …), tax talk, and bank names | Notes into `edit.json` `notes` | A wrongly spoken number → **flag to Daniel with its timestamp**. It is never shown, and Daniel chooses to re-record or cut it |
 | A2.3 | Paper edit | Claude | Decide what stays, in order, from the transcript: `remove` spans for bad takes, `captionFixes` bound to context (never a flat word swap) | `edit.json` `remove`, `captionFixes` | Nothing removed changes a claim, number or disclaimer; unsure means keep it |
-| A2.4 | Scene brief **[BUILD WP6]** | Claude | `node scripts/brief.mjs <slug>` | `out/videos/<slug>/brief.json` (intent, data shapes, numbers, banks, steps, comparisons) | — |
-| | *Until built* | Claude | Write the same fields by hand at the top of `edit.json` `notes` | — | — |
+| A2.4 | Scene brief **[TODAY]** | Claude | `node scripts/brief.mjs <slug>` | `out/videos/<slug>/brief.json` (intent, data shapes, numbers, banks, steps, comparisons) | — |
 
 ### A3. Choose the template
 
 | # | Step | Who | Run / do | Makes | Gate |
 |---|---|---|---|---|---|
 | A3.1 | Daniel named a template? | — | If yes, use it; the choice is logged as an override (`select-template.mjs <slug> --pick <id>` once WP6 merges). Skip to A3.4 | — | — |
-| A3.2 | Selector **[BUILD WP6]** | Claude | `node scripts/select-template.mjs <slug>` | `out/videos/<slug>/selection.json` (top 3 and scores) | Take the top pick unless a hard reason is written down |
-| | *Until built* | Claude | Apply the editor skill's content → direction table: number-heavy → `datalab`; mechanism → `explainer`; steps → `checklist`; warning or myth → `newsroom`/`reaction`; A vs B → `scenario`; news → `newsroom`/`studio`; client Q&A → `chatstory`; personal story → `kitchen`; series episode → `series`. Tie → the one least used in the design log | — | Write the reason in `notes` |
+| A3.2 | Selector **[TODAY]** | Claude | `node scripts/select-template.mjs <slug>` | `out/videos/<slug>/selection.json` (top 3 and scores) | Take the top pick unless a hard reason is written down |
 | A3.3 | Variety check | Claude | `python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>`. After WP5, novelty applies to **skin** only (cover, texture, transitions, treatment, sound). Keep **grammar** (how numbers, comparisons and steps are shown; caption position) consistent | Check output | Pass, or change skin axes; never edit the log to pass |
 | A3.4 | Set design | Claude | `"design": "<id>"` in `edit.json` | — | — |
 
@@ -89,8 +86,7 @@ makes a point clearer. Anything else is cut.
 | A4.2 | Numbers | Claude | Spoken numbers chart automatically (golden rule). Add `stats` only for labelled figures. Time from `words.json` `startMs` | `stats` | `node scripts/check-golden.mjs <slug>` lists every number and bank found; each one must match the maths check in A2.2 |
 | A4.3 | Comparisons, steps, verdicts | Claude | `cues`: `compare` (A vs B), `bars` (2–4 values), `points` (2–5 steps), `verdict`, `venn`, `kinetic` (myth strike-through), `emoji`, `lenders`. Pick by data shape, not taste | `cues` | One idea per cue; the cue appears within the spoken phrase |
 | A4.4 | Banks | Claude | Automatic from bank names. Check `public/lenders/` for the logo | — | No logo implies endorsement |
-| A4.5 | B-roll, cutaway, PiP, overlay **[BUILD WP3]** | Claude | 1) `node scripts/library.mjs find <keywords EN> <keywords VI>` **first**. 2) On a miss, get the asset into the library through the faceless tooling (Pixabay → Pexels, then fal FLUX only if stock fails, cost stated); Mode A itself never downloads. 3) Add an entry to the top-level `visuals` list in `edit.json`: `mode` cutaway / pip / overlay, `atMs`, `durMs`, `asset` (a `library/...` path or `{"find": "<keywords>"}`). 4) `node scripts/library.mjs resolve <slug>` turns every `{find}` into a path; it stops and names any unmatched keyword | `edit.json` `visuals` | B-roll for jump cuts and abstract ideas only; never over a spoken number; each cutaway ≤ 4 s and total face-hidden time reported by `check-golden` |
-| | *Until built* | Claude | No B-roll in Mode A. Cover jump cuts with the design's existing transitions and cue panels. List the B-roll you would have used (time + keyword) for Daniel | — | — |
+| A4.5 | B-roll, cutaway, PiP, overlay **[TODAY]** | Claude | 1) `node scripts/library.mjs find <keywords EN> <keywords VI>` **first**. 2) On a miss, get the asset into the library through the faceless tooling (Pixabay → Pexels, then fal FLUX only if stock fails, cost stated); Mode A itself never downloads. 3) Add an entry to the top-level `visuals` list in `edit.json`: `mode` cutaway / pip / overlay, `atMs`, `durMs`, `asset` (a `library/...` path or `{"find": "<keywords>"}`). 4) `node scripts/library.mjs resolve <slug>` turns every `{find}` into a path; it stops and names any unmatched keyword | `edit.json` `visuals` | B-roll for jump cuts and abstract ideas only; never over a spoken number; each cutaway ≤ 4 s and total face-hidden time reported by `check-golden` |
 | A4.6 | Chapters and keywords | Claude | `chapters` at topic changes; `keywords` highlight at most 1–2 words per sentence | — | — |
 | A4.7 | CTA | Claude | One `cta`. Only one ask | — | — |
 | A4.8 | Compliance fields | Claude | Advertised rate → `compliance.advertisedRate` (rate, comparison rate, as-at date) or no rate at all. Tax talk → `taxNote` | `compliance` | Missing → the rate does not appear |
@@ -161,7 +157,7 @@ on voice or images.
 
 | # | Step | Who | Run / do | Makes | Gate |
 |---|---|---|---|---|---|
-| B4.1 | Scene brief and template **[BUILD WP6]** | Claude | `node scripts/brief.mjs <slug>`, then `node scripts/select-template.mjs <slug>` | `brief.json`, `selection.json` | Faceless stays on `faceless` unless the selector finds a better-fitting faceless-capable template |
+| B4.1 | Scene brief and template **[TODAY]** | Claude | `node scripts/brief.mjs <slug>`, then `node scripts/select-template.mjs <slug>` | `brief.json`, `selection.json` | Faceless stays on `faceless` unless the selector finds a better-fitting faceless-capable template |
 | B4.2 | Hook, chapters, stats, cues | Claude | Add to `edit.json`, timed from `words.json` (available only after voicing): `hook`, `chapters`, `stats` for labelled numbers, `cues` (`compare`, `bars`, `points`, `verdict`) per the scene visuals chosen in B2.2 | `edit.json` | Elements carry the facts; footage only fills; the navy veil hides footage whenever an element is up |
 | B4.3 | Compliance fields | Claude | `compliance.advertisedRate` if a rate is presented as available, `taxNote` for tax talk | — | — |
 | B4.4 | New concept? | Claude | As A4.9, then promote (WP7) | Template | — |
@@ -190,7 +186,5 @@ on voice or images.
 
 ## Which steps still need building
 
-**WP3** (visual cues; A4.5; PR #42) · **WP4** (multi-clip; A1.2; PR #40) · **WP5** (reading-time
-floor, grammar vs skin; A3.3 and A5.1) · **WP6** (brief and selector; A2.4, A3.2, B4.1; PR #43) ·
-**WP7** (promotion; A4.9). The *Until built* lines keep production running meanwhile, and each one
+**WP5** (reading-time floor, grammar vs skin; A3.3 and A5.1) · **WP7** (promotion; A4.9). The *Until built* lines keep production running meanwhile, and each one
 names exactly what is skipped.

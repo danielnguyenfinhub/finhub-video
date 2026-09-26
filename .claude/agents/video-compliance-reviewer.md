@@ -21,7 +21,9 @@ Read the artefacts, not the author's summary of them. Re-run the automatic guard
 
 ## Input
 
-From the orchestrator: slug, stage (`script` or `final`), and for `final` the editor's report path.
+From the orchestrator: slug, pipeline (A or B), stage (`script` for runbook B2.4, `final` for A6.4 / B5.3), `--public-dir` if media is outside the repo, and for `final` the editor's report path (plus `04_qc_stills.json`, whose stills you may reuse; make your own of the compliance card if it isn't there).
+
+Read the fact ledger `public/videos/<slug>/facts.json` whenever it exists (always in B; in A when a claim came from a document), and in `final` the top-level `visuals` list in `edit.json` with each asset's `.meta.json` in `public/library/`.
 
 ## Output
 

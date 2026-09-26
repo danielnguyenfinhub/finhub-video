@@ -12,14 +12,15 @@ Whatever skill is driving (Remotion's, the editor skill, or a scene written by h
 
 ### Harness: video production team
 
-**Goal:** a document or recording becomes a finished video that a second, independent reviewer has checked for compliance, with Daniel approving only the script.
+**Goal:** a recording (Pipeline A) or a document (Pipeline B) becomes a finished video through the whole runbook, built by one agent and checked by two independent ones (technical QC, compliance), with Daniel deciding only at the gates: the script lock (B), a wrongly spoken number (A), and posting.
 
-**Trigger:** when Daniel asks for a video from a document, a faceless video, or a video "with the team" / "with a compliance check", use the `video-production-team` skill. It runs three agents in `.claude/agents/`: `video-script-writer`, `video-editor` (which follows `vietnamese-finance-video-editor`) and `video-compliance-reviewer` (which follows `video-compliance-review`). A plain edit of a talking-head video can still use the editor skill alone.
+**Trigger:** when Daniel asks to edit his footage ("edit my video", "I recorded a video about…") or for a video from a document or topic (faceless), including follow-ups on one ("redo the paper edit", "re-run QC", "fix what compliance flagged"), use the `video-production-team` skill. It runs the whole runbook for both pipelines with its agents in `.claude/agents/`; `vietnamese-finance-video-editor` is the standard its editor follows.
 
 **Change log:**
 | Date | Change | Files | Why |
 |---|---|---|---|
 | 2026-09-26 | Initial team | the three agents, `video-production-team`, `video-compliance-review` | Independent compliance check; scripts written from documents |
+| 2026-09-26 | Team v2: both pipelines end to end; story-editor and video-qc added; editor narrowed; tooling wired | `video-production-team` (rewritten), `video-story-editor`, `video-qc` (agent and skill), `video-editor`, `video-script-writer`, `video-compliance-reviewer`, `video-compliance-review`, editor `SKILL.md` (one line), `AGENTS.md` trigger | Daniel asked for a team to run the whole process |
 
 ### Harness: refactor team
 
