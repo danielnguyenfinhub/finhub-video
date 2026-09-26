@@ -28,6 +28,10 @@ Cut wall-clock minutes per video without changing what the video looks or sounds
 - **Hardware encoders are optional paths.** If `h264_nvenc`, `h264_amf` or `h264_qsv` is used, fall back to `libx264` when it's absent, and say which machine you measured on.
 - **Shortest diff.** Mark a deliberate shortcut with `# ponytail: <limit>, <when to upgrade>`.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "pipeline-optimizer (render speed)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 The orchestrator gives you: the slug to time, the media root, the refactorer's report (so you work on the new layout), and any reviewer feedback, word for word.

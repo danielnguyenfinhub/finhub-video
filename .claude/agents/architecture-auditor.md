@@ -28,6 +28,10 @@ Produce one report Daniel can decide from: what is duplicated, what costs tokens
 - **Token cost is text, not video.** The model never reads an `.mp4`; it pays for directory listings, large text files and everything CLAUDE.md pulls in. Rank text files and folders by tokens, not bytes.
 - **Client data stops the job.** If any file under the media root names a real client, note the path only, quote nothing, and return `blocked`.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "asset-refactorer and architecture-auditor (asset layout)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 The orchestrator gives you: the repo root (the current directory), the media root, the output folder `out/refactor/`, and any earlier report or feedback from Daniel.

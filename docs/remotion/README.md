@@ -8,6 +8,7 @@ tools instead of fetching remotion.dev. They are big: **grep, never read whole.*
 | `remotion-api-reference.md` | Every package, its exports, one working example each | 97 KB |
 | `remotion-examples-all.md` | One type-checked example per API | 218 KB |
 | `remotion-full-docs.md` | Remotion's own docs, all 394 API pages, `<!-- source: url -->` before each | 1.3 MB |
+| `agent-map.md` | Which APIs each agent in `.claude/agents/` needs, with the lookup command | 5 KB |
 
 ```bash
 grep -n "^### <OffthreadVideo>" docs/remotion/remotion-full-docs.md   # find a page, then sed -n 'N,+80p'

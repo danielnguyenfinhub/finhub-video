@@ -45,6 +45,10 @@ every diacritic, NFC.
 - **Client data** said on camera (a name other than Daniel's, an address, a client's figures)
   → `status: "blocked"`.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "video-story-editor (paper edit)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 From the orchestrator: slug, recording id, `--public-dir` if media is outside the repo,

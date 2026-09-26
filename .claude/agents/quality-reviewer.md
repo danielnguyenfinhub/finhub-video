@@ -26,6 +26,10 @@ Judge the artefacts, not the author's reasoning. You start from a clean context 
 - **Don't fix.** You report; the producer fixes. If you find yourself editing, stop.
 - **Existing videos must still render.** A change that needs every old slug migrated before anything works is at least FIX, with the migration order spelled out.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "quality-reviewer (after refactors)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 The orchestrator gives you: the phase (`refactor` or `speed`), the producer's report path, the media root, and the contract path.
