@@ -11,7 +11,6 @@ import { Box, Circle, Highlight, Underline } from "@remotion/rough-notation";
 import type React from "react";
 import {
   AbsoluteFill,
-  Img,
   Sequence,
   interpolate,
   staticFile,
@@ -20,15 +19,25 @@ import {
 } from "remotion";
 import { brand } from "../../brand/theme";
 import type { OverlayProps } from "../../mortgage/design";
+import { HOOK_FRAMES, SAFE } from "../../mortgage/golden";
+import { LogoMark } from "../../mortgage/LogoMark";
 import type { EditJson, Reel } from "../../mortgage/schema";
-import { FONT, LOGO, clamp, emphasised, enter } from "../../mortgage/style";
+import { FONT, clamp, emphasised, enter } from "../../mortgage/style";
 import { toOutMs } from "../../mortgage/timeline";
 import { CueTrack } from "./Cues";
-import { INK, MARKER, PencilLine, Sticky } from "./Paper";
+import {
+  BAND,
+  BandWide,
+  INK,
+  MARKER,
+  NoteBand,
+  PencilLine,
+  Sticky,
+  logoDuring,
+} from "./Paper";
 
-const HOOK_FRAMES = 105;
-// Captions sit on the paper below the talking-head card (see index.tsx).
-const CAPTION_TOP = 1350;
+// Captions sit on the paper below the talking-head card (see index.tsx),
+// growing up from SAFE.bottom.
 
 // ---------------------------------------------------------------- captions
 
@@ -47,7 +56,13 @@ const CaptionPage: React.FC<{ page: TikTokPage; keywords: string[] }> = ({
   );
   const p = enter(frame, fps);
   return (
-    <AbsoluteFill style={{ top: CAPTION_TOP, alignItems: "center" }}>
+    <AbsoluteFill
+      style={{
+        height: SAFE.bottom,
+        alignItems: "center",
+        justifyContent: "flex-end",
+      }}
+    >
       <div
         style={{
           width: 900,
@@ -162,7 +177,7 @@ const StatNote: React.FC<{ big: string; label: string }> = ({ big, label }) => {
       .fontSize,
   );
   return (
-    <AbsoluteFill style={{ top: 190, alignItems: "center" }}>
+    <NoteBand width={760}>
       <Audio src={staticFile("sfx/ding.wav")} volume={() => 0.3} />
       <Sticky
         rotate={0}
@@ -199,7 +214,7 @@ const StatNote: React.FC<{ big: string; label: string }> = ({ big, label }) => {
           {label}
         </div>
       </Sticky>
-    </AbsoluteFill>
+    </NoteBand>
   );
 };
 
@@ -210,13 +225,17 @@ const StatNotes: React.FC<{ reel: Reel }> = ({ reel }) => {
       {(reel.edit.stats ?? []).map((c) => {
         const at = toOutMs(reel.timeline.segments, c.atMs, fps);
         if (at === null) return null;
+        const from = Math.round((at / 1000) * fps);
+        const frames = Math.round((c.durMs / 1000) * fps);
         return (
-          <Sequence
-            key={c.atMs}
-            from={Math.round((at / 1000) * fps)}
-            durationInFrames={Math.round((c.durMs / 1000) * fps)}
-          >
-            <StatNote big={c.big} label={c.label} />
+          <Sequence key={c.atMs} from={from} durationInFrames={frames}>
+            <BandWide.Provider
+              value={
+                !logoDuring(from, frames, reel.timeline.talkFrames, fps)
+              }
+            >
+              <StatNote big={c.big} label={c.label} />
+            </BandWide.Provider>
           </Sequence>
         );
       })}
@@ -240,7 +259,7 @@ const ChapterTab: React.FC<{ index: number; title: string }> = ({
     clamp,
   );
   return (
-    <AbsoluteFill style={{ top: 70, left: 60 }}>
+    <AbsoluteFill style={{ top: BAND.top, left: BAND.left }}>
       <Audio src={staticFile("sfx/whoosh.wav")} volume={() => 0.3} />
       <div
         style={{
@@ -248,8 +267,10 @@ const ChapterTab: React.FC<{ index: number; title: string }> = ({
           alignItems: "center",
           gap: 26,
           alignSelf: "flex-start",
-          // Ends 24 px before the logo badge (top right); a long title wraps.
-          maxWidth: 760,
+          // Stays left of the LogoMark tile (BAND); a long title wraps.
+          // ponytail: shares the band with notes and cues; edit.json keeps
+          // chapter starts clear of them (true for every live video).
+          maxWidth: BAND.width,
           background: "#fff",
           padding: "18px 34px",
           fontFamily: FONT,
@@ -357,7 +378,15 @@ const HookNote: React.FC<{ hook: NonNullable<EditJson["hook"]> }> = ({
     <AbsoluteFill style={{ opacity: 1 - outP }}>
       <Audio src={staticFile("sfx/mouse-click.wav")} volume={() => 0.5} />
       <Trail layers={4} lagInFrames={0.6} trailOpacity={0.5}>
-        <AbsoluteFill style={{ top: 175, alignItems: "center" }}>
+        {/* No logo during the hook (logoVisible), so the full SAFE width. */}
+        <AbsoluteFill
+          style={{
+            top: SAFE.top,
+            left: SAFE.left,
+            width: SAFE.right - SAFE.left,
+            alignItems: "center",
+          }}
+        >
           <Sticky
             rotate={0}
             style={{
@@ -421,24 +450,6 @@ const ProgressLine: React.FC<{ talkFrames: number }> = ({ talkFrames }) => {
   );
 };
 
-// The FinHub logo, top right for the whole talk (as in the classic design),
-// on white as the brand kit requires; drawn last so nothing covers it.
-const LogoBadge: React.FC = () => (
-  <div
-    style={{
-      position: "absolute",
-      top: 28,
-      right: 36,
-      padding: "10px 16px",
-      borderRadius: 18,
-      background: "#fff",
-      boxShadow: "0 6px 18px rgba(11, 31, 61, 0.25)",
-    }}
-  >
-    <Img src={LOGO} style={{ height: 100, display: "block" }} />
-  </div>
-);
-
 export const Overlay: React.FC<OverlayProps> = ({
   reel,
   keywords,
@@ -455,6 +466,7 @@ export const Overlay: React.FC<OverlayProps> = ({
         <HookNote hook={reel.edit.hook} />
       </Sequence>
     ) : null}
-    <LogoBadge />
+    {/* Golden rule 3c; drawn last so nothing covers it. */}
+    <LogoMark talkFrames={talkFrames} />
   </>
 );

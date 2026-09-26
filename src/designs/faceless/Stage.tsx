@@ -121,13 +121,27 @@ const counted = (big: string, t: number): string => {
   return big.slice(0, m.index) + now + big.slice(m.index + m[0].length);
 };
 
+// How far the ring closes: a percentage fills to its value (on a 10 % scale
+// below 10 %, e.g. interest rates, else 100 %); a date, count or amount has
+// no scale, so the ring closes.
+const ringFill = (big: string): number => {
+  const m = big.match(/\d[\d.,]*/);
+  if (!m || !big.includes("%")) return 1;
+  const v = parseFloat(m[0].replace(",", "."));
+  if (!Number.isFinite(v)) return 1;
+  return Math.min(1, v / (v < 10 ? 10 : 100));
+};
+
 const FigureHero: React.FC<{ figure: Figure }> = ({ figure }) => {
   const frame = useCurrentFrame();
   const t = interpolate(frame, [4, 34], [0, 1], {
     ...clamp,
     easing: (x) => 1 - (1 - x) ** 3,
   });
-  const R = 200;
+  // Ring (2R + 60) plus a two-line label fits inside STAGE, so the label
+  // never reaches the dropped caption below it (index.tsx LOW_BOTTOM).
+  const R = 170;
+  const fill = ringFill(figure.big);
   const C = 2 * Math.PI * R;
   return (
     <StageBox>
@@ -156,7 +170,7 @@ const FigureHero: React.FC<{ figure: Figure }> = ({ figure }) => {
             strokeWidth={26}
             strokeLinecap="round"
             strokeDasharray={C}
-            strokeDashoffset={C * (1 - 0.78 * t)}
+            strokeDashoffset={C * (1 - fill * t)}
             transform={`rotate(-90 ${R + 30} ${R + 30})`}
           />
         </svg>
@@ -167,7 +181,7 @@ const FigureHero: React.FC<{ figure: Figure }> = ({ figure }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: figure.big.length > 7 ? 92 : 128,
+            fontSize: ((figure.big.length > 7 ? 92 : 128) * R) / 200,
             fontWeight: 900,
             color: "#fff",
             textShadow: "0 6px 30px rgba(0,0,0,0.5)",
@@ -181,7 +195,7 @@ const FigureHero: React.FC<{ figure: Figure }> = ({ figure }) => {
       {figure.source === "stat" ? (
         <div
           style={{
-            marginTop: 28,
+            marginTop: 20,
             maxWidth: 900,
             textAlign: "center",
             fontSize: 44,

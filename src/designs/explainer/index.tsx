@@ -18,6 +18,7 @@ import {
 import { BadgeRow } from "../../brand/BadgeRow";
 import { brand } from "../../brand/theme";
 import type { CoverProps, Design, TalkProps } from "../../mortgage/design";
+import { SAFE } from "../../mortgage/golden";
 import { PacedVideo } from "../../mortgage/PacedVideo";
 import { CTA_BUTTON } from "../../mortgage/schema";
 import {
@@ -94,16 +95,31 @@ const Talk: React.FC<TalkProps> = ({
           backgroundColor: "#000",
         }}
       >
-        <PacedVideo
-          seg={seg}
-          src={src}
-          look={look}
-          foreground={foreground}
+        {/* 360 px taller than the card (clipped at its bottom): the cover
+            crop takes less off the top, so his head sits ~180 px lower, eyes
+            below the notes band (Paper.tsx BAND). A wrapper, not the video's
+            style, which the graded <Video> does not size by. The punch-in
+            zooms around his face so the chin stays in the card. */}
+        <div
           style={{
-            transform: `scale(${base + punch})`,
-            transformOrigin: "50% 30%",
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "100%",
+            height: "calc(100% + 360px)",
           }}
-        />
+        >
+          <PacedVideo
+            seg={seg}
+            src={src}
+            look={look}
+            foreground={foreground}
+            style={{
+              transform: `scale(${base + punch})`,
+              transformOrigin: "50% 60%",
+            }}
+          />
+        </div>
       </div>
       <Tape left={20} top={120} rotate={-28} />
       <Tape left={880} top={120} rotate={24} />
@@ -123,6 +139,11 @@ const Talk: React.FC<TalkProps> = ({
   );
 };
 
+// The cover's pen-circled porthole (was 580 at y 900, which ran past
+// SAFE.bottom once the title moved down to SAFE.top).
+// Its pen circle reaches ~110 px above and ~120 px below the photo.
+const PORTHOLE = { top: 940, size: 320 };
+
 // A hand-drawn arrow from the title down to Daniel's face.
 const ARROW =
   "M 300 0 C 180 90, 170 200, 250 300 M 250 300 L 205 262 M 250 300 L 262 245";
@@ -141,7 +162,9 @@ const Cover: React.FC<CoverProps> = ({
   const words = title.split(/\s+/).filter(Boolean);
   const hit = emphasised(words, keywords);
   const size = Math.round(
-    Math.min(118, Math.max(78, 112 * Math.sqrt(40 / title.length))),
+    // Smaller than before (118/112/78) so the title, from SAFE.top, ends
+    // above the porthole's pen circle.
+    Math.min(100, Math.max(72, 96 * Math.sqrt(40 / title.length))),
   );
   const face = enter(frame, fps, 4);
   const arrow = evolvePath(interpolate(frame, [18, 40], [0, 1], clamp), ARROW);
@@ -151,9 +174,9 @@ const Cover: React.FC<CoverProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 150,
+          top: SAFE.top,
           left: 90,
-          right: 90,
+          right: 1080 - SAFE.right,
           display: "flex",
           flexWrap: "wrap",
           gap: "8px 22px",
@@ -193,10 +216,18 @@ const Cover: React.FC<CoverProps> = ({
           style={{ transform: `rotate(${frame * 2}deg) scale(${face})` }}
         />
       </div>
+      {/* Title from SAFE.top, porthole under it, credit on SAFE.bottom:
+          the arrow is drawn at 0.7 scale in the gap left of the porthole. */}
       <svg
         width={400}
         height={320}
-        style={{ position: "absolute", left: 120, top: 640 }}
+        style={{
+          position: "absolute",
+          left: 40,
+          top: PORTHOLE.top - 20,
+          transform: "scale(0.7)",
+          transformOrigin: "0 0",
+        }}
       >
         <path
           d={ARROW}
@@ -211,8 +242,8 @@ const Cover: React.FC<CoverProps> = ({
       <div
         style={{
           position: "absolute",
-          left: 250,
-          top: 900,
+          left: (1080 - PORTHOLE.size) / 2,
+          top: PORTHOLE.top,
           transform: `scale(${face})`,
         }}
       >
@@ -226,8 +257,8 @@ const Cover: React.FC<CoverProps> = ({
         >
           <div
             style={{
-              width: 580,
-              height: 580,
+              width: PORTHOLE.size,
+              height: PORTHOLE.size,
               borderRadius: "50%",
               overflow: "hidden",
               border: "10px solid #fff",
@@ -248,7 +279,7 @@ const Cover: React.FC<CoverProps> = ({
       <div
         style={{
           position: "absolute",
-          bottom: 150,
+          bottom: 1920 - SAFE.bottom,
           left: 0,
           right: 0,
           textAlign: "center",

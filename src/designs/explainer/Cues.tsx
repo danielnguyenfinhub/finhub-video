@@ -7,7 +7,6 @@ import { evolvePath } from "@remotion/paths";
 import { Box, Circle, CrossedOff, Highlight } from "@remotion/rough-notation";
 import type React from "react";
 import {
-  AbsoluteFill,
   Sequence,
   interpolate,
   staticFile,
@@ -23,9 +22,17 @@ import {
   type Reel,
   type Tone,
 } from "../../mortgage/schema";
+import { LOGO_HEIGHT, SAFE } from "../../mortgage/golden";
 import { FONT, clamp, pop } from "../../mortgage/style";
 import { Points, useExit, type CueOf, type Rel } from "../classic/Infographics";
-import { INK, MARKER, NOTE } from "./Paper";
+import {
+  BandWide,
+  INK,
+  MARKER,
+  NOTE,
+  NoteBand,
+  logoDuring,
+} from "./Paper";
 
 // brand.good/bad are for dark backgrounds; these are the ink versions that
 // read on paper.
@@ -46,7 +53,7 @@ const IndexCard: React.FC<{
   const p = pop(frame, fps, 0);
   const exit = useExit();
   return (
-    <AbsoluteFill style={{ top: 180, alignItems: "center" }}>
+    <NoteBand width={width}>
       <div
         style={{
           position: "relative",
@@ -63,7 +70,7 @@ const IndexCard: React.FC<{
       >
         {children}
       </div>
-    </AbsoluteFill>
+    </NoteBand>
   );
 };
 
@@ -188,10 +195,14 @@ const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
   const exit = useExit();
   const vs = pop(frame, fps, rel(cue.vsAtMs ?? cue.cards[1].atMs));
   const q = cue.question ? pop(frame, fps, rel(cue.question.atMs)) : 0;
+  // Two 370 px notes, their pen circles (16 px each side) and the 110 px gap.
   return (
-    <AbsoluteFill
+    <NoteBand
+      width={2 * (370 + 32) + 110}
       style={{
-        top: 190,
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         fontFamily: FONT,
         color: INK,
@@ -289,7 +300,7 @@ const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
           {cue.question.text}
         </div>
       ) : null}
-    </AbsoluteFill>
+    </NoteBand>
   );
 };
 
@@ -533,8 +544,11 @@ const Emoji: React.FC<{ cue: CueOf<"emoji"> }> = ({ cue }) => {
     <div
       style={{
         position: "absolute",
-        top: 520,
-        [cue.position === "left" ? "left" : "right"]: 60,
+        // Below the LogoMark tile, inside SAFE, beside Daniel's head.
+        top: SAFE.top + LOGO_HEIGHT + 50,
+        ...(cue.position === "left"
+          ? { left: SAFE.left }
+          : { right: 1080 - SAFE.right }),
         opacity: 1 - exit,
         transform: `scale(${pop(frame, fps, 0)})`,
       }}
@@ -621,14 +635,21 @@ export const CueTrack: React.FC<{ reel: Reel }> = ({ reel }) => {
     <>
       {cues.map((c) => {
         const from = outFrame(c.fromMs);
+        const frames = Math.max(1, outFrame(c.toMs) - from);
         return (
           <Sequence
             key={`${c.kind}${c.fromMs}`}
             from={from}
-            durationInFrames={Math.max(1, outFrame(c.toMs) - from)}
+            durationInFrames={frames}
             layout="none"
           >
-            <CueView cue={c} rel={(ms) => outFrame(ms) - from} />
+            <BandWide.Provider
+              value={
+                !logoDuring(from, frames, reel.timeline.talkFrames, fps)
+              }
+            >
+              <CueView cue={c} rel={(ms) => outFrame(ms) - from} />
+            </BandWide.Provider>
           </Sequence>
         );
       })}

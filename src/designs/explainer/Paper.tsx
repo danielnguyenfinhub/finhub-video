@@ -3,8 +3,15 @@
 import { noise2D } from "@remotion/noise";
 import { evolvePath } from "@remotion/paths";
 import type React from "react";
+import { createContext, useContext } from "react";
 import { AbsoluteFill } from "remotion";
 import { brand } from "../../brand/theme";
+import {
+  HOOK_FRAMES,
+  LOGO_HEIGHT,
+  LOGO_SECONDS,
+  SAFE,
+} from "../../mortgage/golden";
 
 export const PAPER = "#F6F1E4";
 export const INK = brand.textOnCard;
@@ -60,6 +67,60 @@ export const Sticky: React.FC<{
     {children}
   </div>
 );
+
+// Where notes and cue cards sit: from SAFE.top, across SAFE, but left of the
+// LogoMark tile (120 px logo, 2000x1215 file, 22 px padding each side, 20 px
+// gap) while the logo shows, so nothing is ever under it. The talking-head
+// card frames Daniel low (index.tsx), so the band ends above his eyes.
+const LOGO_TILE = Math.ceil((LOGO_HEIGHT * 2000) / 1215) + 44 + 20;
+export const BAND = {
+  top: SAFE.top,
+  left: SAFE.left,
+  width: SAFE.right - SAFE.left - LOGO_TILE,
+} as const;
+const WIDE = SAFE.right - SAFE.left;
+
+// Whether the LogoMark shows at any point of [from, from + frames) (talk
+// frames), mirroring logoVisible.
+export const logoDuring = (
+  from: number,
+  frames: number,
+  talkFrames: number,
+  fps: number,
+): boolean =>
+  (from < LOGO_SECONDS * fps && from + frames > HOOK_FRAMES) ||
+  from + frames > talkFrames - LOGO_SECONDS * fps;
+
+// Set by the note's owner (StatNotes, CueTrack): false while the logo is up.
+export const BandWide = createContext(false);
+
+// Lays `children` (drawn `width` px wide) out in the band, scaled down to fit
+// and never above 0.8, so the tallest card (kinetic, ~600 px) ends near
+// y 900, above Daniel's eyes (~950 in the card).
+// ponytail: width-only fit; measure the card if a taller cue kind appears.
+const MAX_SCALE = 0.8;
+export const NoteBand: React.FC<{
+  width: number;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}> = ({ width, children, style }) => {
+  const w = useContext(BandWide) ? WIDE : BAND.width;
+  return (
+    <AbsoluteFill
+      style={{ top: BAND.top, left: BAND.left, width: w, alignItems: "center" }}
+    >
+      <div
+        style={{
+          transform: `scale(${Math.min(MAX_SCALE, w / width)})`,
+          transformOrigin: "top center",
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    </AbsoluteFill>
+  );
+};
 
 // A slightly wobbly horizontal pencil line; noise makes it hand-drawn and the
 // same on every render.

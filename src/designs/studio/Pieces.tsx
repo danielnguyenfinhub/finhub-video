@@ -20,6 +20,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { brand } from "../../brand/theme";
+import { LOGO_HEIGHT, SAFE } from "../../mortgage/golden";
 import { FONT, LOGO, clamp } from "../../mortgage/style";
 import { useCoveredAudioData } from "../../elements/useCoveredAudioData";
 
@@ -99,9 +100,12 @@ export const NameTag: React.FC<{
   return (
     <div
       style={{
+        // Top-left of SAFE, beside the LogoMark tile (both show 3.5-7.5 s)
+        // and above a stat callout (STAT_TOP); the bottom of SAFE belongs to
+        // the captions.
         position: "absolute",
-        left: 60,
-        top: 1520,
+        left: SAFE.left,
+        top: SAFE.top,
         display: "flex",
         flexDirection: "column",
       }}
@@ -111,6 +115,12 @@ export const NameTag: React.FC<{
     </div>
   );
 };
+
+// Under the LogoMark tile and the name tag (which can show with it), so none
+// of the three overlap; drawn at 0.8 (scaled from the pointer tip, so the
+// box is shifted up by the 20 % it loses) so the tip stays above his eyes.
+const STAT_TOP = SAFE.top + LOGO_HEIGHT + 30;
+const STAT_SCALE = 0.8;
 
 // A speech-bubble callout that wobbles in (Elements: commerce/
 // product-discount-callout, makeCallout from @remotion/shapes).
@@ -135,11 +145,11 @@ export const StatCallout: React.FC<{ big: string; label: string }> = ({
       style={{
         position: "absolute",
         left: 190,
-        top: 190,
+        top: STAT_TOP - 310 * (1 - STAT_SCALE),
         width: 700,
         height: 310,
         transformOrigin: "50% 100%",
-        transform: `scale(${pop}) rotate(${interpolate(
+        transform: `scale(${pop * STAT_SCALE}) rotate(${interpolate(
           frame,
           [0, 7, 14, 20, 26],
           [0, 8, -6, 3, 0],
