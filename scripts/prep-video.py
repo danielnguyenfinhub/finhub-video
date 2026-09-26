@@ -2,6 +2,7 @@
 
     python scripts/prep-video.py "<path to the recorded video>" <slug> [--recording <id>] [--no-clean]
     python scripts/prep-video.py <slug> --recording <id>
+    python scripts/prep-video.py <slug> --clips public/videos/<slug>/clips.json
 
 The first form prepares a new recording: its files go in
 public/recordings/<id>/ (id defaults to the slug; see scripts/recordings.py),
@@ -10,6 +11,13 @@ and names the videos using it: pick another --recording id for a new take, or
 delete the folder to replace the recording for all of them.
 The second form (no video file) makes a new edit of a recording already
 prepared: it skips steps 1-3 and writes only the slug's edit.json.
+The third form assembles several prepared takes (the paper edit in clips.json:
+[{"recording", "inMs", "outMs", "role": "a-roll" | "b-roll"}]) into one
+recording, public/recordings/<slug>-assembly/: the a-roll spans trimmed and
+joined in order (source.mp4 re-encoded like step 1, words.json shifted onto the
+joined clock, "clipStart": "<recording>" on the first word of each clip, and
+foreground.webm joined the same way when every take has one). The slug's
+edit.json then names that recording. b-roll entries are only listed.
 
 1. public/recordings/<id>/source.mp4: a short-GOP proxy (a keyframe every 15
    frames) so every OffthreadVideo seek is cheap; phone originals often have one
@@ -35,6 +43,7 @@ import re
 import subprocess
 import sys
 import time
+from fractions import Fraction
 from pathlib import Path
 
 from recordings import ID_PATTERN, PUBLIC, recording_dir, set_source
@@ -53,6 +62,11 @@ VOICE_CLEANUP = ("highpass=f=80,afftdn=nr=10:nf=-50:tn=1,"
 # Whisper leaves hesitation sounds out unless its prompt has some; once they are
 # in words.json, the timeline cuts them (edit.json "cut").
 FILLER_PROMPT = "Ừm, ờ... hôm nay thì, à, mình nói về, ờm, khoản vay nhé."
+# The proxy encode (step 1); the assembly uses the same so the quality matches.
+PROXY_VIDEO = ["-c:v", "libx264", "-crf", "16", "-preset", "medium",
+               "-g", "15", "-keyint_min", "15", "-sc_threshold", "0", "-pix_fmt", "yuv420p"]
+PROXY_AUDIO = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart"]
+ROLES = ("a-roll", "b-roll")
 
 
 def run(cmd: list[str], what: str) -> str:
@@ -85,11 +99,8 @@ def make_proxy(src: Path, proxy: Path, clean: bool) -> None:
     print(f"Encoding proxy -> {proxy} "
           f"({'voice clean-up' if clean else 'audio as recorded'}) ...", flush=True)
     run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(src),
-         "-c:v", "libx264", "-crf", "16", "-preset", "medium",
-         "-g", "15", "-keyint_min", "15", "-sc_threshold", "0",
-         "-pix_fmt", "yuv420p", *(["-af", VOICE_CLEANUP] if clean else []),
-         "-c:a", "aac", "-b:a", "192k", "-ar", "48000",
-         "-movflags", "+faststart", str(proxy)], "proxy encode")
+         *PROXY_VIDEO, *(["-af", VOICE_CLEANUP] if clean else []),
+         *PROXY_AUDIO, str(proxy)], "proxy encode")
     original, copy = frame_count(src), frame_count(proxy)
     if original != copy:
         raise SystemExit(
@@ -155,6 +166,151 @@ def sentence_table(words: list[dict]) -> None:
             sentence = []
 
 
+def read_clips(path: Path) -> list[dict]:
+    """clips.json, checked: a list of {recording, inMs, outMs, role}, one a-roll at least."""
+    try:
+        clips = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as err:
+        raise SystemExit(f"Cannot read {path}: {err}") from err
+    if not isinstance(clips, list):
+        raise SystemExit(f"{path} must be a list of clips.")
+    for i, c in enumerate(clips, 1):
+        ok = (isinstance(c, dict) and isinstance(c.get("recording"), str)
+              and c.get("role") in ROLES
+              and all(isinstance(c.get(k), int) and c[k] >= 0 for k in ("inMs", "outMs"))
+              and c["inMs"] < c["outMs"])
+        if not ok:
+            raise SystemExit(f'{path}, clip {i}: needs "recording", whole-number "inMs" < '
+                             f'"outMs" and "role" ("a-roll" or "b-roll"); got {c}.')
+        if c["role"] == "a-roll" and not ID_PATTERN.fullmatch(c["recording"]):
+            raise SystemExit(f'{path}, clip {i}: "{c["recording"]}" is not a recording id.')
+    if not any(c["role"] == "a-roll" for c in clips):
+        raise SystemExit(f"{path} has no a-roll clip to assemble.")
+    return clips
+
+
+def video_format(path: Path) -> tuple[Fraction, int, int]:
+    """(frame rate, width, height) of the first video stream."""
+    out = run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+               "stream=r_frame_rate,width,height", "-of", "json", str(path)],
+              f"ffprobe {path.name}")
+    s = json.loads(out)["streams"][0]
+    return Fraction(s["r_frame_rate"]), int(s["width"]), int(s["height"])
+
+
+def shift_words(words: list[dict], start_ms: float, end_ms: float,
+                offset_ms: float, recording: str) -> list[dict]:
+    """The words of one clip moved onto the assembled clock, first one marked.
+
+    A word is kept when its middle falls inside the clip, clamped to its edges.
+    """
+    kept = []
+    for w in words:
+        if not start_ms <= (w["startMs"] + w["endMs"]) / 2 < end_ms:
+            continue
+        s = round(max(w["startMs"], start_ms) - start_ms + offset_ms)
+        e = round(min(w["endMs"], end_ms) - start_ms + offset_ms)
+        kept.append({**w, "startMs": s, "endMs": max(s, e)})
+    if kept:
+        # A leading space keeps the token merge from gluing it to the last clip's word.
+        text = kept[0]["text"]
+        kept[0] = {**kept[0], "text": text if text.startswith(" ") else " " + text,
+                   "clipStart": recording}
+    return kept
+
+
+def join_foregrounds(fgs: list[Path], spans: list[tuple[int, int]], out: Path,
+                     frames: int) -> None:
+    """Trim and join the takes' cut-outs like source.mp4, keeping the alpha channel."""
+    inputs = [a for f in fgs for a in ("-c:v", "libvpx-vp9", "-i", str(f))]  # decoder keeps alpha
+    chains = "".join(f"[{i}:v]trim=start_frame={s}:end_frame={e},setpts=PTS-STARTPTS[v{i}];"
+                     for i, (s, e) in enumerate(spans))
+    graph = chains + "".join(f"[v{i}]" for i in range(len(spans))) + \
+        f"concat=n={len(spans)}:v=1:a=0[v]"
+    # ponytail: crf 30 is a guess at matte.html's quality; match it if edges look soft.
+    run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", *inputs,
+         "-filter_complex", graph, "-map", "[v]", "-c:v", "libvpx-vp9",
+         "-pix_fmt", "yuva420p", "-crf", "30", "-b:v", "0", "-an", str(out)],
+         "foreground join")
+    if frame_count(out) != frames:
+        out.unlink()
+        raise SystemExit("The joined foreground.webm does not match source.mp4 frame for "
+                         "frame; removed it. Make the assembly's own cut-out in matte.html.")
+
+
+def assemble(slug: str, clips_path: Path) -> str:
+    """Build public/recordings/<slug>-assembly/ from clips.json; returns its id."""
+    clips = read_clips(clips_path)
+    for c in clips:
+        if c["role"] == "b-roll":
+            print(f"b-roll, not in the assembly: {c['recording']} {c['inMs']}-{c['outMs']} ms "
+                  f"(add it to the library as own-footage: node scripts/library.mjs add "
+                  f"<file> <meta.json>)")
+    a_roll = [c for c in clips if c["role"] == "a-roll"]
+    folders = [recording_dir(PUBLIC, slug, c["recording"]) for c in a_roll]
+    for c, folder in zip(a_roll, folders):
+        if not ((folder / "source.mp4").exists() and (folder / "words.json").exists()):
+            raise SystemExit(
+                f"Recording {c['recording']} is not prepared ({folder} needs source.mp4 and "
+                f"words.json). Prepare that take first:\n  python scripts/prep-video.py "
+                f"\"<video file of that take>\" {slug} --recording {c['recording']}")
+    formats = {video_format(f / "source.mp4") for f in folders}
+    if len(formats) != 1:
+        raise SystemExit(f"The takes differ in frame rate or size ({formats}); they can only "
+                         f"be joined when all match.")
+    fps = formats.pop()[0]
+    recording = f"{slug}-assembly"
+    out = PUBLIC / "recordings" / recording
+    fgs = [f / "foreground.webm" for f in folders]
+    joins_fg = all(f.exists() for f in fgs)
+    if (out / "foreground.webm").exists() and not joins_fg:
+        raise SystemExit(f"{out / 'foreground.webm'} is from an earlier clip list and not every "
+                         f"take has a cut-out to rebuild it. Delete it, then run again.")
+
+    spans = [(round(c["inMs"] * fps / 1000), round(c["outMs"] * fps / 1000)) for c in a_roll]
+    words: list[dict] = []
+    chains, offset = "", Fraction(0)
+    for i, ((s, e), c, folder) in enumerate(zip(spans, a_roll, folders)):
+        length = frame_count(folder / "source.mp4")
+        if e > length:
+            raise SystemExit(f"Clip {c['recording']} {c['inMs']}-{c['outMs']} ms runs past the "
+                             f"end of that take ({round(length / fps * 1000)} ms).")
+        start, end = s / fps, e / fps  # seconds, snapped to whole frames
+        chains += (f"[{i}:v]trim=start_frame={s}:end_frame={e},setpts=PTS-STARTPTS[v{i}];"
+                   f"[{i}:a]atrim=start={float(start)}:end={float(end)},"
+                   f"asetpts=PTS-STARTPTS[a{i}];")
+        try:
+            take = json.loads((folder / "words.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as err:
+            raise SystemExit(f"Cannot read {folder / 'words.json'}: {err}") from err
+        words += shift_words(take, float(start * 1000), float(end * 1000),
+                             float(offset * 1000), c["recording"])
+        offset += end - start
+    graph = chains + "".join(f"[v{i}][a{i}]" for i in range(len(spans))) + \
+        f"concat=n={len(spans)}:v=1:a=1[v][a]"
+    frames = sum(e - s for s, e in spans)
+    out.mkdir(parents=True, exist_ok=True)
+    proxy = out / "source.mp4"
+    print(f"Joining {len(spans)} clips ({frames} frames) -> {proxy} ...", flush=True)
+    run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+         *[a for f in folders for a in ("-i", str(f / "source.mp4"))],
+         "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
+         *PROXY_VIDEO, *PROXY_AUDIO, str(proxy)], "assembly encode")
+    if frame_count(proxy) != frames:
+        raise SystemExit(f"{proxy} has {frame_count(proxy)} frames, expected {frames}. "
+                         f"Not continuing.")
+    words_path = out / "words.json"
+    words_path.write_text(json.dumps(words, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"Wrote {words_path} ({len(words)} tokens)")
+    if joins_fg:
+        join_foregrounds(fgs, spans, out / "foreground.webm", frames)
+        print(f"Joined the takes' cut-outs -> {out / 'foreground.webm'}")
+    else:
+        print(f"No foreground.webm (not every take has one): for the brand background, make "
+              f"the assembly's own at http://localhost:4100/matte.html?slug={slug}")
+    return recording
+
+
 def refuse_existing(folder: Path, recording: str, slug: str) -> None:
     """Stop rather than reuse or overwrite a recording that is already prepared."""
     users = []
@@ -184,6 +340,9 @@ def main() -> None:
                         help="recording id under public/recordings/ (default: the slug)")
     parser.add_argument("--no-clean", action="store_true",
                         help="keep the audio as recorded (skip the voice clean-up)")
+    parser.add_argument("--clips", type=Path, metavar="CLIPS_JSON",
+                        help="assemble the takes listed in this clips.json into the "
+                             "recording <slug>-assembly")
     args = parser.parse_args()
     slug: str = args.slug
     recording: str = args.recording or slug
@@ -194,7 +353,13 @@ def main() -> None:
     folder = recording_dir(PUBLIC, slug, recording)
     proxy = folder / "source.mp4"
     words_path = folder / "words.json"
-    if args.video is None:
+    if args.clips is not None:
+        if args.video is not None or args.recording:
+            parser.error("--clips takes no video file and no --recording: the takes are in "
+                         "clips.json and the result is <slug>-assembly")
+        recording = assemble(slug, args.clips)
+        title = slug
+    elif args.video is None:
         if not args.recording:
             parser.error("give the video file, or --recording <id> for a new edit of an "
                          "existing recording")

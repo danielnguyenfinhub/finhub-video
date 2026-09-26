@@ -1,5 +1,5 @@
 // Check for src/mortgage/golden.ts. Run: node scripts/check-golden.mjs [slug]
-// (exit 1 on failure). Synthetic captions prove the number gluing, the
+// [--public-dir dir] (exit 1 on failure). Synthetic captions prove the number gluing, the
 // bare-count filter, stat coverage and bank detection; with a slug it also
 // prints what that video's captions would produce. scripts/brief.mjs imports
 // the exports below; the checks run only when this file is the entry point.
@@ -18,7 +18,7 @@ execFileSync(process.execPath, [
   `--outdir=${join(bundle, "..")}`,
 ]);
 const url = (p) => new URL(`file:///${p.replace(/\\/g, "/")}`);
-export const { figuresOf, lenderMentionsOf } = await import(url(bundle));
+export const { figuresOf, lenderMentionsOf, faceHiddenOf, CUTAWAY_MAX_MS } = await import(url(bundle));
 export const { buildTimeline } = await import(url(join(bundle, "..", "timeline.mjs")));
 export const FPS = 30;
 
@@ -72,11 +72,26 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   check("adjacent ANZ merged", m.filter((x) => x.lender.name === "ANZ").length === 2);
   check("mention >= 2.5 s", m.every((x) => x.endMs - x.startMs >= 2500));
 
-  const slug = process.argv[2];
+  // Visuals: a cutaway hides the face, pip does not; too long fails, over a
+  // spoken number is flagged ("4" ".1" is said at 1.2 s source, "5 triệu" at
+  // 7.2 s, "100.000%" at 14 s).
+  const cutaway = (atMs, durMs, mode = "cutaway") => ({ mode, atMs, durMs, asset: "library/stock-video/x.mp4" });
+  const fh = (visuals) => faceHiddenOf(reelOf(w, { visuals }), FPS);
+  const overNum = fh([cutaway(1000, 1000)]);
+  check("cutaway over 4.1 flagged", overNum.overNumbers.some((n) => n.big === "4.1"), JSON.stringify(overNum));
+  check("pip hides nothing", fh([cutaway(1000, 3000, "pip")]).totalMs === 0);
+  const long = fh([cutaway(7800, CUTAWAY_MAX_MS + 500)]);
+  check("long cutaway fails", long.tooLong.length === 1 && long.overNumbers.length === 0, JSON.stringify(long));
+  const two = fh([cutaway(8000, 2000), cutaway(9000, 2000)]);
+  // Output ms: pacing speeds the talk up, so the second starts < 1 s after the first.
+  check("overlapping cutaways merge", two.longestMs === two.totalMs && two.longestMs > 2000 && two.longestMs < 4000, JSON.stringify(two));
+
+  const [slug, dirFlag, dirArg] = process.argv.slice(2);
+  const pub = dirFlag === "--public-dir" ? dirArg : "public";
   if (slug) {
     const { recordingPath } = await import(url(join(process.cwd(), "src", "mortgage", "recording.ts")));
-    const edit = JSON.parse(readFileSync(`public/videos/${slug}/edit.json`, "utf8"));
-    const src = JSON.parse(readFileSync(`public/${recordingPath(slug, edit.source, "words.json")}`, "utf8"));
+    const edit = JSON.parse(readFileSync(`${pub}/videos/${slug}/edit.json`, "utf8"));
+    const src = JSON.parse(readFileSync(`${pub}/${recordingPath(slug, edit.source, "words.json")}`, "utf8"));
     const reel = reelOf(src, edit);
     const f = figuresOf(reel, FPS);
     console.log(`\n${slug}: ${f.length} figures (${f.filter((x) => x.source === "stat").length} stats)`);
@@ -84,6 +99,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const l = lenderMentionsOf(reel);
     console.log(`${slug}: ${l.length} bank mentions`);
     for (const x of l) console.log(`  ${(x.startMs / 1000).toFixed(1)}s ${x.lender.name}`);
+    const h = faceHiddenOf(reel, FPS);
+    console.log(`${slug}: face hidden ${(h.totalMs / 1000).toFixed(1)} s in total, longest ${(h.longestMs / 1000).toFixed(1)} s (limit ${CUTAWAY_MAX_MS / 1000} s per cutaway, untuned)`);
+    for (const x of h.tooLong) check(`cutaway at ${x.atMs} ms is ${(x.durMs / 1000).toFixed(1)} s, over the face limit`, false);
+    for (const x of h.overNumbers) console.log(`FLAG cutaway at ${x.atMs} ms covers the spoken number ${x.big}: a figure drawn behind Daniel is hidden with him; move or shorten it`);
   }
 
   process.exit(failed ? 1 : 0);
