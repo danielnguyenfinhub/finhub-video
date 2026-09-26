@@ -173,6 +173,8 @@ import {Interactive} from 'remotion';
 
 ### Morph paths using inline `interpolatePaths()`
 
+> **Installed here: Remotion 4.0.527.** `interpolatePaths()` does not exist until 4.0.529. Use `interpolatePath(progress, pathA, pathB)` from `@remotion/paths` (two paths), with `progress` from `interpolate()`.
+
 Use `interpolatePaths()` from `@remotion/paths` directly in `d`.  
 It accepts a frame, an input range, an equally sized array of path strings, and options for easing, extrapolation, and posterization.
 Keep the output paths, ranges, and options inline, following the same input-range rules as `interpolate()` above.  

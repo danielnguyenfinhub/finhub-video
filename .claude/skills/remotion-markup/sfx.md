@@ -8,9 +8,10 @@ metadata:
 To include a sound effect, use the `<Audio>` tag:
 
 ```tsx
-import { Audio } from "@remotion/sfx";
+import { Audio } from "@remotion/media";
+import { whoosh } from "@remotion/sfx"; // 4.0.527: @remotion/sfx exports the URLs, not <Audio>
 
-<Audio src={"https://remotion.media/whoosh.wav"} />;
+<Audio src={whoosh} />;
 ```
 
 The following sound effects are available:

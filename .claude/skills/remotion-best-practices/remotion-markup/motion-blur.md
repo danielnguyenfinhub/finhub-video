@@ -8,6 +8,9 @@ Install it with `npx remotion add @remotion/motion-blur`.
 ## `<HtmlInCanvasMotionBlur>`
 
 Available from Remotion 4.0.529.  
+
+> **Installed here: Remotion 4.0.527.** `<HtmlInCanvasMotionBlur>` is not available; use `<CameraMotionBlur>` or `<Trail>` from `@remotion/motion-blur` until the upgrade.
+
 Supply the canvas `width` and `height`, usually from `useVideoConfig()`.  
 `shutterAngle` defaults to `180` and accepts `0` to `360`.
 `0` disables blur. `samples` defaults to `8` and must be an integer from `1` to `64`. More samples can smooth the blur but increase preview and render cost.
