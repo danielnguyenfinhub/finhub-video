@@ -79,7 +79,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   w[36].text = ".000";
   w[37].text = "%";
   const figs = figuresOf(reelOf(w), FPS);
-  check("glued 4.1", figs.some((f) => f.big === "4.1"), figs.map((f) => f.big).join(" | "));
+  check("glued 4 .1 -> 4,1 (Vietnamese decimal comma)", figs.some((f) => f.big === "4,1"), figs.map((f) => f.big).join(" | "));
   check("1 năm dropped", !figs.some((f) => f.big === "1"));
   check("bare 2 dropped", !figs.some((f) => f.big === "2"));
   check("5 triệu kept", figs.some((f) => f.big === "5"), JSON.stringify(figs.map((f) => [f.big, f.fromFrame])));
@@ -110,7 +110,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const cutaway = (atMs, durMs, mode = "cutaway") => ({ mode, atMs, durMs, asset: "library/stock-video/x.mp4" });
   const fh = (visuals) => faceHiddenOf(reelOf(w, { visuals }), FPS);
   const overNum = fh([cutaway(1000, 1000)]);
-  check("cutaway over 4.1 flagged", overNum.overNumbers.some((n) => n.big === "4.1"), JSON.stringify(overNum));
+  check("cutaway over 4.1 flagged", overNum.overNumbers.some((n) => n.big === "4,1"), JSON.stringify(overNum));
   check("pip hides nothing", fh([cutaway(1000, 3000, "pip")]).totalMs === 0);
   const long = fh([cutaway(7800, CUTAWAY_MAX_MS + 500)]);
   check("long cutaway fails", long.tooLong.length === 1 && long.overNumbers.length === 0, JSON.stringify(long));

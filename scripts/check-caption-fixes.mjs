@@ -10,3 +10,17 @@ if (got !== want) {
   process.exit(1);
 }
 console.log("caption fixes ok");
+
+// Vietnamese decimal comma: Whisper's "4" ".1" -> "4,1"; a dot before three
+// digits is Vietnamese thousands and stays ("100.000"). The English line
+// (edit.subtitles) is typed text, never built here, so it keeps "4.1".
+const nums = [" là", " 4", ".1", " tỷ", " và", " 100", ".000", "%", " hay", " 0", ".4%"];
+const ns = nums.map((text, i) => ({ text, startMs: i * 400, endMs: i * 400 + 350, timestampMs: null, confidence: 1 }));
+const reel = { subtitles: [{ fromMs: 0, toMs: 4000, text: "4.1 billion" }] };
+const numGot = t.buildTimeline(ns, reel, 30).captions.map((c) => c.text).join("");
+const numWant = " là 4,1 tỷ và 100.000% hay 0,4%";
+if (numGot !== numWant || reel.subtitles[0].text !== "4.1 billion") {
+  console.error(`decimal comma: got "${numGot}", want "${numWant}"`);
+  process.exit(1);
+}
+console.log("decimal comma ok");

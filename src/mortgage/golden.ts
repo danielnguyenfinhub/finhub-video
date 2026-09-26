@@ -181,7 +181,7 @@ export const logoVisible = (
 export type Figure = {
   fromFrame: number; // talk timeline
   frames: number;
-  big: string; // the number as said, e.g. "4.1", "0,4%", "1.600"
+  big: string; // the number as said, e.g. "4,1", "0,4%", "1.600"
   label: string; // stat label, or the words around an automatic figure
   source: "stat" | "auto";
 };
@@ -194,7 +194,7 @@ const NUMERIC = /^[.,]?\d/;
 const clean = (s: string) => s.trim().replace(/[.,!?;:]+$/g, "");
 
 // Every number in the captions, glued across Whisper's split tokens ("4" ".1"
-// -> "4.1", "100" ".000" "%" -> "100.000%").
+// -> "4,1" (timeline.ts decimalComma), "100" ".000" "%" -> "100.000%").
 const spokenNumbers = (reel: Reel) => {
   const caps = reel.timeline.captions;
   const out: { big: string; label: string; startMs: number }[] = [];
