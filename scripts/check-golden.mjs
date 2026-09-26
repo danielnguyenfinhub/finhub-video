@@ -28,9 +28,9 @@ export const FPS = 30;
 
 // Reading-time findings: holds the floor stretched, holds it could not
 // stretch (the next card of the same kind starts first), and caption pages
-// faster than READING.charsPerSec. Pages already last until the next page, so
-// they can only be fixed by speech timing (pacing) or paging: reported, not
-// changed. Paging as classic does it (900 / 350 ms); frames are video frames.
+// faster than READING.captionCharsPerSec. Pages already last until the next
+// page, so they can only be fixed by paging or a remove: reported, not
+// changed, and not a failure. Paging as classic does it (900 / 350 ms); frames are video frames.
 // ponytail: one paging setting for every design; pass the design's own
 // combine window if a design with longer pages gets false alarms.
 const TOL_MS = 1000 / FPS;
@@ -43,9 +43,10 @@ export const readingFindings = (reel) => {
   const slowPages = pages.flatMap((p, i) => {
     const next = pages[i + 1]?.startMs ?? Infinity;
     const shownMs = Math.min(p.durationMs + 400, next - p.startMs);
-    const needMs = readingMs([p.text], false);
+    const needMs = readingMs([p.text], false, READING.captionCharsPerSec);
+    const cps = (needMs / 1000) * READING.captionCharsPerSec / (shownMs / 1000);
     return shownMs + TOL_MS < needMs
-      ? [{ frame: video(Math.round((p.startMs / 1000) * FPS)), text: p.text, shownMs, needMs }]
+      ? [{ frame: video(Math.round((p.startMs / 1000) * FPS)), text: p.text, shownMs, needMs, cps }]
       : [];
   });
   const framed = (hs) => hs.map((h) => ({ ...h, frame: video(h.atFrame) }));
@@ -119,7 +120,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
   // Reading-time floor: NFC length (a decomposed "ộ" counts once), the number
   // minimum, a short stat stretched into free time, a cue boxed in by the next
-  // cue reported short, and a fast caption page reported with its frame.
+  // cue reported short, and a caption page flagged only past the caption cap
+  // (one page, then a pause, pacing off so output time = source time).
   check("chars / charsPerSec", readingMs(["Lãi suất đã tăng"]) === (16 / READING.charsPerSec) * 1000);
   check("NFD counts as NFC", readingMs(["Lãi suất tăng".normalize("NFD")]) === readingMs(["Lãi suất tăng"]));
   check("number held >= min", readingMs(["5%"]) === READING.minNumberHoldMs && readingMs(["5%"], false) < 1000);
@@ -140,10 +142,17 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   check("boxed-in cue reported short", bf.short.length === 1 && bf.short[0].what === "cues[0] verdict" && bf.short[0].frame > 0, JSON.stringify(bf.short));
   const bfe = readingFloor(boxed, FPS).edit.cues[0];
   check("boxed-in cue grows only to the next cue", bfe.toMs > 1000 && bfe.toMs <= 1201, JSON.stringify(bfe));
-  const fast = words("nghiêng nguyện khuỷnh thuyết trường chuyện huyện xong")
-    .map((x, i) => ({ ...x, startMs: i * 150 + (i === 7 ? 2000 : 0), endMs: i * 150 + 120 + (i === 7 ? 2000 : 0) }));
-  const fp = readingFindings(reelOf(fast));
-  check("fast caption page reported", fp.slowPages.length >= 1 && fp.slowPages[0].text.includes("nghiêng"), JSON.stringify(fp.slowPages));
+  const pageAt = (cps) => {
+    const page = "Lãi suất tăng rồi."; // 18 chars, one page (sentence end)
+    const nextMs = Math.round((page.length / cps) * 1000);
+    const ws = words(`${page} xong`).map((x, i) => (i < 4
+      ? { ...x, startMs: i * 150, endMs: i * 150 + 120 }
+      : { ...x, startMs: nextMs, endMs: nextMs + 300 }));
+    return readingFindings(reelOf(ws, { pacing: { mode: "off" } })).slowPages;
+  };
+  check("caption page at 20 chars/s passes", pageAt(20).length === 0, JSON.stringify(pageAt(20)));
+  const at25 = pageAt(25);
+  check("caption page at 25 chars/s flagged", at25.length === 1 && at25[0].text.startsWith("Lãi suất") && at25[0].frame > 0, JSON.stringify(at25));
 
   const [slug, dirFlag, dirArg] = process.argv.slice(2);
   const pub = dirFlag === "--public-dir" ? dirArg : "public";
@@ -166,8 +175,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(`${slug}: reading floor ${READING.charsPerSec} chars/s, numbers >= ${READING.minNumberHoldMs} ms (untuned)`);
     for (const x of r.extended) console.log(`  HELD frame ${x.frame} ${x.what}: ${ms(x.shownMs)} -> ${ms(x.heldMs)} (needs ${ms(x.needMs)})  "${x.text}"`);
     for (const x of r.short) console.log(`  SHORT frame ${x.frame} ${x.what}: held ${ms(x.heldMs)} < ${ms(x.needMs)}; the next one starts first  "${x.text}"`);
-    console.log(`${slug}: ${r.slowPages.length} of ${r.pages} caption pages shown for less than their reading time (speech-bound; fix by pacing or paging)`);
-    for (const x of r.slowPages) console.log(`  PAGE frame ${x.frame}: ${ms(x.shownMs)} < ${ms(x.needMs)}  "${x.text}"`);
+    console.log(`${slug}: ${r.slowPages.length} of ${r.pages} caption pages faster than ${READING.captionCharsPerSec} chars/s (report only)`);
+    for (const x of r.slowPages) console.log(`  NOTE frame ${x.frame}: caption faster than speech-readable: consider paging or a remove (${x.cps.toFixed(1)} chars/s, ${ms(x.shownMs)})  "${x.text}"`);
   }
 
   process.exit(failed ? 1 : 0);

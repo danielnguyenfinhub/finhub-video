@@ -96,7 +96,7 @@ makes a point clearer. Anything else is cut.
 
 | # | Step | Who | Run / do | Makes | Gate |
 |---|---|---|---|---|---|
-| A5.1 | Caption check | Claude | `node scripts/check-caption-pages.mjs <slug>` for this video's caption pages. `node scripts/check-caption-fixes.mjs` only when `src/mortgage/timeline.ts` was changed (it self-tests the caption-fix logic on a synthetic transcript; exit 1 = failure) Then `node scripts/check-golden.mjs <slug>` lists cards and cues held to the reading floor and any it could not hold, and caption pages faster than it | Report | No SHORT card or cue; slow caption pages are speech-bound (fix by pacing or paging, or accept); diacritics intact |
+| A5.1 | Caption check | Claude | `node scripts/check-caption-pages.mjs <slug>` for this video's caption pages. `node scripts/check-caption-fixes.mjs` only when `src/mortgage/timeline.ts` was changed (it self-tests the caption-fix logic on a synthetic transcript; exit 1 = failure) Then `node scripts/check-golden.mjs <slug>` lists cards and cues held to the reading floor and any it could not hold, and notes caption pages faster than 22 chars/s | Report | No SHORT card or cue; a noted caption page is report-only (consider paging or a remove); diacritics intact |
 | A5.2 | Cut list review | Claude | `node scripts/export-srt.mjs <slug>` lists every automatic cut (ờ/ừm, stutters) | Cut list | Read it against the words: no sentence meaning changed |
 | A5.3 | Music | Claude | `music` from `public/music/` only (licensed). The render ducks it under the voice and normalises to −14 LUFS | — | — |
 

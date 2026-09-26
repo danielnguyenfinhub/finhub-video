@@ -20,15 +20,27 @@ import { toOutMs, toSrcMs } from "./timeline";
 //   NFC text (a precomposed "ộ" is one character) with spaces collapsed.
 // - minNumberHoldMs 1500: a figure needs one look to land, whatever its
 //   length; it matches the 1.5 s low edge of the change cadence.
+// - captionCharsPerSec 22, REPORT ONLY: caption pages follow Daniel's speech
+//   (about 20 chars/s) and cannot be held longer without desync; heard and
+//   read together, a page is only flagged when faster than this.
 // Tune once Daniel has watched a few videos with it.
-export const READING = { charsPerSec: 15, minNumberHoldMs: 1500 } as const;
+export const READING = {
+  charsPerSec: 15,
+  captionCharsPerSec: 22,
+  minNumberHoldMs: 1500,
+} as const;
 
-// Caption pages pass numberFloor false: their numbers get a card of their own.
-export const readingMs = (texts: string[], numberFloor = true): number => {
+// Caption pages pass numberFloor false and READING.captionCharsPerSec: their
+// numbers get a card of their own.
+export const readingMs = (
+  texts: string[],
+  numberFloor = true,
+  charsPerSec: number = READING.charsPerSec,
+): number => {
   const chars = [
     ...texts.join(" ").normalize("NFC").replace(/\s+/g, " ").trim(),
   ].length;
-  const ms = (chars / READING.charsPerSec) * 1000;
+  const ms = (chars / charsPerSec) * 1000;
   return numberFloor && /\d/.test(texts.join(""))
     ? Math.max(ms, READING.minNumberHoldMs)
     : ms;
