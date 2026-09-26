@@ -1,0 +1,44 @@
+{
+  "id": "neon",
+  "intents": [
+    "process",
+    "warn"
+  ],
+  "dataShapes": [
+    "steps",
+    "numbers"
+  ],
+  "grammar": {
+    "numbers": "gauge ring halo behind the head",
+    "comparisons": "classic compare/bars cue cards (MotionTrack)",
+    "steps": "ring chapter card + star-wipe",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "countdown-ring cover",
+    "captions": "one big glowing word",
+    "framing": "cut-out with a glowing audio ring",
+    "transitions": "star-wipe",
+    "texture": "neon starburst + amber sparks",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 24,
+    "en": 0
+  },
+  "minHoldMs": 1000,
+  "facePolicy": "face-required",
+  "renderCost": "high",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

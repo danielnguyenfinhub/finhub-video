@@ -1,0 +1,13 @@
+{
+  "status": "UNTUNED: starting guesses, not fitted to any outcome data. Revisit once ~10 videos have a selection.json and Daniel's pick.",
+  "weights": {
+    "intent": 3,
+    "shape": 2,
+    "comp": 1,
+    "asset": 1,
+    "rec": 2,
+    "cost": 0.5
+  },
+  "recency": [1, 0.6, 0.3],
+  "cost": { "low": 0, "med": 0.5, "high": 1 }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "scenario",
+  "intents": [
+    "compare"
+  ],
+  "dataShapes": [
+    "comparison",
+    "numbers"
+  ],
+  "grammar": {
+    "numbers": "illustrative figure card",
+    "comparisons": "two-column A/B table, inputs typed live (own)",
+    "steps": "chapter strip",
+    "eligibility": "verdict, never 'best'",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "A/B split cover",
+    "captions": "pill captions",
+    "framing": "cut-out straddling the split at 0.75",
+    "transitions": "core chapter transitions",
+    "texture": "split backdrop",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 30,
+    "en": 0
+  },
+  "minHoldMs": 2000,
+  "facePolicy": "face-required",
+  "renderCost": "low",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

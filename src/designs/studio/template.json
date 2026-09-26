@@ -1,0 +1,43 @@
+{
+  "id": "studio",
+  "intents": [
+    "explain",
+    "data"
+  ],
+  "dataShapes": [
+    "numbers"
+  ],
+  "grammar": {
+    "numbers": "speech-bubble stat callout",
+    "comparisons": "classic compare/bars cue cards (MotionTrack)",
+    "steps": "circle-marked chapter cards",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "liquid-contour cover",
+    "captions": "moving pill",
+    "framing": "full-frame, punch-in per cut",
+    "transitions": "core chapter transitions",
+    "texture": "liquid contours",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 44,
+    "en": 0
+  },
+  "minHoldMs": 1500,
+  "facePolicy": "face-required",
+  "renderCost": "high",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

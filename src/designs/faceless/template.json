@@ -1,0 +1,48 @@
+{
+  "id": "faceless",
+  "intents": [
+    "explain",
+    "process",
+    "data"
+  ],
+  "dataShapes": [
+    "narrative",
+    "steps",
+    "comparison",
+    "numbers"
+  ],
+  "grammar": {
+    "numbers": "counting ring chart on the stage",
+    "comparisons": "compare cards with VS",
+    "steps": "navy-glass numbered points list",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "centre stage, drops to a lower band; English line at the bottom"
+  },
+  "skinAxes": {
+    "cover": "navy card, logo tile + two-line title",
+    "captions": "centred karaoke words + boxed English line",
+    "framing": "stock footage dimmed on navy, veil under elements",
+    "transitions": "panel drop-in / fly-out, footage straight cuts",
+    "texture": "navy gradient veil over footage",
+    "sound": "voice + calm piano bed",
+    "cta": "white contact card + compliance card"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi",
+    "en"
+  ],
+  "maxChars": {
+    "vi": 60,
+    "en": 140
+  },
+  "minHoldMs": 1500,
+  "facePolicy": "faceless",
+  "renderCost": "med",
+  "preview": null,
+  "uses": 1,
+  "lastUsed": "2026-09-26"
+}

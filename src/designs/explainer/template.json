@@ -1,0 +1,44 @@
+{
+  "id": "explainer",
+  "intents": [
+    "explain"
+  ],
+  "dataShapes": [
+    "narrative",
+    "comparison",
+    "eligibility"
+  ],
+  "grammar": {
+    "numbers": "sticky note",
+    "comparisons": "sticky-note compare cards (own)",
+    "steps": "chapter title in pen + book-flip",
+    "eligibility": "pen tick/cross (own)",
+    "captionPosition": "marker on the paper below the card"
+  },
+  "skinAxes": {
+    "cover": "taped photo on lined paper + marker title",
+    "captions": "marker-highlight words on paper, sentence-aware pages",
+    "framing": "cut-out on brand backdrop inside a taped photo card",
+    "transitions": "book flip / clock wipe / swap",
+    "texture": "lined paper + tape",
+    "sound": "pencil click + ding",
+    "cta": "paper contact card"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 44,
+    "en": 0
+  },
+  "minHoldMs": 2000,
+  "facePolicy": "face-required",
+  "renderCost": "med",
+  "preview": null,
+  "uses": 1,
+  "lastUsed": "2026-09-25"
+}

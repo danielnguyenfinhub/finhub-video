@@ -1,0 +1,44 @@
+{
+  "id": "series",
+  "intents": [
+    "explain",
+    "data"
+  ],
+  "dataShapes": [
+    "numbers",
+    "banks"
+  ],
+  "grammar": {
+    "numbers": "sidebar bar list + counter card",
+    "comparisons": "classic compare/bars cue cards (MotionTrack)",
+    "steps": "journey tracker",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "numbered episode ring",
+    "captions": "series captions",
+    "framing": "cut-out bottom-left at 0.9",
+    "transitions": "core chapter transitions",
+    "texture": "waves backdrop + amber strip",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 40,
+    "en": 0
+  },
+  "minHoldMs": 1500,
+  "facePolicy": "face-required",
+  "renderCost": "low",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

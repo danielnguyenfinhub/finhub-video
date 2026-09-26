@@ -15,8 +15,8 @@ const POLICY_WORDS = [
 ];
 // Vietnamese syllables are space-separated, so "not a letter or digit" on each
 // side is the word boundary (\b doesn't know accented letters).
-const POLICY_RE = new RegExp(
-  `(?<![\p{L}\p{N}])(${POLICY_WORDS.join("|")})s?(?![\p{L}\p{N}])`,
+export const POLICY_RE = new RegExp(
+  String.raw`(?<![\p{L}\p{N}])(${POLICY_WORDS.join("|")})s?(?![\p{L}\p{N}])`,
   "iu",
 );
 
