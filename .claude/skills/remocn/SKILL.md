@@ -109,7 +109,7 @@ const opacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" 
 const scale = spring({ fps, frame, config: { damping: 12, mass: 1, stiffness: 100 } });
 
 // Deterministic randomness (NEVER Math.random())
-import { random } from "@remotion/random";
+import { random } from "remotion";
 const jitter = random(`seed-${frame}`);
 ```
 
