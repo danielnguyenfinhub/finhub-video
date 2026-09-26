@@ -90,7 +90,7 @@ makes a point clearer. Anything else is cut.
 | A4.6 | Chapters and keywords | Claude | `chapters` at topic changes; `keywords` highlight at most 1–2 words per sentence | — | — |
 | A4.7 | CTA | Claude | One `cta`. Only one ask | — | — |
 | A4.8 | Compliance fields | Claude | Advertised rate → `compliance.advertisedRate` (rate, comparison rate, as-at date) or no rate at all. Tax talk → `taxNote` | `compliance` | Missing → the rate does not appear |
-| A4.9 | New visual concept needed? | Claude | Only if no existing design or cue does it. Build `src/designs/<id>/` per `src/designs/README.md`, register it in `index.ts`, list hard-coded strings in `copy`, and use theme tokens only. Then **[BUILD WP7]** `node scripts/promote-design.mjs <id>` to save it as a template | New template with manifest and preview | Promotion checks pass |
+| A4.9 | New visual concept needed? | Claude | Only if no existing design or cue does it. Build `src/designs/<id>/` per `src/designs/README.md`, register it in `index.ts`, list hard-coded strings in `copy`, and use theme tokens only. Then **[TODAY]** `node scripts/promote-design.mjs <id>` to save it as a template | New template with manifest and preview | Promotion checks pass |
 
 ### A5. Captions and sound
 
@@ -160,7 +160,7 @@ on voice or images.
 | B4.1 | Scene brief and template **[TODAY]** | Claude | `node scripts/brief.mjs <slug>`, then `node scripts/select-template.mjs <slug>` | `brief.json`, `selection.json` | Faceless stays on `faceless` unless the selector finds a better-fitting faceless-capable template |
 | B4.2 | Hook, chapters, stats, cues | Claude | Add to `edit.json`, timed from `words.json` (available only after voicing): `hook`, `chapters`, `stats` for labelled numbers, `cues` (`compare`, `bars`, `points`, `verdict`) per the scene visuals chosen in B2.2 | `edit.json` | Elements carry the facts; footage only fills; the navy veil hides footage whenever an element is up |
 | B4.3 | Compliance fields | Claude | `compliance.advertisedRate` if a rate is presented as available, `taxNote` for tax talk | — | — |
-| B4.4 | New concept? | Claude | As A4.9, then promote (WP7) | Template | — |
+| B4.4 | New concept? | Claude | As A4.9, then promote **[TODAY]** | Template | — |
 
 ### B5. QC, render, deliver
 

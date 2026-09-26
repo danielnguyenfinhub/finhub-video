@@ -16,10 +16,29 @@ const root = join(import.meta.dirname, "..");
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 const r2 = (n) => Math.round(n * 100) / 100;
 
-export const loadManifests = () =>
-  readdirSync(join(root, "src", "designs"))
-    .filter((id) => existsSync(join(root, "src", "designs", id, "template.json")))
-    .map((id) => readJson(join(root, "src", "designs", id, "template.json")));
+export const loadManifests = (dir = join(root, "src", "designs")) =>
+  readdirSync(dir)
+    .filter((id) => existsSync(join(dir, id, "template.json")))
+    .map((id) => readJson(join(dir, id, "template.json")));
+
+// Every template.json field the selector reads, with its type; promote-design.mjs
+// checks a manifest against this list. An array lists the allowed values.
+export const MANIFEST_FIELDS = {
+  id: "string",
+  intents: "string[]",
+  dataShapes: "string[]",
+  grammar: "object",
+  skinAxes: "object",
+  aspects: "string[]",
+  languages: "string[]",
+  maxChars: { vi: "number", en: "number" },
+  minHoldMs: "number",
+  facePolicy: ["face-required", "face-optional", "faceless"],
+  renderCost: Object.keys(readJson(join(root, "config", "selector.json")).cost),
+  preview: "string|null",
+  uses: "number",
+  lastUsed: "string|null",
+};
 
 // Why a design cannot make this video, or null when it can.
 const excluded = (t, b) => {
