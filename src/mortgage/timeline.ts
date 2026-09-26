@@ -148,6 +148,18 @@ const fixWord = (
   return w;
 };
 
+// Whisper writes numbers the English way ("4.1"); the captions are the
+// Vietnamese line, so a decimal takes a comma ("4,1") like the stats and
+// figures. A dot before exactly three digits is Vietnamese thousands
+// ("100.000", "1.600") and stays. The English line (edit.subtitles) is typed
+// text and never passes through here.
+// ponytail: every spoken word is treated as Vietnamese; an English sentence
+// in the speech would get "4,1" too. Add a per-word language test if that happens.
+const decimalComma = (w: string) =>
+  w.replace(/(\d)\.(\d+)/g, (m, a: string, b: string) =>
+    b.length === 3 ? m : `${a},${b}`,
+  );
+
 const bare = (s: string | undefined) =>
   s
     ?.trim()
@@ -243,10 +255,8 @@ const prepareWords = (raw: Word[], edit: TimelineEdit): EditWord[] => {
     atSentenceStart =
       /[.?!]$/.test(w.text.trim()) ||
       (atSentenceStart && autoCut === "filler");
-    const fixed = fixWord(
-      w.text.normalize("NFC").trim(),
-      bare(prev?.text),
-      bare(all[i + 1]?.text),
+    const fixed = decimalComma(
+      fixWord(w.text.normalize("NFC").trim(), bare(prev?.text), bare(all[i + 1]?.text)),
     );
     const custom = fixes.find((f) => f.from === fixed);
     return {

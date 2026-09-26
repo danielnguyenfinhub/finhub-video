@@ -37,8 +37,12 @@ import { MetallicLogo3D, calculateMetallicLogo3DMetadata } from "./showcase/logo
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
 import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
+import { RealEstateInvesting } from "./showcase/realestateinvesting/RealEstateInvesting";
+import { TravelRouteMap } from "./showcase/travelroutemap/TravelRouteMap";
 import { BMS_DURATION, BmsCellBalancing } from "./showcase/bmscellbalancing/BmsCellBalancing";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
+import { NewsHeadlineHighlight, newsHeadlineDefaultProps, newsHeadlineSchema } from "./showcase/newsheadline/NewsHeadlineHighlight";
+import { CtaOverlay, ctaOverlayDefaultProps, ctaOverlaySchema } from "./showcase/ctaoverlay/CtaOverlay";
 
 // A single-frame <Still> for a poster image (`npx remotion still Poster`).
 // Deliberately static rather than reusing TitleScene's animated entrance —
@@ -141,7 +145,13 @@ export const RemotionRoot: React.FC = () => {
       </Folder>
       <Folder name="Experiments">
         <Composition id="MetallicLogo3D" component={MetallicLogo3D} calculateMetadata={calculateMetallicLogo3DMetadata} durationInFrames={120} fps={30} width={1920} height={1080} />
+        {/* From the Remotion prompt gallery; the prompt URL is at the top of each file. */}
+        <Composition id="NewsHeadlineHighlight" component={NewsHeadlineHighlight} schema={newsHeadlineSchema} defaultProps={newsHeadlineDefaultProps} durationInFrames={150} fps={30} width={1920} height={1080} />
+        {/* Transparent: render as ProRes 4444 with alpha (command in CtaOverlay.tsx). */}
+        <Composition id="CtaOverlay" component={CtaOverlay} schema={ctaOverlaySchema} defaultProps={ctaOverlayDefaultProps} durationInFrames={180} fps={30} width={1920} height={1080} />
         <Composition id="BarLineChart" component={BarLineChart} durationInFrames={120} fps={30} width={1920} height={1080} />
+        <Composition id="RealEstateInvesting" component={RealEstateInvesting} durationInFrames={600} fps={30} width={1080} height={1920} />
+        <Composition id="TravelRouteMap" component={TravelRouteMap} durationInFrames={450} fps={30} width={1920} height={1080} />
         <Composition id="BmsCellBalancing" component={BmsCellBalancing} durationInFrames={BMS_DURATION} fps={30} width={1280} height={720} />
       </Folder>
       <Folder name="Utilities">

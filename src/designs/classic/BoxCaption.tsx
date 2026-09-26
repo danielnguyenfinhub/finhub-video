@@ -17,6 +17,7 @@ import {
 } from "remotion";
 import { brand } from "../../brand/theme";
 import { FONT, emphasised, enter, reelFontReady } from "../../mortgage/style";
+import { SAFE } from "../../mortgage/golden";
 
 const SIZE = 66;
 const WEIGHT = 800; // a weight reelFontReady() loads, so the measure is exact
@@ -83,7 +84,14 @@ export const BoxCaptionPage: React.FC<{
   );
   return (
     <AbsoluteFill
-      style={{ justifyContent: "flex-start", alignItems: "center", top: 1180 }}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "center",
+        // Golden rule: captions below FACE. Anchored to SAFE.bottom and growing
+        // upward, one or two lines sit clear of the mouth, even on a 1.13x
+        // zoom-cut (y 1180 crossed it), and never enter the bottom UI.
+        height: SAFE.bottom, // not bottom: AbsoluteFill sets height 100%, which wins
+      }}
     >
       <div
         style={{
