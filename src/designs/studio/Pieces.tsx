@@ -5,7 +5,6 @@
 import { liquidContours } from "@remotion/effects/liquid-contours";
 import {
   getWaveformPortion,
-  useWindowedAudioData,
 } from "@remotion/media-utils";
 import { Circle } from "@remotion/rough-notation";
 import { makeCallout } from "@remotion/shapes";
@@ -22,6 +21,7 @@ import {
 } from "remotion";
 import { brand } from "../../brand/theme";
 import { FONT, LOGO, clamp } from "../../mortgage/style";
+import { useCoveredAudioData } from "../../elements/useCoveredAudioData";
 
 const ease = Easing.bezier(0.65, 0, 0.35, 1);
 
@@ -235,7 +235,7 @@ export const VoiceNote: React.FC<{ src: string; talkFrames: number }> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const bars = 56;
-  const { audioData, dataOffsetInSeconds } = useWindowedAudioData({
+  const { audioData, dataOffsetInSeconds } = useCoveredAudioData({
     fps,
     frame: 0,
     src,
