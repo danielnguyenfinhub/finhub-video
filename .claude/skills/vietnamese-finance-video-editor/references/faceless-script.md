@@ -24,6 +24,35 @@ The writing rules below are MoneyPrinterTurbo's (Daniel liked how it writes scri
 - **End with one call to action**, e.g. "Nhắn tin cho Finance Hub để được hỗ trợ." Don't add a second one.
 - **Write real Vietnamese** with every diacritic.
 
+## Fact ledger (`facts.json`, and `scenes[].facts`)
+
+Every factual claim a scene makes, spoken or on screen, traces to the source document. Write the sources to `public/videos/<slug>/facts.json`, an array with one entry per fact:
+
+```json
+[
+  {
+    "id": "F1",
+    "claim_vi": "Môi giới vay phải hành động vì lợi ích của bạn.",
+    "claim_en": "Mortgage brokers must act in your interests.",
+    "verbatim": "the exact sentence from the document, copied, not paraphrased",
+    "doc": "MFAA-BID-Key-Concepts-2021.pdf",
+    "locator": "p. 4, 'The best interests duty'",
+    "asAt": "2021-01-01",
+    "kind": "rule"
+  }
+]
+```
+
+- `id` is F1, F2, … in order. `asAt` is the document's own date (YYYY-MM-DD). `kind` is one of `number`, `rule`, `condition`, `definition`.
+- Every scene carries `facts`: the ids it relies on (`"facts": ["F1", "F3"]`), or `"facts": []` when it makes no factual claim (a hook question, the call to action). The empty list is the "no claim" marker; leaving the field out is not.
+- The dry run checks it (`scripts/facts.mjs`; its self-check is `node scripts/check-facts.mjs`) and blocks when:
+  - a scene has a digit, or a policy word (phải, được phép, không được, yêu cầu, điều kiện, tối thiểu, tối đa, đủ điều kiện, bắt buộc; must, required, eligible, minimum, maximum, condition, only if, not allowed), and no `facts` field at all. A false alarm on a scene with no claim is fixed with `"facts": []`;
+  - a scene cites an id that isn't in `facts.json`;
+  - a number in the scene's `vi` or `en` isn't in the `verbatim`, `claim_vi` or `claim_en` of a fact it cites. "5,79" and "5.79" count as the same number, and thousands separators are ignored.
+- A cited fact whose `asAt` is more than 90 days old is a warning: check it still holds.
+- Numbers written as words ("năm phần trăm") are not checked; the compliance review traces them by reading.
+- **Legacy slugs.** A slug with no `facts.json` (every video made before the ledger, such as `bid-explained`) dry-runs with one warning, "ledger missing (legacy slug): facts not checked". Its facts are checked once it gets a ledger.
+
 ## The English line (`scenes[].en`)
 
 Write a faithful, plain translation of that scene. It appears under the captions for the whole scene, so keep it to about 20 words or fewer.
@@ -89,9 +118,9 @@ RG 234 scans all of it.
 {
   "title": "Phí ngân hàng: 3 điều nên biết",
   "scenes": [
-    { "vi": "Mỗi năm người Úc trả hàng tỷ đô phí ngân hàng.", "en": "Australians pay billions in bank fees every year.", "footage": "bank fees paperwork" },
-    { "vi": "Lãi suất trung bình hiện khoảng 6,2 phần trăm.", "en": "The average rate is around 6.2 percent." },
-    { "vi": "Hãy xem lại khoản vay mỗi năm một lần. Nhắn tin cho Finance Hub để được hỗ trợ.", "en": "Review your loan once a year. Message Finance Hub for help.", "footage": "couple reviewing home loan" }
+    { "vi": "Mỗi năm người Úc trả hàng tỷ đô phí ngân hàng.", "en": "Australians pay billions in bank fees every year.", "footage": "bank fees paperwork", "facts": ["F1"] },
+    { "vi": "Lãi suất trung bình hiện khoảng 6,2 phần trăm.", "en": "The average rate is around 6.2 percent.", "facts": ["F2"] },
+    { "vi": "Hãy xem lại khoản vay mỗi năm một lần. Nhắn tin cho Finance Hub để được hỗ trợ.", "en": "Review your loan once a year. Message Finance Hub for help.", "footage": "couple reviewing home loan", "facts": [] }
   ],
   "post": {
     "title": "Bạn đang trả bao nhiêu phí ngân hàng?",
@@ -103,6 +132,6 @@ RG 234 scans all of it.
 
 ## Steps
 
-1. **Write** `script.json` and run `node scripts/voice-video.mjs <slug> --dry-run`. It checks RG 234 and prints the character count and the footage searches.
+1. **Write** `facts.json` and `script.json` and run `node scripts/voice-video.mjs <slug> --dry-run`. It checks RG 234 and the fact ledger, and prints the character count and the footage searches.
 2. **Send Daniel the script** as a readable list (Vietnamese, English, footage, post copy) with the character count. Wait for his approval.
 3. **Build.** Run `node scripts/voice-video.mjs <slug>`, then add the hook, chapters and stats to `edit.json` (`references/edit-json.md`). Check stills, then render with `python scripts/render-video.py <slug>`.

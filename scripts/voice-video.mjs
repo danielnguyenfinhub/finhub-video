@@ -25,7 +25,7 @@
 //                          used only if the free stock search finds nothing" } ],
 //     "post": { "title": "...", "caption": "...", "hashtags": ["#..."] } }
 // How to write one: .claude/skills/vietnamese-finance-video-editor/references/faceless-script.md
-// --dry-run: RG 234 check + character count (ElevenLabs bills per character),
+// --dry-run: RG 234 check, fact-ledger check (scripts/facts.mjs) + character count (ElevenLabs bills per character),
 // nothing voiced. Show this to Daniel for approval before a real run.
 //
 // Writes to public/videos/<slug>/:
@@ -44,6 +44,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkFacts, readLedger } from "./facts.mjs";
 import { omnivoicePython, resolveProfile } from "./omnivoice.mjs";
 import { aiClip, stockClips } from "./visuals.mjs";
 
@@ -142,6 +143,17 @@ try {
 } catch (err) {
   fail(`RG 234 blocked the script, nothing was voiced.\n${err.message}`);
 }
+
+// Every factual claim traces to facts.json (faceless-script.md "Fact ledger").
+let ledger;
+try {
+  ledger = readLedger(dir);
+} catch (err) {
+  fail(err.message);
+}
+const facts = checkFacts(script, ledger);
+facts.warnings.forEach((w) => console.log(`facts: ${w}`));
+if (facts.errors.length) fail(`facts blocked the script, nothing was voiced.\n${facts.errors.join("\n")}`);
 
 const chars = scenes.reduce((n, s) => n + s.vi.length, 0);
 const engine = engineFlag ?? script.engine ?? "google";
