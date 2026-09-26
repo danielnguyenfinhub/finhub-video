@@ -1,7 +1,8 @@
 // Check for src/mortgage/golden.ts. Run: node scripts/check-golden.mjs [slug]
 // [--public-dir dir] (exit 1 on failure). Synthetic captions prove the number gluing, the
-// bare-count filter, stat coverage and bank detection; with a slug it also
-// prints what that video's captions would produce. scripts/brief.mjs imports
+// bare-count filter, stat coverage, bank detection and the reading-time floor;
+// with a slug it also prints what that video's captions would produce, and
+// every card, cue or caption page shown for less than its reading time. scripts/brief.mjs imports
 // the exports below; the checks run only when this file is the entry point.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
@@ -14,13 +15,43 @@ import { pathToFileURL } from "node:url";
 const bundle = join(mkdtempSync(join(tmpdir(), "golden-")), "golden.mjs");
 execFileSync(process.execPath, [
   "node_modules/esbuild/bin/esbuild", "src/mortgage/golden.ts", "src/mortgage/timeline.ts",
+  "src/mortgage/captionPages.ts",
   "--bundle", "--format=esm", "--platform=node", "--out-extension:.js=.mjs",
   `--outdir=${join(bundle, "..")}`,
 ]);
 const url = (p) => new URL(`file:///${p.replace(/\\/g, "/")}`);
-export const { figuresOf, lenderMentionsOf, faceHiddenOf, CUTAWAY_MAX_MS } = await import(url(bundle));
-export const { buildTimeline } = await import(url(join(bundle, "..", "timeline.mjs")));
+export const { figuresOf, lenderMentionsOf, faceHiddenOf, CUTAWAY_MAX_MS, READING, readingMs, readingFloor } =
+  await import(url(bundle));
+export const { buildTimeline, TALK_START_FRAME } = await import(url(join(bundle, "..", "timeline.mjs")));
+const { captionPages } = await import(url(join(bundle, "..", "captionPages.mjs")));
 export const FPS = 30;
+
+// Reading-time findings: holds the floor stretched, holds it could not
+// stretch (the next card of the same kind starts first), and caption pages
+// faster than READING.charsPerSec. Pages already last until the next page, so
+// they can only be fixed by speech timing (pacing) or paging: reported, not
+// changed. Paging as classic does it (900 / 350 ms); frames are video frames.
+// ponytail: one paging setting for every design; pass the design's own
+// combine window if a design with longer pages gets false alarms.
+const TOL_MS = 1000 / FPS;
+export const readingFindings = (reel) => {
+  const video = (talkFrame) => TALK_START_FRAME + talkFrame;
+  const { holds } = readingFloor(reel, FPS);
+  const extended = holds.filter((h) => h.heldMs > h.shownMs + 1);
+  const short = holds.filter((h) => h.heldMs + TOL_MS < h.needMs);
+  const pages = captionPages({ captions: reel.timeline.captions, combineWithinMs: 900, breakOnSilenceAfterMs: 350 });
+  const slowPages = pages.flatMap((p, i) => {
+    const next = pages[i + 1]?.startMs ?? Infinity;
+    const shownMs = Math.min(p.durationMs + 400, next - p.startMs);
+    const needMs = readingMs([p.text], false);
+    return shownMs + TOL_MS < needMs
+      ? [{ frame: video(Math.round((p.startMs / 1000) * FPS)), text: p.text, shownMs, needMs }]
+      : [];
+  });
+  const framed = (hs) => hs.map((h) => ({ ...h, frame: video(h.atFrame) }));
+  return { extended: framed(extended), short: framed(short), slowPages, pages: pages.length };
+};
+const ms = (x) => `${Math.round(x)} ms`;
 
 export const words = (text) =>
   text.split(" ").map((w, i) => ({
@@ -86,6 +117,34 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   // Output ms: pacing speeds the talk up, so the second starts < 1 s after the first.
   check("overlapping cutaways merge", two.longestMs === two.totalMs && two.longestMs > 2000 && two.longestMs < 4000, JSON.stringify(two));
 
+  // Reading-time floor: NFC length (a decomposed "ộ" counts once), the number
+  // minimum, a short stat stretched into free time, a cue boxed in by the next
+  // cue reported short, and a fast caption page reported with its frame.
+  check("chars / charsPerSec", readingMs(["Lãi suất đã tăng"]) === (16 / READING.charsPerSec) * 1000);
+  check("NFD counts as NFC", readingMs(["Lãi suất tăng".normalize("NFD")]) === readingMs(["Lãi suất tăng"]));
+  check("number held >= min", readingMs(["5%"]) === READING.minNumberHoldMs && readingMs(["5%"], false) < 1000);
+  const sw = words("một hai ba bốn năm sáu bảy tám chín mười mươi một mươi hai mươi ba mươi bốn mươi lăm");
+  const statText = ["4,1 tỷ đô", "phí người Úc trả ngân hàng trong một năm"];
+  const statReel = reelOf(sw, { stats: [{ atMs: 400, durMs: 500, big: statText[0], label: statText[1] }] });
+  const floored = readingFloor(statReel, FPS);
+  const need = readingMs(statText);
+  check("short stat stretched to its reading time", Math.abs(floored.edit.stats[0].durMs - need) < 1 && readingFindings(statReel).short.length === 0,
+    `${floored.edit.stats[0].durMs} vs ${need}`);
+  check("speech timing untouched", floored.edit.stats[0].atMs === 400 && statReel.timeline.talkFrames === reelOf(sw).timeline.talkFrames);
+  const verdict = (fromMs, toMs, text) => ({ kind: "verdict", fromMs, toMs, ok: true, text });
+  const boxed = reelOf(sw, { cues: [
+    verdict(400, 1000, "Phí thường niên cao hơn lãi suất bạn tiết kiệm được"),
+    verdict(1200, 5000, "Đúng"),
+  ] });
+  const bf = readingFindings(boxed);
+  check("boxed-in cue reported short", bf.short.length === 1 && bf.short[0].what === "cues[0] verdict" && bf.short[0].frame > 0, JSON.stringify(bf.short));
+  const bfe = readingFloor(boxed, FPS).edit.cues[0];
+  check("boxed-in cue grows only to the next cue", bfe.toMs > 1000 && bfe.toMs <= 1201, JSON.stringify(bfe));
+  const fast = words("nghiêng nguyện khuỷnh thuyết trường chuyện huyện xong")
+    .map((x, i) => ({ ...x, startMs: i * 150 + (i === 7 ? 2000 : 0), endMs: i * 150 + 120 + (i === 7 ? 2000 : 0) }));
+  const fp = readingFindings(reelOf(fast));
+  check("fast caption page reported", fp.slowPages.length >= 1 && fp.slowPages[0].text.includes("nghiêng"), JSON.stringify(fp.slowPages));
+
   const [slug, dirFlag, dirArg] = process.argv.slice(2);
   const pub = dirFlag === "--public-dir" ? dirArg : "public";
   if (slug) {
@@ -103,6 +162,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(`${slug}: face hidden ${(h.totalMs / 1000).toFixed(1)} s in total, longest ${(h.longestMs / 1000).toFixed(1)} s (limit ${CUTAWAY_MAX_MS / 1000} s per cutaway, untuned)`);
     for (const x of h.tooLong) check(`cutaway at ${x.atMs} ms is ${(x.durMs / 1000).toFixed(1)} s, over the face limit`, false);
     for (const x of h.overNumbers) console.log(`FLAG cutaway at ${x.atMs} ms covers the spoken number ${x.big}: a figure drawn behind Daniel is hidden with him; move or shorten it`);
+    const r = readingFindings(reel);
+    console.log(`${slug}: reading floor ${READING.charsPerSec} chars/s, numbers >= ${READING.minNumberHoldMs} ms (untuned)`);
+    for (const x of r.extended) console.log(`  HELD frame ${x.frame} ${x.what}: ${ms(x.shownMs)} -> ${ms(x.heldMs)} (needs ${ms(x.needMs)})  "${x.text}"`);
+    for (const x of r.short) console.log(`  SHORT frame ${x.frame} ${x.what}: held ${ms(x.heldMs)} < ${ms(x.needMs)}; the next one starts first  "${x.text}"`);
+    console.log(`${slug}: ${r.slowPages.length} of ${r.pages} caption pages shown for less than their reading time (speech-bound; fix by pacing or paging)`);
+    for (const x of r.slowPages) console.log(`  PAGE frame ${x.frame}: ${ms(x.shownMs)} < ${ms(x.needMs)}  "${x.text}"`);
   }
 
   process.exit(failed ? 1 : 0);

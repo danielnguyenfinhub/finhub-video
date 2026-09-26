@@ -70,7 +70,10 @@ or `toOutMs` (timeline.ts). Reel data: `reel.edit` (edit.json), `reel.timeline.c
    (`src/mortgage/captionPages.ts`) for sentence-aware pages. Measure text only after
    `reelFontReady()` with `useDelayRender` (see studio/PillCaptions.tsx).
 5b. **A visual change every 1.5–3 s.** Punch-in on cuts, a word pop, a card, a logo: the
-   template must never sit still for more than 3 s (Daniel's rule).
+   template must never sit still for more than 3 s (Daniel's rule). A text or number
+   hold wins over this: the core holds each card and cue for its reading time
+   (`READING` in `golden.ts`), and the change is carried by motion inside the scene
+   (a count-up, a highlight, a slow push-in), never by cutting the card early.
 6. **Hook in 3 s.** `reel.edit.hook` (`{big, sub?, countTo?, suffix?}`) shows in the first
    105 frames of the Overlay; the Cover title uses `fitText` (`@remotion/layout-utils`).
 7. **Brand only.** Colours from `src/brand/theme.ts` (tints/gradients of them are fine).

@@ -213,7 +213,7 @@ Every template follows the same golden rules, enforced in [`src/mortgage/golden.
 - Charts sit *behind* you, never over your face.
 - The Finance Hub logo pops in after the hook and again in the last 10 seconds.
 - Nothing important leaves the 9:16 or 4:5 safe zones.
-- Something changes on screen every 1.5–3 seconds.
+- Something changes on screen every 1.5–3 seconds, but a card or number stays up long enough to read (motion inside it carries the change).
 - Captions are readable with the sound off.
 
 `node scripts/check-golden.mjs my-slug` shows which numbers and banks it found in a video.

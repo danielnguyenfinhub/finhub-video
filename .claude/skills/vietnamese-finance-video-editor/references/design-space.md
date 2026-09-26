@@ -2,6 +2,17 @@
 
 ## The 8 axes (the design log records one value per axis)
 
+The axes split into **grammar** and **skin** (WP5), the same split as every
+`src/designs/<id>/template.json` (`grammar` and `skinAxes`):
+
+- **Grammar** — how information is shown: the `graphics` axis, which the manifests
+  break down into numbers, comparisons, steps, eligibility, plus caption position.
+  Keep it **consistent per data shape**: the same kind of number or comparison reads
+  the same way from video to video, so viewers learn it once.
+- **Skin** — the look around it: `cover`, `captions` (style), `framing`,
+  `transitions`, `texture` (and colour treatment within the tokens), `sound`, `cta`.
+  **Novelty lives here.**
+
 | Axis | Example values (invent new ones freely) |
 |---|---|
 | cover | frozen-frame + big title · magazine cover · newspaper front page · big-number poster · 3D title · whiteboard sketch · split photo/graphic · ticket/receipt |
@@ -49,5 +60,6 @@ with captions and light motion only.
 
 ## Variety rule
 
-Differs from each of the last 3 videos on ≥ 4 axes; never the previous video's cover or
-captions value. `python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>` enforces it.
+Differs from each of the last 3 videos on ≥ 4 of the 7 **skin** axes (at least half);
+never the previous video's cover or captions value. Grammar (`graphics`) may repeat, and
+should for the same data shape. `python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>` enforces it.

@@ -35,6 +35,7 @@ import {
   type EditJson,
   type Reel,
 } from "./schema";
+import { readingFloor } from "./golden";
 import { KEYWORDS, clamp, useReelFont } from "./style";
 import {
   CHAPTER_TRANSITION_FRAMES,
@@ -122,7 +123,8 @@ export const buildReel = (
     assertRateGate(rate.rateFigure, rate.comparisonRate, rate.ratesAsAt);
   const timeline = buildTimeline(words as Word[], edit, FPS);
   return {
-    reel: { edit, timeline },
+    // Cards and cues held to their reading time (WP5); speech is untouched.
+    reel: { edit: readingFloor({ edit, timeline }, FPS).edit, timeline },
     durationInFrames:
       TALK_START_FRAME +
       timeline.talkFrames +

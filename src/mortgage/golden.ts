@@ -4,11 +4,136 @@
 //      cue covers);
 //   2. a bank Daniel names shows its logo (lenderMentionsOf);
 //   3. everything sits inside the 4:5 band, so one render works as a Reel
-//      and in the Facebook feed (SAFE).
+//      and in the Facebook feed (SAFE);
+//   5. every card and number is held long enough to read (READING, WP5). A
+//      text or number hold beats the 1.5–3 s change cadence: the change is
+//      carried by motion inside the scene (a count-up, a highlight, a push-in),
+//      never by cutting the card early.
 // Designs decide how these look, never whether they appear.
 import { findLenderMentions, type LenderMention } from "./lenders";
-import type { Reel } from "./schema";
-import { toOutMs } from "./timeline";
+import { onScreenCopy, type EditJson, type Reel } from "./schema";
+import { toOutMs, toSrcMs } from "./timeline";
+
+// Reading-time floor (WP5, 26/09/2026). UNTUNED starting values, one place:
+// - charsPerSec 15: adult subtitle guidance sits at 15–17 characters/s; the
+//   low end, because stacked Vietnamese diacritics read slower. Measured on
+//   NFC text (a precomposed "ộ" is one character) with spaces collapsed.
+// - minNumberHoldMs 1500: a figure needs one look to land, whatever its
+//   length; it matches the 1.5 s low edge of the change cadence.
+// Tune once Daniel has watched a few videos with it.
+export const READING = { charsPerSec: 15, minNumberHoldMs: 1500 } as const;
+
+// Caption pages pass numberFloor false: their numbers get a card of their own.
+export const readingMs = (texts: string[], numberFloor = true): number => {
+  const chars = [
+    ...texts.join(" ").normalize("NFC").replace(/\s+/g, " ").trim(),
+  ].length;
+  const ms = (chars / READING.charsPerSec) * 1000;
+  return numberFloor && /\d/.test(texts.join(""))
+    ? Math.max(ms, READING.minNumberHoldMs)
+    : ms;
+};
+
+export type Hold = {
+  what: string; // "stats[0]", "cues[2] compare"
+  text: string;
+  atFrame: number; // talk timeline
+  shownMs: number; // as edit.json has it
+  needMs: number;
+  heldMs: number; // after the floor
+};
+
+// Stretches each stat card and cue to its reading time, on the talk timeline,
+// without touching speech: a hold only grows into the free time before the
+// next card of the same kind (they share a place on screen) and the talk end.
+// A hold still under its need is short; check-golden reports it.
+export const readingFloor = (
+  reel: Reel,
+  fps: number,
+): { edit: EditJson; holds: Hold[] } => {
+  const segs = reel.timeline.segments;
+  const talkMs = (reel.timeline.talkFrames / fps) * 1000;
+  const out = (ms: number) => toOutMs(segs, ms, fps);
+  const frameOf = (ms: number) => Math.round((ms / 1000) * fps);
+  const holds: Hold[] = [];
+  // Output-ms spans in edit order; each may grow up to the next start.
+  // ponytail: only same-kind neighbours bound a hold (stat vs stat, cue vs
+  // cue); bound across kinds too if a design puts both in one place.
+  const grow = (
+    items: { what: string; text: string[]; a: number | null; b: number }[],
+  ) => {
+    const starts = items.flatMap((x) => (x.a === null ? [] : [x.a]));
+    return items.map((x) => {
+      if (x.a === null) return null;
+      const a = x.a;
+      const next = Math.min(talkMs, ...starts.filter((s) => s > a));
+      const needMs = readingMs(x.text);
+      const heldMs = Math.max(x.b - a, Math.min(needMs, next - a));
+      holds.push({
+        what: x.what,
+        text: x.text.filter(Boolean).join(" · "),
+        atFrame: frameOf(a),
+        shownMs: x.b - a,
+        needMs,
+        heldMs,
+      });
+      return heldMs;
+    });
+  };
+  const stats = reel.edit.stats ?? [];
+  const statHeld = grow(
+    stats.map((s, i) => {
+      const a = out(s.atMs);
+      return {
+        what: `stats[${i}]`,
+        text: [s.big, s.label],
+        a,
+        b: (a ?? 0) + s.durMs,
+      };
+    }),
+  );
+  const copy = onScreenCopy(reel.edit);
+  const cues = reel.edit.cues ?? [];
+  const cueHeld = grow(
+    cues.map((c, i) => {
+      const a = out(c.fromMs);
+      return {
+        what: `cues[${i}] ${c.kind}`,
+        text: copy[`cues[${i}]`] ?? [],
+        a,
+        b: out(c.toMs) ?? talkMs,
+      };
+    }),
+  );
+  return {
+    edit: {
+      ...reel.edit,
+      ...(reel.edit.stats && {
+        stats: stats.map((s, i) => {
+          const held = statHeld[i];
+          return held !== null && held > s.durMs + 1
+            ? { ...s, durMs: held }
+            : s;
+        }),
+      }),
+      ...(reel.edit.cues && {
+        cues: cues.map((c, i) => {
+          const a = out(c.fromMs);
+          const held = cueHeld[i];
+          if (
+            a === null ||
+            held === null ||
+            held <= (out(c.toMs) ?? talkMs) - a + 1
+          )
+            return c;
+          const toMs = toSrcMs(segs, a + held, fps); // back to source ms
+          return toMs > c.toMs ? { ...c, toMs } : c;
+        }),
+      }),
+    },
+    holds,
+  };
+};
 
 // 1080x1920 frame; Facebook crops the feed post to the middle 1080x1350
 // (y 285-1635) and keeps its own header/CTA over the top 10% and bottom 12%
@@ -142,7 +267,10 @@ export const figuresOf = (reel: Reel, fps: number): Figure[] => {
     lastMs = at;
     autos.push({
       fromFrame: Math.max(0, toFrame(at)),
-      frames: toFrame(AUTO_MS),
+      // Held to its reading time, never into the next automatic figure.
+      frames: toFrame(
+        Math.max(AUTO_MS, Math.min(readingMs([n.big, n.label]), AUTO_GAP_MS)),
+      ),
       big: n.big,
       label: n.label,
       source: "auto",

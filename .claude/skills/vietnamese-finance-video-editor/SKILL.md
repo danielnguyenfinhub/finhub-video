@@ -77,9 +77,15 @@ miễn phí, đảm bảo …) in the verify list — never silently cut them.
 ## Design rules (open field — the why, then your taste)
 
 - **Variety is the product.** Daniel's audience must never feel a template. Read the
-  design log (`python .claude/skills/vietnamese-finance-video-editor/scripts/main.py log`). The new design differs from each of the
-  last 3 videos on ≥ 4 of the 8 axes and never repeats the previous video's cover
-  concept or caption style (`python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>` proves it).
+  design log (`python .claude/skills/vietnamese-finance-video-editor/scripts/main.py log`). Novelty is for the **skin** only:
+  the new design differs from each of the last 3 videos on ≥ 4 of the 7 skin axes and
+  never repeats the previous video's cover concept or caption style
+  (`python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check <axes.json>` proves it). **Grammar** (how numbers,
+  comparisons, steps and eligibility are shown; caption position) stays consistent per
+  data shape (`references/design-space.md`).
+- **Held long enough to read.** Cards and cues hold for their reading time
+  (`READING` in `src/mortgage/golden.ts`); a hold beats the 1.5–3 s change rule, and the
+  change is carried by motion inside the scene.
 - **Content decides the direction**, not habit (decision tree below).
 - **Use the toolkit generously, but every effect earns its place**: it makes the point
   clearer, or it holds attention at a retention moment (the hook, a number, a topic
@@ -199,13 +205,13 @@ Report to Daniel in plain language, backed by this structure (`templates/output.
 | Frame fetch timeout / 404 on source.mp4 | render from the phone original or missing proxy | Re-run prep; render only from the prep proxy (`public/recordings/<id>/source.mp4`, or `public/videos/<slug>/` without `"source"`) |
 | Light leaks or 3D render black | WebGL without ANGLE | Use `render-video.py` (sets `--gl=angle`) |
 | Files changed on disk mid-task | GitHub Desktop pull/checkout stashed your work | Stop; find the stash (`git stash list`), restore, tell Daniel |
-| Check fails in `main.py check` | < 4 axes differ | Redesign; do not edit the log |
+| Check fails in `main.py check` | < 4 skin axes differ | Change skin axes; do not edit the log |
 
 ## Anti-Patterns
 
 | Anti-pattern | Why it fails | Correct behaviour |
 |---|---|---|
-| Re-using the last design by habit | Viewers see a template; retention drops | Read the log; change ≥ 4 axes |
+| Re-using the last design by habit | Viewers see a template; retention drops | Read the log; change ≥ 4 skin axes |
 | Editing the core or theme for one video | The next video breaks; compliance drifts | Designs only; core changes need a regression render |
 | Hard-coded text missing from `copy` | Escapes the RG 234 guard | List every string in `copy` |
 | Effects stacked everywhere | Noise hides the message and the face | Effects at signature moments only |
@@ -217,6 +223,10 @@ Report to Daniel in plain language, backed by this structure (`templates/output.
 | Sending the 1080p file to the phone | Over 30 MB | Send the phone copy |
 
 ## Change log
+- 26/09/2026 — v3.2.0 (WP5): novelty applies to skin axes only (≥ 4 of 7); grammar stays
+  consistent per data shape. Reading-time floor in the core (`READING`, untuned 15
+  chars/s, numbers ≥ 1500 ms): cards and cues are held to it, and `check-golden` reports
+  what it cannot hold.
 - 25/09/2026 — v3.1.0: designs draw on the element libraries in `.claude/elements/`
   (Remotion Elements + remocn); adaptation rules in toolkit.md → "Element libraries".
 - 24/09/2026 — v3.0.1: moved into `danielnguyenfinhub/finhub-video` (paths from the repo
