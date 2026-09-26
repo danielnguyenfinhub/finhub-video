@@ -1,6 +1,6 @@
 import {AbsoluteFill, Img, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig, type CalculateMetadataFunction} from "remotion";
 import {z} from "zod";
-import {useTyDoFont} from "../tydo/TyDoOverlays";
+import {useTyDoFont} from "./font";
 import {LowerThird} from "./LowerThird";
 
 export const brandOverlaySchema = z.object({
@@ -54,7 +54,7 @@ export const BrandOverlay: React.FC<BrandOverlayProps> = ({name, roleVi, roleEn}
           opacity: logoOpacity,
         }}
       >
-        <Img src={staticFile("ty-do/finhub-logo.png")} style={{height: LOGO_HEIGHT, display: "block"}} />
+        <Img src={staticFile("brand/finhub-logo.png")} style={{height: LOGO_HEIGHT, display: "block"}} />
       </div>
       <Sequence from={LOWER_THIRD_FROM} durationInFrames={LOWER_THIRD_DURATION} name="Lower third">
         <AbsoluteFill style={{opacity: lowerThirdOpacity}}>

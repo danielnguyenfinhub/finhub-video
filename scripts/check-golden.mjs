@@ -71,8 +71,9 @@ check("mention >= 2.5 s", m.every((x) => x.endMs - x.startMs >= 2500));
 
 const slug = process.argv[2];
 if (slug) {
-  const src = JSON.parse(readFileSync(`public/videos/${slug}/words.json`, "utf8"));
+  const { recordingPath } = await import(url(join(process.cwd(), "src", "mortgage", "recording.ts")));
   const edit = JSON.parse(readFileSync(`public/videos/${slug}/edit.json`, "utf8"));
+  const src = JSON.parse(readFileSync(`public/${recordingPath(slug, edit.source, "words.json")}`, "utf8"));
   const reel = reelOf(src, edit);
   const f = figuresOf(reel, FPS);
   console.log(`\n${slug}: ${f.length} figures (${f.filter((x) => x.source === "stat").length} stats)`);

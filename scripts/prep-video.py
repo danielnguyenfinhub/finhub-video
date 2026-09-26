@@ -1,20 +1,30 @@
 """Prepare a new talking-head video for the MortgageReel template.
 
-    python scripts/prep-video.py "<path to the recorded video>" <slug> [--no-clean]
+    python scripts/prep-video.py "<path to the recorded video>" <slug> [--recording <id>] [--no-clean]
+    python scripts/prep-video.py <slug> --recording <id>
 
-1. public/videos/<slug>/source.mp4: a short-GOP proxy (a keyframe every 15
+The first form prepares a new recording: its files go in
+public/recordings/<id>/ (id defaults to the slug; see scripts/recordings.py),
+the edit in public/videos/<slug>/. If that recording already exists it stops
+and names the videos using it: pick another --recording id for a new take, or
+delete the folder to replace the recording for all of them.
+The second form (no video file) makes a new edit of a recording already
+prepared: it skips steps 1-3 and writes only the slug's edit.json.
+
+1. public/recordings/<id>/source.mp4: a short-GOP proxy (a keyframe every 15
    frames) so every OffthreadVideo seek is cheap; phone originals often have one
    keyframe every 8 s, which times out parallel renders. Checked frame-for-frame
    against the original, so transcript timestamps apply to both. Its audio gets
    the VOICE_CLEANUP chain below unless --no-clean (for an already clean
    studio recording).
-2. public/videos/<slug>/words.json: word-level faster-whisper large-v3
+2. public/recordings/<id>/words.json: word-level faster-whisper large-v3
    transcript (Vietnamese) of the proxy, hesitation sounds (ờ, ừm) included so
    the timeline can cut them. Slow on CPU; progress is printed.
 3. A sentence table with each sentence's pace (words/s), flagging slow and fast
    delivery, to help write edit.json.
-4. public/videos/<slug>/edit.json: a skeleton (title from the file name), only
-   if none exists yet.
+4. public/videos/<slug>/edit.json: a skeleton (title from the file name,
+   "source": <id>), only if none exists yet; an existing one gets its "source"
+   set to <id>.
 """
 
 from __future__ import annotations
@@ -27,7 +37,8 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+from recordings import ID_PATTERN, PUBLIC, recording_dir, set_source
+
 SLOW_WPS = 3.4
 FAST_WPS = 5.4
 # A table row ends at a full stop, a pause, or this many words.
@@ -94,7 +105,9 @@ def transcribe(proxy: Path) -> list[dict]:
     except ImportError as err:
         raise SystemExit("faster-whisper is not installed: pip install faster-whisper") from err
     print("Loading faster-whisper large-v3 (CPU, int8) ...", flush=True)
-    model = WhisperModel("large-v3", device="cpu", compute_type="int8", cpu_threads=16)
+    # ponytail: 8 threads measured fastest on the i9-13900H (124 s vs 140 s at 16,
+    # identical words.json); re-time if the machine changes.
+    model = WhisperModel("large-v3", device="cpu", compute_type="int8", cpu_threads=8)
     segments, info = model.transcribe(str(proxy), language="vi",
                                       word_timestamps=True, beam_size=5,
                                       initial_prompt=FILLER_PROMPT)
@@ -142,37 +155,77 @@ def sentence_table(words: list[dict]) -> None:
             sentence = []
 
 
+def refuse_existing(folder: Path, recording: str, slug: str) -> None:
+    """Stop rather than reuse or overwrite a recording that is already prepared."""
+    users = []
+    for edit_path in sorted((PUBLIC / "videos").glob("*/edit.json")):
+        try:
+            source = json.loads(edit_path.read_text(encoding="utf-8")).get("source")
+        except (OSError, json.JSONDecodeError):
+            continue
+        if source == recording:
+            users.append(edit_path.parent.name)
+    raise SystemExit(
+        f"Recording {recording} already exists in {folder}, used by: "
+        f"{', '.join(users) or 'no video yet'}. Nothing was changed.\n"
+        f"- A new take: run again with --recording <other-id>, e.g. --recording {slug}-2.\n"
+        f"- A new edit of this recording: leave out the video file: "
+        f"python scripts/prep-video.py {slug} --recording {recording}\n"
+        f"- To replace this recording for all of those videos: delete {folder} first.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("video", type=Path, help="the recorded video file")
+    parser.add_argument("video", type=Path, nargs="?",
+                        help="the recorded video file; leave out to make a new edit of "
+                             "the existing recording named by --recording")
     parser.add_argument("slug", help="short folder name, e.g. lmi-explained")
+    parser.add_argument("--recording", metavar="ID",
+                        help="recording id under public/recordings/ (default: the slug)")
     parser.add_argument("--no-clean", action="store_true",
                         help="keep the audio as recorded (skip the voice clean-up)")
     args = parser.parse_args()
-    src: Path = args.video.resolve()
     slug: str = args.slug
-    if not src.is_file():
-        raise SystemExit(f"Video not found: {src}")
-    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", slug):
-        raise SystemExit(f'Slug "{slug}" must be lowercase letters, digits and hyphens.')
+    recording: str = args.recording or slug
+    for name, value in (("Slug", slug), ("Recording id", recording)):
+        if not ID_PATTERN.fullmatch(value):
+            raise SystemExit(f'{name} "{value}" must be lowercase letters, digits and hyphens.')
 
-    folder = ROOT / "public" / "videos" / slug
-    folder.mkdir(parents=True, exist_ok=True)
+    folder = recording_dir(PUBLIC, slug, recording)
     proxy = folder / "source.mp4"
-    make_proxy(src, proxy, clean=not args.no_clean)
-
-    words = transcribe(proxy)
     words_path = folder / "words.json"
-    words_path.write_text(json.dumps(words, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"Wrote {words_path} ({len(words)} tokens)")
-    sentence_table(words)
+    if args.video is None:
+        if not args.recording:
+            parser.error("give the video file, or --recording <id> for a new edit of an "
+                         "existing recording")
+        if not (proxy.exists() and words_path.exists()):
+            raise SystemExit(f"No prepared recording in {folder} (it needs source.mp4 and "
+                             f"words.json). Give the video file to prepare it.")
+        title = slug
+    else:
+        src: Path = args.video.resolve()
+        if not src.is_file():
+            raise SystemExit(f"Video not found: {src}")
+        if proxy.exists():
+            refuse_existing(folder, recording, slug)
+        title = src.stem
+        folder.mkdir(parents=True, exist_ok=True)
+        make_proxy(src, proxy, clean=not args.no_clean)
+        words = transcribe(proxy)
+        words_path.write_text(json.dumps(words, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"Wrote {words_path} ({len(words)} tokens)")
+        sentence_table(words)
 
-    edit_path = folder / "edit.json"
+    edit_dir = PUBLIC / "videos" / slug
+    edit_dir.mkdir(parents=True, exist_ok=True)
+    edit_path = edit_dir / "edit.json"
     if edit_path.exists():
-        print(f"\n{edit_path} already exists; left unchanged.")
+        set_source(edit_path, recording)
+        print(f'\n{edit_path} already exists; only its "source" is set, to {recording}.')
     else:
         skeleton = {
-            "title": src.stem,
+            "source": recording,
+            "title": title,
             "pacing": {"mode": "auto"},
             "chapters": [],
             "stats": [],

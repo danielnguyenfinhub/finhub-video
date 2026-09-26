@@ -1,14 +1,16 @@
 // Background removal for edit.json "background": "brand". Open
 // http://localhost:4100/matte.html?slug=<slug>: it cuts Daniel out of
-// public/videos/<slug>/source.mp4 with @remotion/video-matting (the modnet
-// person model, 25.9 MB, downloaded from remotion.media once, then cached) and
-// sends the result to the review server, which saves it as foreground.webm
-// only if its frame count matches source.mp4. Runs in the browser on the GPU:
+// the video's source.mp4 (in its recording, see src/mortgage/recording.ts)
+// with @remotion/video-matting (the modnet person model, 25.9 MB, downloaded
+// from remotion.media once, then cached) and sends the result to the review
+// server, which saves it as foreground.webm next to source.mp4 only if its
+// frame count matches. Runs in the browser on the GPU:
 // roughly 13x the video's length, so keep the window open until it says Saved.
 import {
   canUseVideoMatting,
   separateVideoLayers,
 } from "@remotion/video-matting";
+import { recordingPath } from "../src/mortgage/recording";
 
 const slug = new URLSearchParams(location.search).get("slug") ?? "";
 const $ = (id: string) => document.getElementById(id)!;
@@ -40,8 +42,14 @@ run.addEventListener("click", async () => {
   run.disabled = true;
   const started = performance.now();
   try {
+    const editRes = await fetch(`/public/videos/${slug}/edit.json`);
+    if (!editRes.ok)
+      throw new Error(
+        `public/videos/${slug}/edit.json: HTTP ${editRes.status}`,
+      );
+    const { source } = (await editRes.json()) as { source?: string };
     const result = await separateVideoLayers({
-      src: `/public/videos/${slug}/source.mp4`,
+      src: `/public/${recordingPath(slug, source, "source.mp4")}`,
       model: "modnet",
       audio: "none",
       onModelLoadProgress: (p) => {

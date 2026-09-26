@@ -4,7 +4,7 @@ A Remotion project: videos are written as React components and rendered to MP4/W
 
 ## How this repo is used: Claude Code is the editor
 
-This is Daniel's video editor, and the editing interface is a Claude Code chat. Daniel is a mortgage broker, not a developer: he records a video, puts it in `public/videos/<slug>/source.mp4`, and says in chat what he wants. The agent does the editing end to end with the `vietnamese-finance-video-editor` skill (prep, `edit.json`, design, render) and hands back a finished video to watch, not options or instructions. `npm run review` is a secondary page for Daniel's own small tweaks (design, grade, timings). Judge new code by whether it makes the next video better or faster to edit this way.
+This is Daniel's video editor, and the editing interface is a Claude Code chat. Daniel is a mortgage broker, not a developer: he records a video, has it prepared into `public/recordings/<id>/source.mp4`, and says in chat what he wants. The agent does the editing end to end with the `vietnamese-finance-video-editor` skill (prep, `edit.json`, design, render) and hands back a finished video to watch, not options or instructions. `npm run review` is a secondary page for Daniel's own small tweaks (design, grade, timings). Judge new code by whether it makes the next video better or faster to edit this way.
 
 This repository was split out of `danielnguyenfinhub/remotion` (a fork of the Remotion monorepo, kept as version 1), where it lived as `my-video/`. Older notes such as `docs/findings.md` refer to that repository's `packages/...` source folders.
 
@@ -110,7 +110,7 @@ Reusable pieces for the owner's real videos; start from these rather than writin
 - `LenderRow` (`height`, at most 100): the lender logos from `public/lenders/` on a white card.
 - `NotoEmoji` (`name`, `size`, `loop`): an animated emoji from `public/emoji/` (see "Emoji" above).
 - `EndCard` (`titleVi`, `titleEn`, `website`, `phone`): closing call to action with contact details and the badge row. There are no real contact details in the repo; pass them in.
-- `theme.ts`: Finance Hub's brand, taken from `TyDoReel` (`src/tydo/TyDoOverlays.tsx`): logo blue, navy, amber accent and the Be Vietnam Pro font. A composition that shows brand text calls `useTyDoFont()` so the font's local files load.
+- `theme.ts`: Finance Hub's brand (first set in the retired TyDoReel): logo blue, navy, amber accent and the Be Vietnam Pro font. A composition that shows brand text calls `useTyDoFont()` (`src/brand/font.ts`) so the font's local files in `public/fonts/` load.
 - `BrandOverlay` / `BrandOverlayVertical` (`name`, `roleVi`, `roleEn`, editable in the Studio's props panel): a transparent overlay for video editors, with the logo on a white pill top-right for the whole 8 s and the lower third from 1 s to 6 s. `npx remotion render BrandOverlay` (or `BrandOverlayVertical` for 1080×1920 reels) writes `out/brand-overlay.mov` as ProRes 4444 with transparency, which Final Cut Pro, Premiere Pro and DaVinci Resolve import; put it on a track above the footage.
 
 If a second video project ever needs these, `remotion-dev/library-starter` is Remotion's template for publishing them as a package; it pins Remotion 4.0.46, so upgrade it first.
@@ -121,15 +121,15 @@ If a second video project ever needs these, `remotion-dev/library-starter` is Re
 
 ## MortgageReel: `src/mortgage/`
 
-The talking-head template. Each video is a folder `public/videos/<slug>/` with `source.mp4` (not in Git), `words.json` and `edit.json`; the code doesn't change per video.
+The talking-head template; the code doesn't change per video. A recording lives once in `public/recordings/<id>/` (`source.mp4`, `foreground.webm`, `words.json`, and `original.<ext>` when kept; only `words.json` is in Git). Each video is a folder `public/videos/<slug>/` with its `edit.json`, whose `"source": "<id>"` names the recording, so two designs of one recording are two slugs and one copy of the files. An `edit.json` without `source` (videos not yet moved by `scripts/migrate-assets.py`, and faceless videos) keeps its files in `public/videos/<slug>/`. `src/mortgage/recording.ts` (TypeScript and Node scripts) and `scripts/recordings.py` (Python) are the only places that turn a slug into these paths; go through them.
 
-1. `python scripts/prep-video.py "<recording>" <slug>` makes the proxy with the voice cleaned up (`--no-clean` keeps the audio as recorded), the word-level transcript with hesitation sounds written down, and a starter `edit.json`.
+1. `python scripts/prep-video.py "<recording>" <slug> [--recording <id>]` makes the proxy with the voice cleaned up (`--no-clean` keeps the audio as recorded), the word-level transcript with hesitation sounds written down, and a starter `edit.json`. The id defaults to the slug. If that recording already exists it stops and names the videos using it: pick another `--recording <id>` for a new take, or delete the folder to replace the recording for all of them. A new edit of a recording already prepared is `python scripts/prep-video.py <slug> --recording <id>` with no video file: it writes only the slug's `edit.json`.
 2. Edit `edit.json` (its fields are described in `src/mortgage/schema.ts`) and preview `MortgageReel` in the Studio with `slug` set.
    Daniel can also do this in `npm run review` (http://localhost:4100/, see `review/README.md`): watch the reel, pick design, grade and chapter transitions, drag or nudge chapters, stats and cues on a timeline, save and render.
 3. `python scripts/render-video.py <slug>` renders, sets the final mix to -14 LUFS, and writes the mobile copy, thumbnail and `.srt`.
 
 - **Automatic cuts** (`edit.json` `cut`, all on by default): hesitation sounds, stutters (the first of a word or phrase said twice in a row, within a sentence), swear words, and any extra `words`. Restarts in different words still need a `remove` span. `node scripts/export-srt.mjs <slug>` lists every automatic cut; check it before rendering.
-- **Brand background** (`edit.json` `"background": "brand"`): replaces the room behind Daniel with the brand backdrop. It needs `foreground.webm` (Daniel cut out, with transparency) next to `source.mp4`: with `npm run review` running, open http://localhost:4100/matte.html?slug=<slug> in the Claude app's browser (it needs WebGPU) and wait for "Saved". It takes about 13x the video's length, downloads the 25.9 MB `modnet` model from remotion.media the first time, and is saved only if its frame count matches `source.mp4`. `render-video.py` stops with these instructions if the file is missing. `foreground.webm` is not in Git.
+- **Brand background** (`edit.json` `"background": "brand"`): replaces the room behind Daniel with the brand backdrop. It needs `foreground.webm` (Daniel cut out, with transparency) next to the recording's `source.mp4`: with `npm run review` running, open http://localhost:4100/matte.html?slug=<slug> in the Claude app's browser (it needs WebGPU) and wait for "Saved". It takes about 13x the video's length, downloads the 25.9 MB `modnet` model from remotion.media the first time, and is saved only if its frame count matches `source.mp4`. `render-video.py` stops with these instructions if the file is missing. `foreground.webm` is not in Git.
 - **Music** (`edit.json` `music`: a file under `public/music/` and an optional `volume`, default 0.3): looped under the whole video and ducked to 30% while Daniel talks. Use only tracks licensed for social media.
 
 ## Project structure
@@ -205,6 +205,17 @@ Whatever skill is driving (Remotion's, the editor skill, or a scene written by h
 | Date | Change | Files | Why |
 |---|---|---|---|
 | 2026-09-26 | Initial team | the three agents, `video-production-team`, `video-compliance-review` | Independent compliance check; scripts written from documents |
+
+### Harness: refactor team
+
+**Goal:** the repo wastes less — duplicated recordings, tokens per session, render minutes — measured before and proved after, with Daniel's recordings moved only by a script he runs himself.
+
+**Trigger:** when Daniel asks to refactor, dedupe, audit or speed up this repo ("where are the tokens going", "run the refactor pipeline", "make rendering faster", "did the dedup work"), use the `refactor-team` skill. It runs `architecture-auditor`, `asset-refactorer`, `pipeline-optimizer` and `quality-reviewer` from `.claude/agents/`, measuring with the `repo-audit-tools` skill. A one-line fix needs no team.
+
+**Change log:**
+| Date | Change | Files | Why |
+|---|---|---|---|
+| 2026-09-26 | Initial team | the four agents, `refactor-team`, `repo-audit-tools`, `.claude/settings.json` (Read-deny rules for the emoji, typeface and country JSON blobs) | Five copies of one 273 MB recording across slug folders; nothing measured the token cost of a session |
 
 `.claude/` also holds 18 other subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.
 

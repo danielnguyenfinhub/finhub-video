@@ -122,6 +122,13 @@ export type Look = (typeof LOOKS)[number];
 export const editSchema = z.strictObject({
   // Not shown anywhere: why a span was removed, what the video is about, etc.
   notes: z.array(z.string()).optional(),
+  // The recording this video edits: public/recordings/<source>/ holds its
+  // source.mp4, foreground.webm and words.json. Absent: they sit in
+  // public/videos/<slug>/ (unmigrated and faceless videos).
+  source: z
+    .string()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "a kebab-case recording id")
+    .optional(),
   // The look of the video: a folder in src/designs/ (default "classic").
   design: text.optional(),
   title: text,

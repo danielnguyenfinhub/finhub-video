@@ -19,8 +19,8 @@ yourself, without editing `edit.json` by hand:
 npm run review        # then open http://localhost:4100/
 ```
 
-Only videos with `source.mp4`, `words.json` and `edit.json` are listed (run
-`scripts/prep-video.py` first). Every change is checked with the same schema
+Only videos with an `edit.json` whose recording has `source.mp4` and
+`words.json` are listed (run `scripts/prep-video.py` first). Every change is checked with the same schema
 and RG 234 scan as the render: a change that would fail shows the error and
 cannot be saved. Wording (titles, captions, cue text) is not editable here on
 purpose; change it with Claude so it gets the full compliance review.

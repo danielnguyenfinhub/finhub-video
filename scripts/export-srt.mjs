@@ -3,8 +3,8 @@
 // words edit.json's `cut` removes automatically (quick: run it to check them
 // before rendering).
 //   node scripts/export-srt.mjs <slug>
-// Imports src/mortgage/timeline.ts directly through Node's native type
-// stripping (Node 22.18+/24), so that file must stay import-free.
+// Imports src/mortgage/timeline.ts and recording.ts directly through Node's
+// native type stripping (Node 22.18+/24), so those files must stay import-free.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -19,19 +19,25 @@ if (!slug) {
   process.exit(1);
 }
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dir = join(root, "public", "videos", slug);
-const read = (f) => {
+// `path` is under public/; words.json is in the video's recording
+// (src/mortgage/recording.ts), edit.json in public/videos/<slug>/.
+const read = (path) => {
   try {
-    return JSON.parse(readFileSync(join(dir, f), "utf8"));
+    return JSON.parse(readFileSync(join(root, "public", path), "utf8"));
   } catch (err) {
-    console.error(`Cannot read public/videos/${slug}/${f}: ${err.message}`);
+    console.error(`Cannot read public/${path}: ${err.message}`);
     process.exit(1);
   }
 };
+const { recordingPath } = await import(
+  pathToFileURL(join(root, "src", "mortgage", "recording.ts")).href
+);
+const edit = read(`videos/${slug}/edit.json`);
+const words = read(recordingPath(slug, edit.source, "words.json"));
 const { buildTimeline, TALK_START_FRAME } = await import(
   pathToFileURL(join(root, "src", "mortgage", "timeline.ts")).href
 );
-const { captions, autoCuts } = buildTimeline(read("words.json"), read("edit.json"), FPS);
+const { captions, autoCuts } = buildTimeline(words, edit, FPS);
 const offset = (TALK_START_FRAME * 1000) / FPS;
 
 const groups = [];

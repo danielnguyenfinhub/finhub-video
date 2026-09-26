@@ -17,20 +17,25 @@ if (!slug) {
   process.exit(1);
 }
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dir = join(root, "public", "videos", slug);
-const read = (f) => {
+// `path` is under public/; words.json is in the video's recording
+// (src/mortgage/recording.ts), edit.json in public/videos/<slug>/.
+const read = (path) => {
   try {
-    return JSON.parse(readFileSync(join(dir, f), "utf8"));
+    return JSON.parse(readFileSync(join(root, "public", path), "utf8"));
   } catch (err) {
-    console.error(`Cannot read public/videos/${slug}/${f}: ${err.message}`);
+    console.error(`Cannot read public/${path}: ${err.message}`);
     process.exit(1);
   }
 };
-const edit = read("edit.json");
+const { recordingPath } = await import(
+  pathToFileURL(join(root, "src", "mortgage", "recording.ts")).href
+);
+const edit = read(`videos/${slug}/edit.json`);
+const words = read(recordingPath(slug, edit.source, "words.json"));
 const { buildTimeline, toOutMs, TALK_START_FRAME } = await import(
   pathToFileURL(join(root, "src", "mortgage", "timeline.ts")).href
 );
-const { segments } = buildTimeline(read("words.json"), edit, FPS);
+const { segments } = buildTimeline(words, edit, FPS);
 const startMs = (TALK_START_FRAME * 1000) / FPS;
 const clock = (ms) => {
   const s = Math.floor(ms / 1000);
