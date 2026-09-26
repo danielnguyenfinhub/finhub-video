@@ -29,7 +29,7 @@ Read the rows you own, and do them in order:
   `startMs`, and the maths recomputed. A number that is wrong is a **flag**, never a fix.
 - **A2.3** `remove` spans and `captionFixes` bound to context (the editor skill's
   `references/edit-json.md` has the shapes). Unsure → keep it.
-- **A2.4** `node scripts/brief.mjs <slug>` (it writes `out/videos/<slug>/brief.json`). If the
+- **A2.4** `node scripts/brief.mjs <slug> [--public-dir <dir>]` (it writes `out/videos/<slug>/brief.json`). If the
   script is missing, the row's *Until built* line.
 
 Standard: the editor skill's Workflow Step 2 and `references/landmines.md`. Vietnamese keeps

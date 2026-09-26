@@ -1,6 +1,6 @@
 // Ranks the designs for one video and writes the top 3, with why, to
 // out/videos/<slug>/selection.json (it runs brief.mjs first).
-//   node scripts/select-template.mjs <slug>
+//   node scripts/select-template.mjs <slug> [--public-dir <dir>]   (passed on to brief.mjs)
 //   node scripts/select-template.mjs <slug> --pick <id> --reason "<why>"   (Daniel's override)
 // Hard filters (aspect, language, card length, hold time, face) drop a design
 // outright; the rest are scored with config/selector.json (untuned weights):
@@ -92,16 +92,17 @@ export function rank(brief, manifests, history, cfg) {
 
 function main() {
   const [slug, ...rest] = process.argv.slice(2);
-  if (!slug) throw new Error('Usage: node scripts/select-template.mjs <slug> [--pick <id> --reason "<why>"]');
+  if (!slug) throw new Error('Usage: node scripts/select-template.mjs <slug> [--public-dir <dir>] [--pick <id> --reason "<why>"]');
   const flag = (name) => {
     const i = rest.indexOf(name);
     return i < 0 ? undefined : rest[i + 1];
   };
   const pick = flag("--pick");
   const reason = flag("--reason");
+  const publicDir = flag("--public-dir");
   if (pick && !reason) throw new Error(`--pick ${pick} needs --reason "<why>" so the override is on record.`);
 
-  execFileSync(process.execPath, [join(root, "scripts", "brief.mjs"), slug], { stdio: ["ignore", "ignore", "pipe"] });
+  execFileSync(process.execPath, [join(root, "scripts", "brief.mjs"), slug, ...(publicDir ? ["--public-dir", publicDir] : [])], { stdio: ["ignore", "ignore", "pipe"] });
   const brief = readJson(join(root, "out", "videos", slug, "brief.json"));
   const cfg = readJson(join(root, "config", "selector.json"));
   const manifests = loadManifests();
