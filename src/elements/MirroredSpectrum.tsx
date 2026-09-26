@@ -3,10 +3,11 @@
 // the audio's own timeline (so a design can follow Daniel's paced voice), and
 // it is silent unless playAudio is set, so it never doubles the voice.
 import { Audio } from "@remotion/media";
-import { useWindowedAudioData, visualizeAudio } from "@remotion/media-utils";
+import { visualizeAudio } from "@remotion/media-utils";
 import type React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { brand } from "../brand/theme";
+import { useCoveredAudioData } from "./useCoveredAudioData";
 
 export const MirroredSpectrum: React.FC<{
   src: string;
@@ -30,7 +31,7 @@ export const MirroredSpectrum: React.FC<{
   const current = useCurrentFrame();
   const { fps } = useVideoConfig();
   const at = Math.round(frame ?? current);
-  const { audioData, dataOffsetInSeconds } = useWindowedAudioData({
+  const { audioData, dataOffsetInSeconds } = useCoveredAudioData({
     fps,
     frame: at,
     src,
