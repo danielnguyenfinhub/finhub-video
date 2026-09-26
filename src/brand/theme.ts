@@ -19,5 +19,10 @@ export const brand = {
   highlight: "#FFB938",
   good: "#3DDC97",
   bad: "#FF5A5F",
+  // Added 2026-09-26 (Daniel): the two off-theme colours the designs already
+  // repeat most (the promotion gate's sweep): a deep navy for shadows and
+  // backdrops, and a slate grey for secondary text.
+  navy: "#06132A",
+  slate: "#5B6B80",
   font: '"Be Vietnam Pro", "Segoe UI", sans-serif',
 } as const;

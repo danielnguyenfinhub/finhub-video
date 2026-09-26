@@ -35,6 +35,8 @@ import { poppins } from "./showcase/font";
 import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
+import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
+import { BMS_DURATION, BmsCellBalancing } from "./showcase/bmscellbalancing/BmsCellBalancing";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 import { NewsHeadlineHighlight, newsHeadlineDefaultProps, newsHeadlineSchema } from "./showcase/newsheadline/NewsHeadlineHighlight";
 import { CtaOverlay, ctaOverlayDefaultProps, ctaOverlaySchema } from "./showcase/ctaoverlay/CtaOverlay";
@@ -143,6 +145,8 @@ export const RemotionRoot: React.FC = () => {
         <Composition id="NewsHeadlineHighlight" component={NewsHeadlineHighlight} schema={newsHeadlineSchema} defaultProps={newsHeadlineDefaultProps} durationInFrames={150} fps={30} width={1920} height={1080} />
         {/* Transparent: render as ProRes 4444 with alpha (command in CtaOverlay.tsx). */}
         <Composition id="CtaOverlay" component={CtaOverlay} schema={ctaOverlaySchema} defaultProps={ctaOverlayDefaultProps} durationInFrames={180} fps={30} width={1920} height={1080} />
+        <Composition id="BarLineChart" component={BarLineChart} durationInFrames={120} fps={30} width={1920} height={1080} />
+        <Composition id="BmsCellBalancing" component={BmsCellBalancing} durationInFrames={BMS_DURATION} fps={30} width={1280} height={720} />
       </Folder>
       <Folder name="Utilities">
         {/* Not part of any reel — a one-off source generator for

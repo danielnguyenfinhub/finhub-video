@@ -48,6 +48,10 @@ const used = rank(numbers, manifests, [{ slug: "x", design: "datalab", date: "20
 const after = used.ranked.find((r) => r.id === "datalab");
 check("recency lowers the just-used skin", after.score < fresh && after.rec === 1, `${fresh} -> ${after.score}`);
 
+// An on-camera brief with the foreground found scores AssetReady for on-camera designs.
+const fg = rank(brief(), manifests, [], cfg).ranked.filter((r) => byId[r.id].facePolicy !== "faceless");
+check("foreground present: AssetReady > 0", fg.length > 0 && fg.every((r) => r.asset > 0), fg.map((r) => `${r.id}:${r.asset}`).join(","));
+
 // Hard filters: a card too long for a template drops it.
 const long = rank(brief({ longestCard: { vi: 200, en: 0 } }), manifests, [], cfg);
 check("200-char card drops everything", long.ranked.length === 0, long.ranked.map((r) => r.id).join(","));
