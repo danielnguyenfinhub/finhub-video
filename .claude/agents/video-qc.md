@@ -28,6 +28,10 @@ If a file can't be opened or a command can't run, the verdict is BLOCK, not PASS
 `05_qc_render.json`, and files under `out/videos/<slug>/team/qc/`. Never edit `edit.json`,
 a design, a script or anything under `src/` or `scripts/`. Bash is for the checks only.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "video-qc (checks what the editor built)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 From the orchestrator: slug, pipeline (A or B), stage (`stills` or `render`), `--public-dir`

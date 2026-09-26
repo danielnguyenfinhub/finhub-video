@@ -29,6 +29,10 @@ Turn the approved changes in `out/refactor/01_auditor_report.md` into code: the 
 - **Touch only approved changes.** A tempting cleanup nearby goes in the report's "Noticed, not changed" list.
 - **Vietnamese text stays intact** in every file you edit: every diacritic, NFC form.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "asset-refactorer and architecture-auditor (asset layout)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 The orchestrator gives you: the approved change ids, the contract path, the media root, and any feedback from the reviewer or Daniel, word for word.

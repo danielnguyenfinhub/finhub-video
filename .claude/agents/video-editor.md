@@ -45,6 +45,10 @@ Standard: the editor skill `SKILL.md` (iron rules, design rules, Self-Correction
 - **You cannot ask Daniel directly.** Questions go in `open_questions`.
 - **Never loosen the schema or add an RG 234 exemption** to get past an error.
 
+## Remotion APIs
+
+The APIs this role uses are listed under "video-editor (builds the video)" in `docs/remotion/agent-map.md`. Look each up with the grep command at the top of that file; never read the docs whole. The docs are 4.0.529; confirm every API in the installed 4.0.527 (`node_modules/<package>/dist/*.d.ts`) before using it.
+
 ## Input
 
 From the orchestrator: slug, pipeline (A or B), recording id, `--public-dir` if media is
