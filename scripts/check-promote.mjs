@@ -47,10 +47,13 @@ put("partial/template.json", JSON.stringify(noFace, null, 2));
 put("good/index.tsx", [
   "// A colour in a comment (#123456) is not code.",
   'const WORD = "PHẦN";',
+  "const shake = (frame) => (frame > 40 && frame < 48 ? 1 : 0); // a comparison is not on-screen text",
   "export const good = {",
   '  id: "good",',
   "  copy: [WORD],",
-  '  Cover: () => <div style={{ color: "#0B1F3D" }}>{WORD} 1</div>, // theme-exempt: fixture for the allowlist',
+  '  Cover: () => <div style={{ color: "#123456" }}>{WORD} 1</div>, // theme-exempt: fixture for the allowlist',
+  // White/black at any alpha and theme.ts colours (any case, rgba of one) pass.
+  '  Talk: () => ({ a: "#fff", b: "#000000", c: "rgba(255, 255, 255, 0.4)", d: "rgba(0,0,0,0.25)", e: "#f5a524", f: "rgba(11, 31, 61, 0.5)" }),',
   "};",
   "",
 ].join("\n"));
@@ -69,7 +72,7 @@ const bad = await promote("bad", opts);
 const named = (re) => bad.failures.some((f) => re.test(f));
 check("bad: unregistered named", named(/^registered: "bad" is not/), bad.failures.join(" | "));
 check("bad: no template.json named", named(/^template\.json: .*does not exist/), bad.failures.join(" | "));
-check("bad: hex colour named", named(/^colours: index\.tsx:4 .*#ff0000/), bad.failures.join(" | "));
+check("bad: off-brand hex named", named(/^colours: index\.tsx:4 .*#ff0000/), bad.failures.join(" | "));
 check("bad: unlisted string named", named(/^copy: index\.tsx: "Xin chào bạn"/), bad.failures.join(" | "));
 check("bad: RG 234 phrase named", named(/^RG 234: .*lãi suất tốt nhất/), bad.failures.join(" | "));
 check("bad: not promoted", !bad.promoted);
