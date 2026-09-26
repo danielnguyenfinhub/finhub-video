@@ -182,7 +182,7 @@ export type Figure = {
   fromFrame: number; // talk timeline
   frames: number;
   big: string; // the number as said, e.g. "4,1", "0,4%", "1.600"
-  label: string; // stat label, or the words around an automatic figure
+  label: string; // stat label, or the short phrase after an automatic figure ("" if none)
   source: "stat" | "auto";
 };
 
@@ -192,6 +192,25 @@ const AUTO_GAP_MS = 4000;
 const UNIT = /^(%|tỷ|ti|triệu|nghìn|ngàn|đô|k)(?!\p{L})/iu;
 const NUMERIC = /^[.,]?\d/;
 const clean = (s: string) => s.trim().replace(/[.,!?;:]+$/g, "");
+// Words that start a new clause: an automatic figure's label stops before them.
+// ponytail: a word list, not a parser; add a word when a label runs on.
+const CLAUSE =
+  /^(nhưng|mà|và|thì|là|còn|hoặc|hay|nên|vì|nếu|khi|rồi|để|but|and|so|if)$/iu;
+const LABEL_WORDS = 4; // the unit plus up to 3 words
+
+// A short label for an automatic figure: what follows the number up to the
+// first clause break, e.g. "tỷ đô mỗi năm". "" when nothing follows, so the
+// design shows the number alone rather than a transcript fragment.
+const autoLabel = (after: string[]) => {
+  const out: string[] = [];
+  for (const w of after) {
+    const word = clean(w);
+    if (!word || CLAUSE.test(word) || /\d/.test(word)) break;
+    out.push(word);
+    if (out.length >= LABEL_WORDS || word !== w.trim()) break; // punctuation ends the clause
+  }
+  return out.join(" ");
+};
 
 // Every number in the captions, glued across Whisper's split tokens ("4" ".1"
 // -> "4,1" (timeline.ts decimalComma), "100" ".000" "%" -> "100.000%").
@@ -218,14 +237,16 @@ const spokenNumbers = (reel: Reel) => {
     // unless a money/percent unit follows; add units above when one slips through.
     const bare = /^\d{1,2}$/.test(clean(big)) && !UNIT.test(next) && !percent;
     if (!bare) {
-      const around = caps
-        .slice(Math.max(0, i - 3), Math.min(caps.length, j + 4))
+      // "phần trăm" is already the "%" on the number.
+      const after = caps
+        .slice(j + 1 + (percent ? 2 : 0), j + 1 + (percent ? 2 : 0) + LABEL_WORDS)
         .map((c) => c.text)
         .join("")
-        .trim();
+        .trim()
+        .split(/\s+/);
       out.push({
         big: clean(big) + (percent ? "%" : ""),
-        label: around,
+        label: autoLabel(after),
         startMs: caps[i].startMs,
       });
     }

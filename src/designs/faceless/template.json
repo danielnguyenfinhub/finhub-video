@@ -44,5 +44,7 @@
   "renderCost": "med",
   "preview": null,
   "uses": 1,
-  "lastUsed": "2026-09-26"
+  "lastUsed": "2026-09-26",
+  "promoted": "2026-09-27",
+  "promotedNote": "grandfathered: in use before the gate"
 }

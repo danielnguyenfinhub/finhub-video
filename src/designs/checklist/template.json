@@ -30,7 +30,12 @@
     "vi"
   ],
   "maxChars": {
-    "vi": 36,
+    "vi": {
+      "hook": 36,
+      "chapter": 36,
+      "stat": 40,
+      "cue": 36
+    },
     "en": 0
   },
   "minHoldMs": 1500,

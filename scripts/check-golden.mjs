@@ -87,6 +87,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   check("all auto", figs.every((f) => f.source === "auto"));
   const pct = figuresOf(reelOf(words("lãi suất hiện là 6 phần trăm mỗi năm")), FPS);
   check("6 phần trăm -> 6%", pct.some((f) => f.big === "6%"), pct.map((f) => f.big).join(" | "));
+  // An automatic figure's label is the short phrase after it, not a transcript fragment.
+  check("auto label: phrase after the unit", pct[0]?.label === "mỗi năm", JSON.stringify(pct[0]?.label));
+  const cut = figuresOf(reelOf(words("thiếu chỉ có 100.000 nhưng mà các")), FPS);
+  check("auto label: omitted at a clause break", cut[0]?.big === "100.000" && cut[0].label === "", JSON.stringify(cut[0]));
+  const unit = figuresOf(reelOf(words("người Úc trả 5 triệu đô mỗi năm cho ngân hàng rồi")), FPS);
+  check("auto label: unit plus up to 3 words", unit[0]?.label === "triệu đô mỗi năm", JSON.stringify(unit[0]?.label));
 
   // A stat over the number replaces the automatic figure.
   const covered = figuresOf(
