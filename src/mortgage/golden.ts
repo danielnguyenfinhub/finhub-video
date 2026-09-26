@@ -153,3 +153,44 @@ export const figuresOf = (reel: Reel, fps: number): Figure[] => {
 
 export const lenderMentionsOf = (reel: Reel): LenderMention[] =>
   findLenderMentions(reel.timeline.captions);
+
+// Golden rule 4 (WP3, 26/09/2026): a cutaway hides Daniel's face (pip and
+// overlay keep him on screen). A single cutaway may not run longer than this,
+// and must not cover a spoken number: its figure would be hidden with him.
+// UNTUNED: a first guess at 4 s; tune it once Daniel has watched a few.
+export const CUTAWAY_MAX_MS = 4000;
+
+export type FaceHidden = {
+  totalMs: number; // face-hidden time on the talk timeline
+  longestMs: number; // longest single face-hidden stretch
+  tooLong: { atMs: number; durMs: number }[]; // cutaways over CUTAWAY_MAX_MS
+  overNumbers: { atMs: number; big: string }[]; // cutaways covering a number
+};
+
+// atMs as in edit.json (source ms) so a report points at the visual to fix.
+export const faceHiddenOf = (reel: Reel, fps: number): FaceHidden => {
+  const cut = (reel.edit.visuals ?? []).flatMap((v) => {
+    const a = v.mode === "cutaway" ? toOutMs(reel.timeline.segments, v.atMs, fps) : null;
+    return a === null ? [] : [{ v, a, b: a + v.durMs }];
+  });
+  // Overlapping cutaways are one stretch of hidden face.
+  const merged: [number, number][] = [];
+  for (const { a, b } of [...cut].sort((x, y) => x.a - y.a)) {
+    const last = merged[merged.length - 1];
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b);
+    else merged.push([a, b]);
+  }
+  const numbers = spokenNumbers(reel);
+  return {
+    totalMs: merged.reduce((t, [a, b]) => t + b - a, 0),
+    longestMs: Math.max(0, ...merged.map(([a, b]) => b - a)),
+    tooLong: cut
+      .filter(({ v }) => v.durMs > CUTAWAY_MAX_MS)
+      .map(({ v }) => ({ atMs: v.atMs, durMs: v.durMs })),
+    overNumbers: cut.flatMap(({ v, a, b }) =>
+      numbers
+        .filter((n) => n.startMs >= a && n.startMs < b)
+        .map((n) => ({ atMs: v.atMs, big: n.big })),
+    ),
+  };
+};
