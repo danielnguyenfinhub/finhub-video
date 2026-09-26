@@ -8,7 +8,7 @@ Ponytail is "lazy senior dev mode": build only what is needed, reuse what exists
 
 **Rules** — condensed into the files every session already reads, instead of ponytail's own `ponytail` skill and hooks:
 
-- `AGENTS.md`, "Work lean: fewer tokens per video": the ladder for videos (existing scene, Element, `@remotion/*` package, then new code), cheap ways to check the result, and the rules for code changes;
+- `AGENTS.md`, "Work lean: fewer tokens per video": the ladder for videos (existing scene, Element, `@remotion/*` package, then new code), cheap ways to check the result; its rules for code changes are in `docs/agents/code-changes.md`;
 - `chat-skill/SKILL.md`, "Keep it lean": the short version for claude.ai.
 
 **Skills** — copied verbatim into `.claude/skills/`, so they can be re-synced by copying the same files again. They run only when asked:

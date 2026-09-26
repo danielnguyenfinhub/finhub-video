@@ -260,6 +260,6 @@ npx remotion upgrade
 
 Upgrades Remotion. All `@remotion/*` packages stay on one version.
 
-When something goes wrong, [`AGENTS.md`](AGENTS.md) and `.claude/skills/vietnamese-finance-video-editor/references/landmines.md` hold the known pitfalls.
+When something goes wrong, [`docs/agents/rendering-without-gpu.md`](docs/agents/rendering-without-gpu.md) (routed from [`AGENTS.md`](AGENTS.md)) and `.claude/skills/vietnamese-finance-video-editor/references/landmines.md` hold the known pitfalls.
 
 Remotion needs a company licence for some organisations: [terms](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
