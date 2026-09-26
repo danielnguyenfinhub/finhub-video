@@ -35,6 +35,7 @@ import { poppins } from "./showcase/font";
 import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
+import { BMS_DURATION, BmsCellBalancing } from "./showcase/bmscellbalancing/BmsCellBalancing";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 
 // A single-frame <Still> for a poster image (`npx remotion still Poster`).
@@ -148,6 +149,9 @@ export const RemotionRoot: React.FC = () => {
           durationInFrames={90}
         />
         <Still id="Poster" component={PosterStill} width={1280} height={720} />
+      </Folder>
+      <Folder name="Experiments">
+        <Composition id="BmsCellBalancing" component={BmsCellBalancing} durationInFrames={BMS_DURATION} fps={30} width={1280} height={720} />
       </Folder>
     </>
   );
