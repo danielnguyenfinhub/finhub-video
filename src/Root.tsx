@@ -35,6 +35,7 @@ import { poppins } from "./showcase/font";
 import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
+import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 
 // A single-frame <Still> for a poster image (`npx remotion still Poster`).
@@ -135,6 +136,9 @@ export const RemotionRoot: React.FC = () => {
           fps={30}
           durationInFrames={EFFECTS_CATALOG_DURATION}
         />
+      </Folder>
+      <Folder name="Experiments">
+        <Composition id="BarLineChart" component={BarLineChart} durationInFrames={120} fps={30} width={1920} height={1080} />
       </Folder>
       <Folder name="Utilities">
         {/* Not part of any reel — a one-off source generator for
