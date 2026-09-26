@@ -35,6 +35,13 @@ import { poppins } from "./showcase/font";
 import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
+import { ShapeToWords, shapeToWordsDefaultProps, shapeToWordsSchema } from "./showcase/shapetowords/ShapeToWords";
+import {
+  KineticMarketing,
+  calculateKineticMarketingMetadata,
+  kineticMarketingDefaultProps,
+  kineticMarketingSchema,
+} from "./showcase/kineticmarketing/KineticMarketing";
 import { BrandOverlay, brandOverlayDefaultProps, brandOverlaySchema, calculateBrandOverlayMetadata } from "./brand/BrandOverlay";
 
 // A single-frame <Still> for a poster image (`npx remotion still Poster`).
@@ -135,6 +142,11 @@ export const RemotionRoot: React.FC = () => {
           fps={30}
           durationInFrames={EFFECTS_CATALOG_DURATION}
         />
+      </Folder>
+      <Folder name="Experiments">
+        {/* Remotion prompt-gallery builds, used as swappable video hooks. */}
+        <Composition id="ShapeToWords" component={ShapeToWords} schema={shapeToWordsSchema} defaultProps={shapeToWordsDefaultProps} durationInFrames={300} fps={30} width={1920} height={1080} />
+        <Composition id="KineticMarketing" component={KineticMarketing} schema={kineticMarketingSchema} defaultProps={kineticMarketingDefaultProps} calculateMetadata={calculateKineticMarketingMetadata} durationInFrames={300} fps={30} width={1920} height={1080} />
       </Folder>
       <Folder name="Utilities">
         {/* Not part of any reel — a one-off source generator for
