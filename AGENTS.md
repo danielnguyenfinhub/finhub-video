@@ -68,14 +68,14 @@ Read list per task, on top of this file. `refs/` is `.claude/skills/vietnamese-f
 |---|---|---|
 | Mode A edit (existing design, re-edit) | editor `SKILL.md`, `refs/landmines.md`, `refs/edit-json.md` | 25,631 |
 | New design (each new talking-head video): Mode A plus | `refs/design-space.md`, `refs/design-architecture.md`, `refs/toolkit.md`, `refs/editing-principles.md`, `.claude/elements/CATALOG.md`, remocn index | +41,893 = 67,524 |
-| Mode B faceless | `refs/faceless-script.md`, `video-production-team` and `video-compliance-review` SKILL.md, the three `video-*` agents | 31,243 |
+| Mode B faceless | `refs/faceless-script.md`, `video-production-team` and `video-compliance-review` SKILL.md, the five `video-*` agents | 47,165 |
 | Repo or tooling change | [code-changes](docs/agents/code-changes.md), [project-structure](docs/agents/project-structure.md), [mortgage-reel](docs/agents/mortgage-reel.md) | 7,738 |
 
 ## Harnesses
 
 ### Harness: video production team
 
-**Trigger:** when Daniel asks for a video from a document, a faceless video, or a video "with the team" / "with a compliance check", use the `video-production-team` skill. It runs three agents in `.claude/agents/`: `video-script-writer`, `video-editor` (which follows `vietnamese-finance-video-editor`) and `video-compliance-reviewer` (which follows `video-compliance-review`). A plain edit of a talking-head video can still use the editor skill alone.
+**Trigger:** when Daniel asks to edit his footage ("edit my video", "I recorded a video about…") or for a video from a document or topic (faceless), including follow-ups on one ("redo the paper edit", "re-run QC", "fix what compliance flagged"), use the `video-production-team` skill. It runs the whole runbook for both pipelines with its agents in `.claude/agents/`; `vietnamese-finance-video-editor` is the standard its editor follows.
 
 ### Harness: refactor team
 

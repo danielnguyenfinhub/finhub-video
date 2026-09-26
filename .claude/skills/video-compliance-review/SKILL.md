@@ -37,7 +37,7 @@ Inputs: `public/videos/<slug>/script.json`, the source document, `out/videos/<sl
 
 ## Stage `final` (before Daniel posts)
 
-Inputs: `public/videos/<slug>/edit.json`, the design in `src/designs/<id>/`, `out/videos/<slug>/team/03_editor_report.json` and the stills it lists, `words.json`.
+Inputs: `public/videos/<slug>/edit.json` (including its `visuals`), the design in `src/designs/<id>/`, `out/videos/<slug>/team/03_editor_report.json` and the stills it lists, `words.json`, and `facts.json` when it exists.
 
 1. **Automatic guard and schema.** Run `npx remotion compositions src/index.ts --props='{"slug":"<slug>"}' 2>&1 | tail -n 5`. A failure → BLOCK.
 2. **Script checks on everything on screen.** Apply script checks 3–10 to edit.json copy (titles, stats, cues, CTA) and to the design's hard-coded strings. Every hard-coded string must be listed in the design's exported `copy` (grep the design folder for quoted text) → missing one is FIX.
@@ -46,7 +46,8 @@ Inputs: `public/videos/<slug>/edit.json`, the design in `src/designs/<id>/`, `ou
 5. **Advertised rate on screen.** Rate, comparison rate at equal prominence, and the as-at date, all visible in the same still → otherwise BLOCK.
 6. **Numbers on screen.** Each matches what's said (or the approved script) and the source → otherwise BLOCK.
 7. **Core untouched.** `git diff --stat origin/main -- src/mortgage src/brand` is empty, or the editor's report names an agreed core change → otherwise BLOCK.
-8. **Legibility.** Compliance text or a condition that's clipped, covered or too small to read in a still → FIX.
+8. **B-roll and images (`visuals`).** Each asset's `.meta.json` in `public/library/` has a `licence`; none → FIX. A clip that shows a bank's branding, a number, or a person in a way that implies endorsement or a client → FIX.
+9. **Legibility.** Compliance text or a condition that's clipped, covered or too small to read in a still → FIX.
 
 ## Verdict
 
