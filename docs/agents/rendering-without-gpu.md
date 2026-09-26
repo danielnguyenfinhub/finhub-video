@@ -1,0 +1,31 @@
+# Rendering without a GPU, and what this sandbox can't do
+
+Part of the project guide; [AGENTS.md](../../AGENTS.md) is the core and routes here.
+
+## Rendering environments without a GPU
+
+`@remotion/effects` and `@remotion/three` (and anything else using a canvas-based component's `effects` prop, or `<ThreeCanvas>`) need a working WebGL2 context. On a machine with a real GPU this needs nothing beyond `Config.setChromiumOpenGlRenderer('angle')` (or `--gl=angle` on the CLI) per the `light-leaks.md`/`3d.md` guides.
+
+In a GPU-less sandbox, Chromium's software WebGL fallback additionally needs `--enable-unsafe-swiftshader`, which Remotion's CLI doesn't expose directly (only `--gl=angle` combined with the unreleased v5-breaking-changes flag adds it automatically). Work around this without touching that project-wide flag by pointing `--browser-executable` at a tiny wrapper script that forwards to the real browser binary with the flag always included:
+
+```sh
+cat > /tmp/headless-shell-swiftshader <<'EOF'
+#!/bin/sh
+exec /path/to/your/headless_shell --enable-unsafe-swiftshader "$@"
+EOF
+chmod +x /tmp/headless-shell-swiftshader
+npx remotion render ExtendedReel out/extended-reel.mp4 --browser-executable=/tmp/headless-shell-swiftshader --gl=swangle
+```
+
+Without this, effects/`<ThreeCanvas>` scenes render as solid black — Chromium accepts the render silently rather than erroring, so check with `--log=verbose` for the "Automatic fallback to software WebGL has been deprecated" warning if a canvas-based scene comes out blank.
+
+## What this sandbox can't do
+
+Each was confirmed with a real render. The details, and how the showcase works around each one, are in `docs/findings.md`.
+
+- **The render browser can't reach** `remotion.media` (`@remotion/sfx` sounds, the video-matting and whisper-webgpu models), `fonts.gstatic.com` (`@remotion/google-fonts` crashes the render, so use `font.ts`'s system font stack here) or `unpkg.com` (`@remotion/rive` hangs the render rather than failing). Files copied into `public/` work.
+- **No H.264, HEVC or AAC decoding through WebCodecs.** `@remotion/media`'s `<Video>` quietly falls back to `<OffthreadVideo>` and `<Audio>` to `<Html5Audio>`; give WebCodecs-based code a VP9 `.webm` (with Opus for sound). `MediabunnyScene` lists what decodes here.
+- **Chromium 141, so no `HtmlInCanvas`** (it needs 149+). Most `@remotion/transitions` presentations are built on it; only `fade`, `slide`, `wipe`, `flip`, `clockWipe`, `iris`, `none` and `pushCut` render here. `<ThreeWebGPUCanvas>` crashes the render.
+- **At most 16 WebGL contexts per page**, and each component with `effects` uses two, so keep eight or fewer mounted at once.
+- **No MapTiler, no H.264 encoding, no cross-origin isolation.** `api.maptiler.com` is blocked (and no key is set), so `MapTilerScene` shows its "add a key" notice. `@remotion/web-renderer` can't encode H.264 here, so it picks WebM. The render page isn't cross-origin isolated, so `@remotion/whisper-web` can't transcribe.
+

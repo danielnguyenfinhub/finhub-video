@@ -1,3 +1,26 @@
+<!-- INDEX: read this block, then stop. -->
+## Index — grep this file for a name, don't read it whole
+
+The full catalog below is about 66 KB. Find a category here, then `grep -n "<name or word>" .claude/elements/remocn/CATALOG.md`
+(or `grep -n -A 30 "^## <category>"` for one category). Paths are under `.claude/elements/remocn/`.
+
+| Category (`## ` heading) | Items | What is in it | Where |
+|---|---|---|---|
+| typography | 61 | kinetic text: letter and word builds, blurs, waves, pops | `components/remocn/` |
+| ui | 42 | animated UI primitives: buttons, dialogs, accordions, prompt flows | `components/remocn/` |
+| transitions | 25 | scene-to-scene transitions: dissolves, wipes, burns, focus pulls | `components/remocn/` |
+| shaders | 23 | shader backgrounds: tunnels, caustics, colour panels, dithering | `components/remocn/` |
+| ui-blocks | 11 | larger blocks: bar and line charts, check lists, code blocks, stickers | `components/remocn/` |
+| filters | 10 | whole-frame looks: ASCII, CRT, lens, halftone, hologram, pixelate | `components/remocn/` |
+| effects | 9 | one-off effects: confetti, crumple toss, ink arrow, radial burst | `components/remocn/` |
+| icons | 102 | animated icons (arrows, alerts, activity, …) | `components/remocn/` |
+| ai, social | 5 + 5 | branded surfaces (ChatGPT, Claude, GitHub, X); most are third-party brand UI, reference only | `components/remocn/` |
+| compositions, templates | 3 + 5 | full scenes and 5 full templates | `components/remocn/` |
+| layout, other, lib | 4 + 4 + 4 | stages and backdrops, menu items, shared helpers other items import | `components/remocn/`, `lib/remocn*/` |
+
+Whole-video structures: `recipes/FINHUB.md`. Adapt every item before use (Be Vietnam Pro, `src/brand/theme.ts` colours, no bundled `<Audio>`).
+<!-- END INDEX -->
+
 # remocn — local reference library
 
 Vendored from https://remocn.dev (MIT, see LICENSE) — 300+ Remotion animations, transitions, shaders,

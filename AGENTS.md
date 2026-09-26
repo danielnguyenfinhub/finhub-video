@@ -6,8 +6,6 @@ A Remotion project: videos are written as React components and rendered to MP4/W
 
 This is Daniel's video editor, and the editing interface is a Claude Code chat. Daniel is a mortgage broker, not a developer: he records a video, has it prepared into `public/recordings/<id>/source.mp4`, and says in chat what he wants. The agent does the editing end to end with the `vietnamese-finance-video-editor` skill (prep, `edit.json`, design, render) and hands back a finished video to watch, not options or instructions. `npm run review` is a secondary page for Daniel's own small tweaks (design, grade, timings). Judge new code by whether it makes the next video better or faster to edit this way.
 
-This repository was split out of `danielnguyenfinhub/remotion` (a fork of the Remotion monorepo, kept as version 1), where it lived as `my-video/`. Older notes such as `docs/findings.md` refer to that repository's `packages/...` source folders.
-
 ## Commands
 
 ```console
@@ -36,12 +34,7 @@ Checking the work costs tokens too:
 - **Don't delegate small lookups.** A subagent starts from nothing: a one-question Explore run here used about 48,000 tokens, and it did not see this file, so put any rule that matters into its prompt.
 - **Mark a deliberate shortcut** with `// ponytail: <limit>, <when to upgrade>`. `/ponytail-debt` lists them.
 
-For code changes (scripts, the MortgageReel core, tooling):
-
-- Fix a bug at its root: grep every caller of the function you touch and fix the shared function once.
-- Shortest correct diff, fewest files, deletion over addition. No abstraction, config or boilerplate nobody asked for.
-- Never cut input validation at trust boundaries, error handling that prevents data loss, security, accessibility, or anything explicitly requested. Non-trivial logic still gets a check.
-- Report in a few lines: what changed and what was skipped. Explain at length only when asked.
+For code changes (scripts, the MortgageReel core, tooling), read [docs/agents/code-changes.md](docs/agents/code-changes.md) first.
 
 ## Language: every video is Vietnamese + English
 
@@ -49,205 +42,44 @@ The owner's videos are bilingual. The speech may be Vietnamese, English, or a mi
 
 - **Write real Vietnamese.** Keep every diacritic ("Lãi suất vay", never "Lai suat vay"), and normalize text that comes from a transcript, an API or a file with `.normalize("NFC")`, so each accented letter is one character.
 - **Default bilingual layout:** Vietnamese as the main line and English as a smaller line under it, sharing the same timing. Keep the two as separate strings or caption tracks, not one mixed sentence, so either can be restyled or dropped.
-- **Fonts must include Vietnamese glyphs.** `font.ts`'s `poppins` is a system font stack, and in this sandbox it renders all of Vietnamese correctly (checked with "Nguyễn Thị Hằng", "ơ ư ạ ế ồ ữ ỷ ặ ộ Đ"; the glyphs come from DejaVu Sans). The real Google Font Poppins has no `vietnamese` subset (only `latin`, `latin-ext`, `devanagari`), so with it, letters such as ế and ữ fall back to another font in the middle of a word. When loading a Google Font, pick one that has the subset, such as Be Vietnam Pro or Montserrat, and request it: `loadFont("normal", {weights: ["400", "700"], subsets: ["vietnamese", "latin"]})`. Google Fonts can't load inside this sandbox's renderer (see below), so check them on a machine with open network access.
-- **Elements need a font change before they show Vietnamese.** The text elements in `.claude/elements/` call `loadFont(...)` with `subsets: ['latin']` only, which leaves out most Vietnamese letters, so add `'vietnamese'` to every one. Two of their fonts have no Vietnamese subset at all and must be swapped rather than extended: Figtree (Rounded Captions on the live site) and Caveat (`storytelling/polaroid-pictures`). Montserrat, used by most caption elements, has one. `public/bangers.woff2` has no Vietnamese glyphs either, so it can't stand in.
-- **Leave room for stacked marks.** Vietnamese letters carry marks above and below (ế, ỗ, ặ), so use a `lineHeight` of about 1.3 or more and don't clip text containers tightly with `overflow: hidden`, which cuts off the top of the marks.
-- **Speech-to-text: never use an English-only model.** The `.en` models (`tiny.en`, `base.en`, `small.en`, `medium.en`) only know English, and `BrowserTranscriptionScene`'s `small.en` is a demo, not a default. Use a multilingual model and set the language per clip:
-  - `@remotion/whisper-webgpu`: `tiny`, `base`, `small`, `medium` or `large-v3-turbo`, with `language: "vi"` or `"en"`. `task: "translate"` produces English text from Vietnamese speech, which can feed the English caption line, but only on `tiny`/`base`/`small`/`medium`: `large-v3-turbo` is multilingual without translation (`getAvailableModels()` reports `supportsTranslation: false` for it and for the `.en` models).
-  - `@remotion/install-whisper-cpp`: `medium`, `large-v3` or `large-v3-turbo`, with `language: "vi"`. `translateToEnglish: true` does the same translation, again not with `large-v3-turbo`. `splitOnWord: true` makes whisper.cpp split its output on words rather than tokens.
-  - OpenAI's Whisper API: pass `language: "vi"` for Vietnamese audio.
-  - For speech that mixes the two, transcribe with the main language and check the English terms in the result; if they come out wrong, split the audio by language and transcribe each part on its own.
-- **Voiceover:** when generating speech (ElevenLabs or similar), pick a model and voice that list Vietnamese support, and generate the Vietnamese and English lines separately. `scripts/generate-voiceover.mjs` uses `eleven_v3`, which speaks Vietnamese; `eleven_multilingual_v2` (the API's default) doesn't. Its default voice (Rachel) is English, so give Vietnamese lines a Vietnamese voice from ElevenLabs' Voice Library.
 - **Voice cloning (OmniVoice):** faceless videos default to Google's Charon voice; `--engine omnivoice` uses a cloned voice (`scripts/voice-video.mjs`, README "Clone your voice"). Run `npm run clone-voice` only after the person says in this chat that the voice is their own or that they have the speaker's written permission; never add `--consent` on your own, and never clone a voice from a video you found or were sent by someone else. Profiles stay in `~/.finhub-voice/`, never in this public repository, and voiced audio is never committed.
 
-## Badges and logos: `public/badges/`
+## Where to read: task → files
 
-The owner's accreditation, membership and award badges, saved unchanged for their videos (end cards, lower thirds, "why choose us" slides). No showcase scene uses them. Load one with `<Img src={staticFile("badges/<file>")} />` and size it by `height` with `objectFit: "contain"`, so it never stretches.
+The rest of the guide is in `docs/agents/`; read a file only when the task needs it. A comment saying "see <section> in AGENTS.md" means the file listed here.
 
-| File | What it is | Pixels | Background |
-|---|---|---|---|
-| `commbank-platinum-broker-2026-27.webp` | CommBank Platinum Broker, 2026/2027 financial year | 1077×1093 | transparent; works on light and dark |
-| `small-business-champion-awards-2026-finalist.jpg` | Australian Small Business Champion Awards 2026, Finalist | 500×1039 | solid white (a JPEG has no transparency) |
-| `afca.png` | AFCA, Australian Financial Complaints Authority | 1163×511 | transparent, navy text |
-| `connective.png` | Connective, the owner's aggregator | 1188×351 | transparent, navy text |
-| `mfaa-accredited-finance-broker.png` | MFAA Accredited Finance Broker | 174×161 | transparent, navy wordmark above a navy panel |
+| Section or topic | Read |
+|---|---|
+| Badges and logos, Lender logos, Emoji, Brand kit, Elements (`src/elements/`) | [brand-assets](docs/agents/brand-assets.md) |
+| MortgageReel (prep, render, cuts, background, music) | [mortgage-reel](docs/agents/mortgage-reel.md) |
+| Project structure | [project-structure](docs/agents/project-structure.md) |
+| Rendering environments without a GPU, What this sandbox can't do | [rendering-without-gpu](docs/agents/rendering-without-gpu.md) |
+| Third-party API keys | [api-keys](docs/agents/api-keys.md) |
+| Skills, harness change logs | [skills-and-harnesses](docs/agents/skills-and-harnesses.md) |
+| Elements (`.claude/elements/`, remocn) | [elements](docs/agents/elements.md) |
+| Starter templates | [starters](docs/agents/starters.md) |
+| Language: fonts, stacked marks, speech-to-text, voiceover | [language](docs/agents/language.md) |
+| Mediabunny, Remotion licence | [mediabunny-and-licence](docs/agents/mediabunny-and-licence.md) |
+| One `@remotion/*` package | grep `docs/findings.md`; never read it whole |
 
-- **Four of them need a light background.** A test render on white and on navy (`#0b1b33`) loaded all five. On navy, the Champion Awards JPG sat in a white box, and the navy text of AFCA, Connective and the MFAA wordmark disappeared. Only the CommBank badge works on dark. In a dark video, put the badge row on a white or light card.
-- **The MFAA file is small** (174×161). Keep it near that size: scaled to 300px tall in the test render it was already soft. Ask the owner for a larger file if it has to be big.
-- **Check the year before using one.** The CommBank badge is for the 2026/2027 financial year and the awards badge for 2026. When a new one arrives, save it next to these with its own year in the name.
-- **These are other organisations' marks**, shown as the owner's credentials. Don't recolour, crop, redraw or animate their parts separately; fade, scale or slide each badge as a whole.
+Read list per task, on top of this file. `refs/` is `.claude/skills/vietnamese-finance-video-editor/references/`; "remocn index" is `head -n 22 .claude/elements/remocn/CATALOG.md`, then grep.
 
-## Lender logos: `public/lenders/`
-
-Logos of the lenders the owner is accredited with, so they are cleared to appear in the owner's videos; follow each lender's broker brand guidelines (clear space, minimum size, no recolouring). Show them with `LenderRow` from the brand kit, and add each new file to its `LENDERS` list.
-
-| File | Pixels | Notes |
+| Task | Files | Bytes |
 |---|---|---|
-| `commbank.png` | 532×434 | transparent; the stacked version (diamond above the black "CommBank" wordmark), cropped around the logo. The black wordmark needs a light background |
-| `westpac.png` | 632×264 | transparent; the red "W" symbol on its own, cropped around it |
-| `anz.webp` | 632×356 | transparent |
-| `firstmac.png` | 300×102 | transparent; small, so keep it at or below about 100px tall |
-| `st-george.png` | 400×340 | white background. A stock-site copy whose fake transparency (a grey checkerboard in the pixels) was whitened; replace it with the official file from St.George's broker portal |
-| `nab.png` | 703×289 | NAB's white-on-black version, cropped to its black box (the file around it had a fake checkerboard) |
-| `bankwest.png` | 688×252 | Bankwest's new logo, orange on its dark grey background, cropped around the logo. The orange ribbon symbol on its own is Bankwest's old logo; don't use it |
+| Mode A edit (existing design, re-edit) | editor `SKILL.md`, `refs/landmines.md`, `refs/edit-json.md` | 25,631 |
+| New design (each new talking-head video): Mode A plus | `refs/design-space.md`, `refs/design-architecture.md`, `refs/toolkit.md`, `refs/editing-principles.md`, `.claude/elements/CATALOG.md`, remocn index | +41,893 = 67,524 |
+| Mode B faceless | `refs/faceless-script.md`, `video-production-team` and `video-compliance-review` SKILL.md, the three `video-*` agents | 31,243 |
+| Repo or tooling change | [code-changes](docs/agents/code-changes.md), [project-structure](docs/agents/project-structure.md), [mortgage-reel](docs/agents/mortgage-reel.md) | 7,738 |
 
-Official files come from each lender's broker portal or brand team; SVG or transparent PNG is best. Replace a file under the same name and `LenderRow` picks it up.
-
-## Emoji: `public/emoji/`
-
-39 [Noto animated emoji](https://googlefonts.github.io/noto-emoji-animation/) saved as Lottie JSON (vector, so sharp at any size), picked for FinHub videos: money, calls to action, reactions, hands and celebrations. The set has no house, key or chart emoji. Show one with `<NotoEmoji name="thumbs-up" size={160} loop />` from the brand kit. The `EmojiCatalog` composition ("Brand" folder) shows every saved emoji with its name.
-
-- **Credit:** they're CC BY 4.0, so a video that uses them credits "Noto Emoji Animation by Google, CC BY 4.0" in its description.
-- **More:** `node scripts/fetch-noto-emoji.mjs rocket fire …` saves others by their `@remotion/animated-emoji` name (411 exist; `getAvailableEmojis()` lists them). Here, run it with `NODE_USE_ENV_PROXY=1`; `googlefonts.github.io` itself is blocked, but the files come from `fonts.gstatic.com`.
-
-## Brand kit: `src/brand/`
-
-Reusable pieces for the owner's real videos; start from these rather than writing new ones. Each animates its own entrance, so wrap it in a `<Sequence>` for timing. `BrandKitDemo` (in the "Brand" folder of the Studio, 1920×1080) shows them all with sample text.
-
-- `BilingualCaption` (`vi`, `en`): Vietnamese main line and English line under it, following "Language" above.
-- `LowerThird` (`name`, `roleVi`, `roleEn`): a name with a bilingual role, sliding in from the left.
-- `BadgeRow` (`height`, at most 160): the five badges on a white card, the awards badge 1.5× taller so it stays readable.
-- `LenderRow` (`height`, at most 100): the lender logos from `public/lenders/` on a white card.
-- `NotoEmoji` (`name`, `size`, `loop`): an animated emoji from `public/emoji/` (see "Emoji" above).
-- `EndCard` (`titleVi`, `titleEn`, `website`, `phone`): closing call to action with contact details and the badge row. There are no real contact details in the repo; pass them in.
-- `theme.ts`: Finance Hub's brand (first set in the retired TyDoReel): logo blue, navy, amber accent and the Be Vietnam Pro font. A composition that shows brand text calls `useTyDoFont()` (`src/brand/font.ts`) so the font's local files in `public/fonts/` load.
-- `BrandOverlay` / `BrandOverlayVertical` (`name`, `roleVi`, `roleEn`, editable in the Studio's props panel): a transparent overlay for video editors, with the logo on a white pill top-right for the whole 8 s and the lower third from 1 s to 6 s. `npx remotion render BrandOverlay` (or `BrandOverlayVertical` for 1080×1920 reels) writes `out/brand-overlay.mov` as ProRes 4444 with transparency, which Final Cut Pro, Premiere Pro and DaVinci Resolve import; put it on a track above the footage.
-
-If a second video project ever needs these, `remotion-dev/library-starter` is Remotion's template for publishing them as a package; it pins Remotion 4.0.46, so upgrade it first.
-
-## Elements: `src/elements/`
-
-22 checked building blocks (typewriter, ticker, Ken Burns, focus crop, before/after, audio ring, custom star-wipe transition, …) for designs and one-off videos; see `src/elements/README.md`. Each renders in the `ElementCatalog` composition ("Elements" folder). Check there before writing a new one.
-
-## MortgageReel: `src/mortgage/`
-
-The talking-head template; the code doesn't change per video. A recording lives once in `public/recordings/<id>/` (`source.mp4`, `foreground.webm`, `words.json`, and `original.<ext>` when kept; only `words.json` is in Git). Each video is a folder `public/videos/<slug>/` with its `edit.json`, whose `"source": "<id>"` names the recording, so two designs of one recording are two slugs and one copy of the files. An `edit.json` without `source` (videos not yet moved by `scripts/migrate-assets.py`, and faceless videos) keeps its files in `public/videos/<slug>/`. `src/mortgage/recording.ts` (TypeScript and Node scripts) and `scripts/recordings.py` (Python) are the only places that turn a slug into these paths; go through them.
-
-1. `python scripts/prep-video.py "<recording>" <slug> [--recording <id>]` makes the proxy with the voice cleaned up (`--no-clean` keeps the audio as recorded), the word-level transcript with hesitation sounds written down, and a starter `edit.json`. The id defaults to the slug. If that recording already exists it stops and names the videos using it: pick another `--recording <id>` for a new take, or delete the folder to replace the recording for all of them. A new edit of a recording already prepared is `python scripts/prep-video.py <slug> --recording <id>` with no video file: it writes only the slug's `edit.json`. Several takes: list the spans in `public/videos/<slug>/clips.json` and run `python scripts/prep-video.py <slug> --clips <that file>`, which joins them into the recording `<slug>-assembly` (shape and matte rule in the editor skill's `references/edit-json.md`; check: `python scripts/check-clips.py`).
-2. Edit `edit.json` (its fields are described in `src/mortgage/schema.ts`) and preview `MortgageReel` in the Studio with `slug` set.
-   Daniel can also do this in `npm run review` (http://localhost:4100/, see `review/README.md`): watch the reel, pick design, grade and chapter transitions, drag or nudge chapters, stats and cues on a timeline, save and render.
-3. `python scripts/render-video.py <slug>` renders, sets the final mix to -14 LUFS, and writes the mobile copy, thumbnail and `.srt`.
-   Before rendering it runs `node scripts/preflight.mjs <slug>` (also `npm run preflight -- <slug>`), which stops on a font without the Vietnamese subset in what MortgageReel renders, cues outside the talk or overlapping each other, and warns on English lines over ~3 lines, compare values too long for the VS badge and stat text too long for its ring.
-   Music beats: `scripts/analyze-beats.py` (HyperFrames' beat-grid analyser, Apache-2.0) writes `public/music/<name>.audiomap.json`; run it with the OmniVoice venv's Python (`.omnivoice\venv\Scripts\python.exe`, which has librosa). Designs read it with `src/elements/beats.ts`.
-
-- **Automatic cuts** (`edit.json` `cut`, all on by default): hesitation sounds, stutters (the first of a word or phrase said twice in a row, within a sentence), swear words, and any extra `words`. Restarts in different words still need a `remove` span. `node scripts/export-srt.mjs <slug>` lists every automatic cut; check it before rendering.
-- **Brand background** (`edit.json` `"background": "brand"`): replaces the room behind Daniel with the brand backdrop. It needs `foreground.webm` (Daniel cut out, with transparency) next to the recording's `source.mp4`: with `npm run review` running, open http://localhost:4100/matte.html?slug=<slug> in the Claude app's browser (it needs WebGPU) and wait for "Saved". It takes about 13x the video's length, downloads the 25.9 MB `modnet` model from remotion.media the first time, and is saved only if its frame count matches `source.mp4`. `render-video.py` stops with these instructions if the file is missing. `foreground.webm` is not in Git.
-- **Music** (`edit.json` `music`: a file under `public/music/` and an optional `volume`, default 0.3): looped under the whole video and ducked to 30% while Daniel talks. Use only tracks licensed for social media.
-
-## Project structure
-
-- `src/index.ts` — entry point, registers the root component
-- `src/Root.tsx` — every `<Composition>` must be registered here
-- `src/Composition.tsx` — the `MyComp` composition (1280×720 @ 30fps)
-- `src/showcase/` — reference reels that exercise almost every installed `@remotion/*` package: `ShowcaseReel`, `ExtendedReel` and `FullReel` (both combined, plus every `@remotion/transitions` presentation and all 74 `@remotion/effects` effects, which are also registered alone as `EffectsCatalog`, then one scene each for `@remotion/web-renderer`, `@remotion/whisper-web`, `@remotion/svg-3d-engine` and `@remotion/maptiler`). Each scene is a worked example for its package, so search here before writing a new one. The scene-by-scene map is in `docs/findings.md`.
-- `docs/findings.md` — verified behaviour of individual packages in this project and sandbox; read the part you need
-- `scripts/renderer-apis.mjs` — the Node-side APIs that can't run in a scene (`@remotion/bundler`, `@remotion/renderer`, the offline Lambda/Cloud Run helpers and others), run for real: `node scripts/renderer-apis.mjs --browser-executable=… --gl=swangle`
-- `player-demo/` — a standalone web page for `@remotion/player`'s `<Player>` and `<Thumbnail>`, which can't live inside a composition: `node player-demo/build.mjs [--serve]`; see its README
-- `bundler-override.mjs` — the skia/tailwind bundler override, shared by `remotion.config.ts` and that script's `bundle()` call (the Node APIs don't read `remotion.config.ts`)
-- `src/index.css` — Tailwind v4 is enabled (`@import "tailwindcss"`)
-- `public/` — static assets, referenced with `staticFile()`: the showcase's sample media (regenerate with `node scripts/generate-sample-media.mjs`; `sample-clip.webm` is the VP9 copy for anything that decodes through WebCodecs), a font and a three.js typeface. What each file is for is in `docs/findings.md`.
-- `public/badges/` — the owner's accreditation and award badges for real videos (see "Badges and logos" above)
-- `public/lenders/` — logos of the lenders the owner is accredited with (see "Lender logos" above)
-- `public/emoji/` — Noto animated emoji as Lottie JSON (see "Emoji" above); `scripts/fetch-noto-emoji.mjs` adds more
-- `.claude/elements/` — local copy of the [Remotion Elements](https://www.remotion.dev/elements/) gallery, plus the [remocn](https://remocn.dev) library in `remocn/`: drop-in components to copy into a scene (see "Elements" below)
-- `out/`, `build/`, `node_modules/`, `remotion-video-skill.zip` — generated, never commit
-
-## Rendering environments without a GPU
-
-`@remotion/effects` and `@remotion/three` (and anything else using a canvas-based component's `effects` prop, or `<ThreeCanvas>`) need a working WebGL2 context. On a machine with a real GPU this needs nothing beyond `Config.setChromiumOpenGlRenderer('angle')` (or `--gl=angle` on the CLI) per the `light-leaks.md`/`3d.md` guides.
-
-In a GPU-less sandbox, Chromium's software WebGL fallback additionally needs `--enable-unsafe-swiftshader`, which Remotion's CLI doesn't expose directly (only `--gl=angle` combined with the unreleased v5-breaking-changes flag adds it automatically). Work around this without touching that project-wide flag by pointing `--browser-executable` at a tiny wrapper script that forwards to the real browser binary with the flag always included:
-
-```sh
-cat > /tmp/headless-shell-swiftshader <<'EOF'
-#!/bin/sh
-exec /path/to/your/headless_shell --enable-unsafe-swiftshader "$@"
-EOF
-chmod +x /tmp/headless-shell-swiftshader
-npx remotion render ExtendedReel out/extended-reel.mp4 --browser-executable=/tmp/headless-shell-swiftshader --gl=swangle
-```
-
-Without this, effects/`<ThreeCanvas>` scenes render as solid black — Chromium accepts the render silently rather than erroring, so check with `--log=verbose` for the "Automatic fallback to software WebGL has been deprecated" warning if a canvas-based scene comes out blank.
-
-## What this sandbox can't do
-
-Each was confirmed with a real render. The details, and how the showcase works around each one, are in `docs/findings.md`.
-
-- **The render browser can't reach** `remotion.media` (`@remotion/sfx` sounds, the video-matting and whisper-webgpu models), `fonts.gstatic.com` (`@remotion/google-fonts` crashes the render, so use `font.ts`'s system font stack here) or `unpkg.com` (`@remotion/rive` hangs the render rather than failing). Files copied into `public/` work.
-- **No H.264, HEVC or AAC decoding through WebCodecs.** `@remotion/media`'s `<Video>` quietly falls back to `<OffthreadVideo>` and `<Audio>` to `<Html5Audio>`; give WebCodecs-based code a VP9 `.webm` (with Opus for sound). `MediabunnyScene` lists what decodes here.
-- **Chromium 141, so no `HtmlInCanvas`** (it needs 149+). Most `@remotion/transitions` presentations are built on it; only `fade`, `slide`, `wipe`, `flip`, `clockWipe`, `iris`, `none` and `pushCut` render here. `<ThreeWebGPUCanvas>` crashes the render.
-- **At most 16 WebGL contexts per page**, and each component with `effects` uses two, so keep eight or fewer mounted at once.
-- **No MapTiler, no H.264 encoding, no cross-origin isolation.** `api.maptiler.com` is blocked (and no key is set), so `MapTilerScene` shows its "add a key" notice. `@remotion/web-renderer` can't encode H.264 here, so it picks WebM. The render page isn't cross-origin isolated, so `@remotion/whisper-web` can't transcribe.
-
-## Third-party API keys (e.g. ElevenLabs voiceover)
-
-`@remotion/elevenlabs` is a Speech-to-Text→`Caption[]` converter (`elevenLabsTranscriptToCaptions()`), not a text-to-speech package — don't confuse the two. `CaptionsScene` demonstrates the converter itself against a hand-built mock transcript (no network needed — the exact shape a real ElevenLabs STT call returns with `timestamps_granularity: "word"`), since this sandbox can't call ElevenLabs' API for a real one. For generating voiceover audio, `scripts/generate-voiceover.mjs` calls ElevenLabs' TTS REST API directly and writes MP3s to `public/voiceover/`, following the `voiceover.md` skill guide. Copy `.env.example` to `.env.local` and fill in `ELEVENLABS_API_KEY`, then run `node scripts/generate-voiceover.mjs`.
-
-The API key is only ever read inside that standalone script, never inside a `.tsx` component: components get bundled for the browser, and Remotion's CLI exposes `.env`/`.env.local` to that bundle's `process.env` (see `env-variables.mdx`), so a key referenced from a component would ship inside the render output. This pre-generate-once-then-read-the-static-file pattern is how to wire up any other third-party API (image/video generation, other TTS providers, etc.) safely.
-
-The one exception is MapTiler: its SDK draws the map in the browser, so `MapTilerScene` reads `REMOTION_MAPTILER_KEY` from `.env` inside the component, as Remotion's own map examples do. MapTiler keys are browser keys by design; use a dedicated free key, since a render has no origin to restrict it to.
-
-Client-side rendering (`@remotion/web-renderer`, used in `WebRendererScene` and the player demo) always sends Remotion a telemetry ping per render: IP address, page domain, video or still, success or failure, never content. The free licence needs no `licenseKey`; pass `isProduction: false` for test renders.
-
-## Skills
-
-`.claude/skills/` contains the official Remotion agent skills (vendored from Remotion's `packages/skills`, matching the pinned Remotion version). Start with `remotion-best-practices` — it routes to the specific skill for the task (creating compositions, markup/animation, captions, maps, rendering, Studio). Follow them when writing any Remotion markup.
-
-Whatever skill is driving (Remotion's, the editor skill, or a scene written by hand), build from the element libraries before writing an effect from scratch: `.claude/elements/CATALOG.md` and `.claude/elements/remocn/CATALOG.md` for components, and `.claude/elements/remocn/recipes/FINHUB.md` for whole-video structures (remocn's composition recipes mapped to FinHub content, with the FinHub overrides). This rule lives here rather than inside the Remotion skills because re-vendoring replaces those.
-
-`.claude/skills/vietnamese-finance-video-editor/` is the owner's own skill, not Remotion's: use it whenever Daniel asks to edit a new talking-head video. It holds the locked-core/new-design-every-video workflow, the design log (`public/videos/design-log.json`, through its `scripts/main.py`) and the compliance rules. Re-vendoring replaces only Remotion's skills and keeps this one.
+## Harnesses
 
 ### Harness: video production team
 
-**Goal:** a document or recording becomes a finished video that a second, independent reviewer has checked for compliance, with Daniel approving only the script.
-
 **Trigger:** when Daniel asks for a video from a document, a faceless video, or a video "with the team" / "with a compliance check", use the `video-production-team` skill. It runs three agents in `.claude/agents/`: `video-script-writer`, `video-editor` (which follows `vietnamese-finance-video-editor`) and `video-compliance-reviewer` (which follows `video-compliance-review`). A plain edit of a talking-head video can still use the editor skill alone.
-
-**Change log:**
-| Date | Change | Files | Why |
-|---|---|---|---|
-| 2026-09-26 | Initial team | the three agents, `video-production-team`, `video-compliance-review` | Independent compliance check; scripts written from documents |
 
 ### Harness: refactor team
 
-**Goal:** the repo wastes less — duplicated recordings, tokens per session, render minutes — measured before and proved after, with Daniel's recordings moved only by a script he runs himself.
-
 **Trigger:** when Daniel asks to refactor, dedupe, audit or speed up this repo ("where are the tokens going", "run the refactor pipeline", "make rendering faster", "did the dedup work"), use the `refactor-team` skill. It runs `architecture-auditor`, `asset-refactorer`, `pipeline-optimizer` and `quality-reviewer` from `.claude/agents/`, measuring with the `repo-audit-tools` skill. A one-line fix needs no team.
-
-**Change log:**
-| Date | Change | Files | Why |
-|---|---|---|---|
-| 2026-09-26 | Initial team | the four agents, `refactor-team`, `repo-audit-tools`, `.claude/settings.json` (Read-deny rules for the emoji, typeface and country JSON blobs) | Five copies of one 273 MB recording across slug folders; nothing measured the token cost of a session |
-
-`.claude/` also holds 18 other subagents in `.claude/agents/` and 7 skills (accessibility, bun-runtime, codebase-onboarding, error-handling, react-patterns, react-performance, search-first) imported from ECC (see `.claude/ECC.md`), and the `ponytail-review`, `ponytail-audit` and `ponytail-debt` skills from ponytail (see `.claude/PONYTAIL.md`). They run only when asked; this file and the Remotion and owner skills win where they conflict.
-
-When upgrading Remotion, re-vendor the skills so guidance matches the installed version:
-
-```console
-node scripts/vendor-skills.mjs   # defaults to ../remotion/packages/skills/skills; pass another source path if needed
-```
-
-The default source is a Remotion checkout in a `remotion` folder next to this one (GitHub Desktop clones `danielnguyenfinhub/remotion` there); check out the Remotion version you're upgrading to first. The script copies the skills without their symlinks (which break on Windows checkouts and inflate zip bundles), rewrites sibling-skill links accordingly, and fails if any relative link is broken. Do not copy the skills by hand.
-
-`node scripts/build-chat-skill.mjs` packages `chat-skill/SKILL.md` plus these skills into `remotion-video-skill.zip` for upload to claude.ai (Claude Chat and account-wide Cowork). Rebuild it after re-vendoring.
-
-## Elements
-
-`.claude/elements/` is a local copy of the official [Remotion Elements](https://www.remotion.dev/elements/) gallery (vendored from Remotion's `packages/docs/elements`) — 41 small, self-contained, drop-in components across 11 categories (audio, backgrounds, captions, commerce, data, layouts, maps, overlays, storytelling, text, youtube). `.claude/elements/CATALOG.md` lists every one with its description. Elements are designed to be copied and edited directly (not installed as a dependency): pick one from the catalog, copy its `.tsx` file (and `initial-props.ts` if present) into `src/showcase/`, and adapt it — check the file's own imports for any package to install first.
-
-`.claude/elements/remocn/` holds 300+ more items from [remocn](https://remocn.dev) (MIT): kinetic text, transitions, shader backgrounds, effects, charts, 100 icons and 5 full templates, indexed with a "use when" line each in `.claude/elements/remocn/CATALOG.md`. They sit at their shadcn install paths (`components/remocn/*`, `lib/remocn*/*`) and import each other through `@/components/remocn/...` and `@/lib/remocn-*`, so copy an element together with the files it imports and rewrite those imports to relative paths. Their npm packages are installed. Adapt any element before use (Be Vietnam Pro, `src/brand/theme.ts` colours, no bundled `<Audio>`): the editing skill's `references/toolkit.md` → "Element libraries" has the full list. Items marked third-party brand UI are reference only.
-
-Two files come from the live site instead, because they are newer than `packages/docs/elements`: `captions/rounded-captions` and `youtube/youtube-subscribe-nudge`. The vendor script deletes and rewrites everything in the folder except `remocn/`, so after re-vendoring, restore them with `git checkout -- .claude/elements/captions/rounded-captions .claude/elements/youtube/youtube-subscribe-nudge` and re-add their `CATALOG.md` lines, unless upstream has caught up.
-
-Re-vendor after pulling upstream changes to `packages/docs/elements`:
-
-```console
-node scripts/vendor-elements.mjs   # defaults to ../remotion/packages/docs/elements; pass another source path if needed
-```
-
-## Starter templates: `starters/`
-
-The 22 official `create-video` templates, created at Remotion 4.0.527 in `danielnguyenfinhub/remotion`: audiogram, blank, code-hike, electron, hello-world, javascript, music-visualization, next, next-no-tailwind, next-pages-dir, overlay, prompt-to-motion-graphics, prompt-to-video, react-router, recorder, render-server, skia, stargazer, still, three, tiktok and vercel, each as `starters/my-<name>/`. They are reference material for scene ideas: each is its own project (`cd starters/my-<name> && npm i`), outside this project's build and type-check (`tsconfig.json` excludes the folder). Copy an idea into `src/` and map its colours to `src/brand/theme.ts`. `starters/my-overlay/README.md` explains using a transparent overlay in a video editor.
 
 ## Conventions
 
@@ -257,6 +89,3 @@ The 22 official `create-video` templates, created at Remotion 4.0.527 in `daniel
 - In components, take `delayRender`/`continueRender`/`cancelRender` from `useDelayRender()` (render-scoped, the documented recommendation) rather than importing the global functions; every scene here does.
 - Users may edit files between conversations (including visually in Remotion Studio); treat surprising diffs as intentional and don't overwrite them.
 - Run `npm run lint` before committing.
-- Read a media file's duration, size or codecs with Mediabunny (`Input` with `UrlSource(staticFile(…))`, or `FilePathSource` in Node), as in the `remotion-multimedia` skill, not with the deprecated `parseMedia()`/`getVideoMetadata()`. It's a direct dependency, pinned to the version `@remotion/media` uses.
-- Mediabunny's docs (mediabunny.dev) are blocked in this sandbox. To read them, clone the source at the installed version, outside this repo and read-only: `GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch v1.56.1 https://github.com/Vanilagy/mediabunny ../vanilagy/mediabunny`, then read `docs/guide/` and `examples/`. Match the tag to `mediabunny` in `package.json`; never copy the source into this repo or install a different version than `@remotion/media` uses.
-- The owner uses Remotion's free license (individuals, for-profit companies with up to 3 employees, and non-profits qualify; see [Remotion's license](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md)). Pass `acknowledgeRemotionLicense` where an API takes it (`<Player>`, `parseMedia()`, `convertMedia()` and others); it only hides Remotion's license notice.
