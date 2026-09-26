@@ -52,7 +52,9 @@ console.log("captionPages ok");
 
 const slug = process.argv[2];
 if (slug) {
-  const raw = JSON.parse(readFileSync(new URL(`../public/videos/${slug}/words.json`, import.meta.url), "utf8"));
+  const { recordingPath } = await import(new URL("../src/mortgage/recording.ts", import.meta.url));
+  const edit = JSON.parse(readFileSync(new URL(`../public/videos/${slug}/edit.json`, import.meta.url), "utf8"));
+  const raw = JSON.parse(readFileSync(new URL(`../public/${recordingPath(slug, edit.source, "words.json")}`, import.meta.url), "utf8"));
   const caps = Array.isArray(raw) ? raw : raw.words;
   const before = problems(createTikTokStyleCaptions({ captions: caps, combineTokensWithinMilliseconds: OPTS.combineWithinMs, breakOnSilenceAfterMilliseconds: OPTS.breakOnSilenceAfterMs }).pages);
   const after = problems(captionPages({ captions: caps, ...OPTS }));

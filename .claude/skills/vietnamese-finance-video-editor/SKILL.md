@@ -125,7 +125,12 @@ line, new or re-edit. Read `references/landmines.md` and the design log. Run
 
 **Step 1 — Prep.** `python scripts/prep-video.py "<video>" <slug>` from the repository root, in the
 background (faster-whisper large-v3 on CPU takes minutes). It writes the short-GOP proxy
-`source.mp4`, `words.json`, a pace table and a skeleton `edit.json`. Check the source
+`source.mp4` and `words.json` once per recording in `public/recordings/<id>/` (id defaults to the
+slug), a pace table, and a skeleton `public/videos/<slug>/edit.json` whose `"source"` names the
+recording. If that recording already exists, prep stops and names the slugs using it: a new
+take needs another `--recording <id>`; deleting the folder replaces the recording for all of
+them (ask Daniel first). A new design of a recording already prepared is a new slug with no
+video file: `python scripts/prep-video.py <slug> --recording <id>` writes only its `edit.json`. Check the source
 aspect ratio: a non-9:16 source is cover-cropped; confirm the face stays in frame.
 
 **Step 2 — Understand the talk.** One paragraph: problem, example, conclusion. Mark the
@@ -198,7 +203,7 @@ Report to Daniel in plain language, backed by this structure (`templates/output.
 | `edit.json is invalid` | zod path in the message | Fix that field; never loosen the schema |
 | `RG 234: restricted terminology` | a string in edit.json or design `copy` | Rewrite the text; exemption only for a genuine definition, quote, negation or proper noun |
 | `"design" … is not a design` | id not registered | Register it in `src/designs/index.ts` |
-| Frame fetch timeout / 404 on source.mp4 | render from the phone original or missing proxy | Re-run prep; render only from `public/videos/<slug>/source.mp4` |
+| Frame fetch timeout / 404 on source.mp4 | render from the phone original or missing proxy | Re-run prep; render only from the prep proxy (`public/recordings/<id>/source.mp4`, or `public/videos/<slug>/` without `"source"`) |
 | Light leaks or 3D render black | WebGL without ANGLE | Use `render-video.py` (sets `--gl=angle`) |
 | Files changed on disk mid-task | GitHub Desktop pull/checkout stashed your work | Stop; find the stash (`git stash list`), restore, tell Daniel |
 | Check fails in `main.py check` | < 4 axes differ | Redesign; do not edit the log |

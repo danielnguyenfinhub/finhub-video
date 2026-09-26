@@ -7,6 +7,7 @@ import {
   createReadStream,
   createWriteStream,
   existsSync,
+  readFileSync,
   readdirSync,
   renameSync,
   rmSync,
@@ -14,8 +15,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { extname, join, resolve } from "node:path";
+import { extname, join, relative, resolve } from "node:path";
 import { z } from "zod";
+import { recordingPath } from "../src/mortgage/recording";
 import { editSchema } from "../src/mortgage/schema";
 
 const ROOT = resolve(__dirname, "..", "..");
@@ -83,13 +85,27 @@ const readBody = (req: IncomingMessage) =>
     req.on("error", fail);
   });
 
-// A video is reviewable once prep-video.py has made all three files.
+// A recording file (source.mp4, foreground.webm, words.json) of a video: in
+// public/recordings/<source>/ when edit.json names one, else in its own folder.
+// A "source" that isn't a plain id (a hand-edited "../x") is refused.
+const recordingFile = (slug: string, file: string) => {
+  const { source } = JSON.parse(readFileSync(join(VIDEOS, slug, "edit.json"), "utf8")) as { source?: string };
+  if (source !== undefined && !SLUG.test(source))
+    throw new Error(`edit.json "source" must be a recording id like ty-do, not "${source}".`);
+  return join(PUBLIC, recordingPath(slug, source, file));
+};
+
+// A video is reviewable once it has an edit.json and its recording has
+// source.mp4 and words.json (prep-video.py makes all three).
 const listVideos = () =>
-  readdirSync(VIDEOS).filter(
-    (d) =>
-      SLUG.test(d) &&
-      ["source.mp4", "words.json", "edit.json"].every((f) => existsSync(join(VIDEOS, d, f))),
-  );
+  readdirSync(VIDEOS).filter((d) => {
+    if (!SLUG.test(d) || !existsSync(join(VIDEOS, d, "edit.json"))) return false;
+    try {
+      return ["source.mp4", "words.json"].every((f) => existsSync(recordingFile(d, f)));
+    } catch {
+      return true; // edit.json doesn't parse or has a bad source: list it so the page shows why
+    }
+  });
 
 // Validates with the same schema the render uses, keeps the previous version
 // as edit.json.bak, then writes.
@@ -118,14 +134,20 @@ const videoFrames = (file: string) =>
     ]).toString().trim(),
   );
 
-// Saves the background-removed foreground (from matte.html) as
-// foreground.webm. Streamed to a .part file, then kept only if it has exactly
-// as many frames as source.mp4: the render plays it through the same cuts and
+// Saves the background-removed foreground (from matte.html) as the
+// recording's foreground.webm. Streamed to a .part file, then kept only if it
+// has exactly as many frames as source.mp4: the render plays it through the same cuts and
 // pacing, so a single dropped frame would put it out of sync with the voice.
 const saveForeground = (req: IncomingMessage, res: ServerResponse, slug: string) =>
   new Promise<void>((done) => {
-    const dir = join(VIDEOS, slug);
-    const part = join(dir, "foreground.webm.part");
+    let target: string;
+    try {
+      target = recordingFile(slug, "foreground.webm");
+    } catch (e) {
+      json(res, 400, { error: `Foreground not saved: ${(e as Error).message}` });
+      return done();
+    }
+    const part = `${target}.part`;
     const out = createWriteStream(part);
     let bytes = 0;
     let settled = false;
@@ -150,12 +172,12 @@ const saveForeground = (req: IncomingMessage, res: ServerResponse, slug: string)
     out.on("finish", () => {
       if (settled) return;
       try {
-        const want = videoFrames(join(dir, "source.mp4"));
+        const want = videoFrames(recordingFile(slug, "source.mp4"));
         const got = videoFrames(part);
         if (got !== want)
           throw new Error(`it has ${got} frames but source.mp4 has ${want}, so it would drift out of sync. Run it again.`);
-        renameSync(part, join(dir, "foreground.webm"));
-        finish(200, { saved: `public/videos/${slug}/foreground.webm`, frames: got });
+        renameSync(part, target);
+        finish(200, { saved: relative(ROOT, target).replace(/\\/g, "/"), frames: got });
       } catch (e) {
         fail(e as Error);
       }

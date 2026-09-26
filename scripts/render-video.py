@@ -21,6 +21,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from recordings import PUBLIC, read_edit, recording_dir
+
 ROOT = Path(__file__).resolve().parent.parent
 # The Remotion CLI run through node directly: same as `npx remotion`, without
 # cmd.exe mangling the JSON in --props on Windows.
@@ -97,15 +99,14 @@ def main() -> None:
     parser.add_argument("slug", help="folder name under public/videos/")
     slug: str = parser.parse_args().slug
 
-    if not (ROOT / "public" / "videos" / slug / "edit.json").exists():
-        raise SystemExit(f"public/videos/{slug}/edit.json not found; run prep-video.py first.")
-    edit = json.loads((ROOT / "public" / "videos" / slug / "edit.json").read_text(encoding="utf-8"))
+    # The rest of edit.json is validated by the render itself.
+    source = read_edit(PUBLIC, slug).get("source")
     # Golden rule: the background is always removed, so the cut-out must exist.
-    if not (ROOT / "public" / "videos" / slug / "foreground.webm").exists():
+    cut_out = recording_dir(PUBLIC, slug, source) / "foreground.webm"
+    if not cut_out.exists():
         raise SystemExit(
-            f"public/videos/{slug}/foreground.webm is missing. Run `npm run review`, open "
+            f"{cut_out} is missing. Run `npm run review`, open "
             f'http://localhost:4100/matte.html?slug={slug} and wait for "Saved".')
-    del edit  # validated by the render itself
     # Fonts without Vietnamese marks, misplaced or overlapping cues: stop now,
     # before a several-minute render (scripts/preflight.mjs).
     run(["node", str(ROOT / "scripts" / "preflight.mjs"), slug], "preflight checks")
@@ -116,9 +117,11 @@ def main() -> None:
     thumb = out_dir / "thumbnail.png"
     props = json.dumps({"slug": slug})
 
+    # ponytail: concurrency 4 measured fastest on the i9-13900H / Iris Xe
+    # (full reel 195 s vs 230 s at 8); re-time if the render machine changes.
     run(REMOTION + ["render", "src/index.ts", "MortgageReel", str(full),
                     f"--props={props}", "--codec=h264", "--gl=angle",
-                    "--concurrency=8", "--timeout=120000"],
+                    "--concurrency=4", "--timeout=120000"],
         f"render {full.name} (several minutes)")
     normalize_loudness(full)
 

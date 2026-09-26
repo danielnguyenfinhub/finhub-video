@@ -1,5 +1,5 @@
 import {AbsoluteFill, Sequence} from "remotion";
-import {useTyDoFont} from "../tydo/TyDoOverlays";
+import {useTyDoFont} from "./font";
 import {BilingualCaption} from "./BilingualCaption";
 import {EndCard} from "./EndCard";
 import {LenderRow} from "./LenderRow";

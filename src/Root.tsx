@@ -24,7 +24,6 @@ import {
   EffectsCatalogScene,
 } from "./showcase/EffectsCatalogScene";
 import { AbsoluteFill } from "remotion";
-import { TyDoReel, tyDoComposition } from "./tydo/TyDoReel";
 import {
   MortgageReel,
   calculateMortgageReelMetadata,
@@ -72,7 +71,6 @@ export const RemotionRoot: React.FC = () => {
     <>
       <MyComposition />
       <Folder name="FinanceHub">
-        <Composition {...tyDoComposition} component={TyDoReel} />
         {/* The reusable talking-head template: one public/videos/<slug>/ per video. */}
         <Composition
           {...mortgageReelComposition}

@@ -1,7 +1,8 @@
 # Landmines — each one already cost a render (symptom → cause → fix)
 
 - Frame-fetch timeouts at random frames → phone source has 8 s keyframes → always render
-  the prep proxy `public/videos/<slug>/source.mp4` (short GOP).
+  the prep proxy `public/recordings/<id>/source.mp4` (short GOP; `public/videos/<slug>/` for
+  an `edit.json` without `"source"`).
 - Files change on disk mid-task, render 404s on edit.json → GitHub Desktop pull or branch
   switch stashed uncommitted work (one stash per branch, replaced on each switch) →
   `git stash list`; untracked files sit in the stash's main tree

@@ -1,8 +1,9 @@
 // MortgageReel: the reusable FinHub talking-head template. Per video, only
-// public/videos/<slug>/{source.mp4, words.json, edit.json} change; this code
-// doesn't. calculateMetadata loads the edit, enforces ASIC RG 234 on every
-// on-screen string (the render FAILS rather than ship a non-compliant claim),
-// builds the paced timeline and hands it to the component as props.
+// public/videos/<slug>/edit.json and its recording (source.mp4, words.json,
+// foreground.webm; see recording.ts) change; this code doesn't.
+// calculateMetadata loads the edit, enforces ASIC RG 234 on every on-screen
+// string (the render FAILS rather than ship a non-compliant claim), builds
+// the paced timeline and hands it to the component as props.
 import {
   TransitionSeries,
   linearTiming,
@@ -23,6 +24,7 @@ import {
 import { z } from "zod";
 import { DEFAULT_DESIGN, getDesign } from "../designs";
 import { assertCompliantCopy, assertRateGate } from "./compliance";
+import { recordingPath } from "./recording";
 import { ComplianceCard } from "./EndCards";
 import {
   DEFAULT_CTA_QUESTION,
@@ -72,8 +74,7 @@ export type MortgageReelProps = z.infer<typeof mortgageReelSchema> & {
   reel: Reel | null;
 };
 
-const fetchJson = async (slug: string, file: string): Promise<unknown> => {
-  const path = `videos/${slug}/${file}`;
+const fetchJson = async (slug: string, path: string): Promise<unknown> => {
   const res = await fetch(staticFile(path));
   if (!res.ok)
     throw new Error(
@@ -98,7 +99,9 @@ export const buildReel = (
   // Throws for an unknown name, listing the designs there are.
   const design = getDesign(edit.design ?? DEFAULT_DESIGN);
   if (!Array.isArray(words) || words.length === 0)
-    throw new Error(`public/videos/${slug}/words.json has no words.`);
+    throw new Error(
+      `public/${recordingPath(slug, edit.source, "words.json")} has no words.`,
+    );
   // Throws "RG 234: restricted terminology found".
   assertCompliantCopy(
     { ...onScreenCopy(edit), [`design:${design.id}`]: design.copy },
@@ -124,15 +127,17 @@ export const calculateMortgageReelMetadata: CalculateMetadataFunction<
   MortgageReelProps
 > = async ({ props }) => {
   const { slug, design } = props;
-  const [editJson, words, cutOut] = await Promise.all([
-    fetchJson(slug, "edit.json"),
-    fetchJson(slug, "words.json"),
-    fetch(staticFile(`videos/${slug}/foreground.webm`), { method: "HEAD" }),
+  const editJson = await fetchJson(slug, `videos/${slug}/edit.json`);
+  const { source } = parseEdit(editJson, slug);
+  const cutOutPath = recordingPath(slug, source, "foreground.webm");
+  const [words, cutOut] = await Promise.all([
+    fetchJson(slug, recordingPath(slug, source, "words.json")),
+    fetch(staticFile(cutOutPath), { method: "HEAD" }),
   ]);
   // Golden rule: the background is always removed, so the cut-out must exist.
   if (!cutOut.ok)
     throw new Error(
-      `MortgageReel "${slug}": public/videos/${slug}/foreground.webm is missing. ` +
+      `MortgageReel "${slug}": public/${cutOutPath} is missing. ` +
         `Run \`npm run review\`, open http://localhost:4100/matte.html?slug=${slug} and wait for "Saved".`,
     );
   const { reel, durationInFrames } = buildReel(editJson, words, slug, design);
@@ -202,8 +207,10 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
   if (!reel) throw new Error("MortgageReel: calculateMetadata did not run.");
   const { edit, timeline } = reel;
   const design = getDesign(edit.design ?? DEFAULT_DESIGN);
-  const src = staticFile(`videos/${slug}/source.mp4`);
-  const foreground = staticFile(`videos/${slug}/foreground.webm`);
+  const src = staticFile(recordingPath(slug, edit.source, "source.mp4"));
+  const foreground = staticFile(
+    recordingPath(slug, edit.source, "foreground.webm"),
+  );
   const keywords = [...KEYWORDS, ...(edit.keywords ?? [])];
   const talk = timeline.talkFrames;
   return (

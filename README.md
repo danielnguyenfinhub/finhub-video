@@ -37,15 +37,19 @@ npm i
 
 ## Step by step (what Claude does, or what you run)
 
-Every video lives in its own folder `public/videos/<slug>/`, where the slug is a short name like `ty-do`. The code never changes per video. Only the files in that folder do.
+Every recording is kept once in `public/recordings/<id>/`, and every video made from it has its own folder `public/videos/<slug>/`, where the slug is a short name like `ty-do`. A second design of the same recording is a new slug whose `edit.json` names the same recording, with no second copy of the files. The code never changes per video.
 
 ```
-public/videos/<slug>/
+public/recordings/<id>/
   source.mp4        the cleaned-up proxy of your recording   (not in Git)
   foreground.webm   you, cut out of the room                  (not in Git)
   words.json        word-by-word transcript with timings
-  edit.json         every editing decision for this video
+
+public/videos/<slug>/
+  edit.json         every editing decision for this video; "source" names the recording
 ```
+
+Videos made before this layout keep everything in `public/videos/<slug>/` until `python scripts/migrate-assets.py` (a dry run; add `--apply` to do it) moves each recording into `public/recordings/` once. Faceless videos always keep their files in their own folder.
 
 ### 1. Prepare the recording
 
@@ -53,11 +57,11 @@ public/videos/<slug>/
 python scripts/prep-video.py "C:\path\to\recording.mp4" my-slug
 ```
 
-This makes `source.mp4` (voice cleaned up; add `--no-clean` for a studio recording), transcribes it into `words.json`, prints a table of each sentence's pace, and writes a starter `edit.json`. Transcription is slow on CPU and prints its progress as it goes.
+This makes `public/recordings/my-slug/source.mp4` (voice cleaned up; add `--no-clean` for a studio recording), transcribes it into `words.json` next to it, prints a table of each sentence's pace, and writes a starter `edit.json`. Transcription is slow on CPU and prints its progress as it goes.
 
 ### 2. Remove the background (always on)
 
-Every template shows you cut out over its own backdrop, so each video needs `foreground.webm`:
+Every template shows you cut out over its own backdrop, so each recording needs `foreground.webm` (made once; every video of that recording uses it):
 
 ```bash
 npm run review

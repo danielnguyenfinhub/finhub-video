@@ -10,7 +10,13 @@ out
 # Claude Chat skill bundle (built from chat-skill/ + .claude/skills/)
 remotion-video-skill.zip
 
-# Original recordings and MortgageReel render proxies (too large for GitHub)
+# Original recordings and MortgageReel render proxies (too large for GitHub):
+# public/recordings/<id>/ holds each recording once, its words.json tracked; the
+# videos/<slug>/ lines cover unmigrated and faceless videos. edit.json.bak is the
+# review page's backup.
+/public/recordings/*/*
+!/public/recordings/*/words.json
+/public/videos/*/*.bak
 /public/4.1*.mp4
 /public/videos/*/source.mp4
 /public/videos/*/original.*
@@ -25,3 +31,6 @@ __pycache__/
 /public/videos/*/foreground.webm.part
 /public/videos/*/voice/
 /.omnivoice/
+
+# Repowise index written by the repo-audit-tools skill (node .claude/skills/repo-audit-tools/scripts/audit.mjs)
+/.repowise/

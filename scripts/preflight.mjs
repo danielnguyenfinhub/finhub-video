@@ -9,7 +9,7 @@
 // The video (with a slug): the edit.json mistakes the RBA video hit once.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
@@ -54,12 +54,18 @@ for (const file of RENDERED.filter(existsSync).flatMap(walk)) {
 const slug = process.argv[2];
 if (slug) {
   const dir = join(ROOT, "public", "videos", slug);
-  const read = (f) => JSON.parse(readFileSync(join(dir, f), "utf8"));
-  if (!existsSync(join(dir, "edit.json")) || !existsSync(join(dir, "words.json")))
-    errors.push(`public/videos/${slug}: edit.json or words.json is missing.`);
+  // edit.json stays in the slug folder; words.json lives with the recording
+  // (src/mortgage/recording.ts, imported through Node's type stripping like export-srt.mjs).
+  const { recordingPath } = await import(pathToFileURL(join(ROOT, "src", "mortgage", "recording.ts")).href);
+  const editPath = join(dir, "edit.json");
+  const source = existsSync(editPath) ? JSON.parse(readFileSync(editPath, "utf8")).source : undefined;
+  const wordsPath = join(ROOT, "public", recordingPath(slug, source, "words.json"));
+  const read = (p) => JSON.parse(readFileSync(p, "utf8"));
+  if (!existsSync(editPath) || !existsSync(wordsPath))
+    errors.push(`public/videos/${slug}: edit.json or ${relative(ROOT, wordsPath).replace(/\\/g, "/")} is missing.`);
   else {
-    const edit = read("edit.json");
-    const words = read("words.json");
+    const edit = read(editPath);
+    const words = read(wordsPath);
     const endMs = words.at(-1)?.endMs ?? 0;
     const inTalk = (ms, what) => {
       if (typeof ms === "number" && (ms < 0 || ms > endMs + 500))

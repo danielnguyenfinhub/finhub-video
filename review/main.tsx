@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { DESIGN_IDS, DEFAULT_DESIGN } from "../src/designs";
 import { MortgageReel, buildReel } from "../src/mortgage/MortgageReel";
+import { recordingPath } from "../src/mortgage/recording";
 import { LOOKS, outFrameOf, type EditJson } from "../src/mortgage/schema";
 import { TALK_START_FRAME, TRANSITIONS } from "../src/mortgage/timeline";
 import { shiftTimes } from "./shift";
@@ -57,10 +58,13 @@ const App = () => {
     if (!slug) return;
     setDraft(null);
     setStatus({ tone: "info", text: `Loading ${slug}…` });
-    Promise.all([
-      getJson(`/public/videos/${slug}/edit.json`),
-      getJson(`/public/videos/${slug}/words.json`),
-    ])
+    getJson(`/public/videos/${slug}/edit.json`)
+      .then(async (edit) => [
+        edit,
+        await getJson(
+          `/public/${recordingPath(slug, edit.source, "words.json")}`,
+        ),
+      ])
       .then(([edit, w]) => {
         setSaved(edit);
         setDraft(edit);
