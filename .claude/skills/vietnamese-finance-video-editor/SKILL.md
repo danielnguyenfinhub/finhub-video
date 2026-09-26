@@ -132,6 +132,10 @@ take needs another `--recording <id>`; deleting the folder replaces the recordin
 them (ask Daniel first). A new design of a recording already prepared is a new slug with no
 video file: `python scripts/prep-video.py <slug> --recording <id>` writes only its `edit.json`. Check the source
 aspect ratio: a non-9:16 source is cover-cropped; confirm the face stays in frame.
+Several takes (or Daniel's own B-roll): prep each take with its own `--recording <id>`, then
+do the paper edit first: order and trim the clips from the transcripts into
+`public/videos/<slug>/clips.json` and run `prep-video.py <slug> --clips <that file>`
+before touching `edit.json` (shape: `references/edit-json.md`, "Several takes").
 
 **Step 2 — Understand the talk.** One paragraph: problem, example, conclusion. Mark the
 hook sentence, topic changes, every number (maths-checked), false starts, misheard words

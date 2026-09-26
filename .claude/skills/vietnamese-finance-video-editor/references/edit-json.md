@@ -6,6 +6,7 @@
 - Top-level fields
 - Cue types
 - Compliance and exemptions
+- Several takes: clips.json
 - Minimal example
 
 Source of truth: `src/mortgage/schema.ts` (zod, strict — an unknown or misspelt key fails
@@ -80,6 +81,32 @@ can appear only with all three; the card then adds the comparison-rate warning.
 third-party-name. `field` is the key printed in the RG 234 error (e.g. `cues[2]`). Promotional
 phrases ("lãi suất tốt nhất") can only be cleared by `quoted` or `negation`. Write a real `note`;
 it is the audit trail.
+
+## Several takes: clips.json
+
+When Daniel records more than one take (or wants his own B-roll), the paper edit goes in
+`public/videos/<slug>/clips.json` before any `edit.json` work: an ordered list, trimmed from each
+take's `words.json`.
+
+```json
+[
+  { "recording": "lmi-take-1", "inMs": 1200, "outMs": 48300, "role": "a-roll" },
+  { "recording": "lmi-take-2", "inMs": 300, "outMs": 21900, "role": "a-roll" },
+  { "recording": "street-walk.mp4", "inMs": 0, "outMs": 4000, "role": "b-roll" }
+]
+```
+
+- `a-roll`: a prepared recording id (`public/recordings/<id>/`); times are that take's ms.
+  `python scripts/prep-video.py <slug> --clips public/videos/<slug>/clips.json` joins the spans in
+  order into the recording `<slug>-assembly` (proxy, merged `words.json` with `"clipStart":
+  "<recording>"` on each clip's first word) and sets `edit.json` `"source"` to it. From then on
+  every `edit.json` time is **assembly** ms (the merged `words.json` clock). Changing clips.json
+  means running it again, and every time already in `edit.json` shifts.
+- `foreground.webm`: joined from the takes' own cut-outs when every take has one; otherwise the
+  assembly needs its own matte (matte.html on the slug), and prep stops rather than keep a cut-out
+  from an older clip list.
+- `b-roll`: listed by prep, not joined. TODO(WP2): add each to the library as `own-footage`
+  (`node scripts/library.mjs add <file> <meta.json>`) and place it over the a-roll with a cue.
 
 ## Minimal example
 

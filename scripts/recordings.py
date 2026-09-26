@@ -10,10 +10,14 @@ Without it (unmigrated and faceless videos) they sit in public/videos/<slug>/.
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
-PUBLIC = Path(__file__).resolve().parent.parent / "public"
+# FINHUB_PUBLIC points every script at another media root (scripts/check-clips.py
+# uses a temp one); unset, it is the repo's public/.
+PUBLIC = Path(os.environ.get("FINHUB_PUBLIC")
+              or Path(__file__).resolve().parent.parent / "public")
 ID_PATTERN = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 
 
