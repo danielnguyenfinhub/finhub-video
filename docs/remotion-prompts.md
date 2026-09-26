@@ -21,13 +21,13 @@ prompt into Claude Code, and it becomes a composition in `src/showcase/` that we
 | 11 | [Music CD store promo](https://www.remotion.dev/prompts/music-cd-store-promo) | | |
 | 12 | [Bar + Line Chart (combined)](https://www.remotion.dev/prompts/bar-line-chart-combined) | Rate and data charts | `BarLineChart`, in progress |
 | 13 | [Cursor Agent Skills Announcement](https://www.remotion.dev/prompts/cursor-agent-skills-announcement) | | |
-| 14 | [Shape to words transformation](https://www.remotion.dev/prompts/shape-to-words-transformation) | Hooks | |
+| 14 | [Shape to words transformation](https://www.remotion.dev/prompts/shape-to-words-transformation) | Hooks | `ShapeToWords`, built |
 | 15 | [Spinning, glitching SVG Logo turned 3D](https://www.remotion.dev/prompts/spinning-glitching-svg-logo-turned-3d) | Logo sting | `MetallicLogo3D`, in progress |
 | 16 | [3D Retro Pixel Font](https://www.remotion.dev/prompts/3d-retro-pixel-font) | | |
 | 17 | [Apple-Style Device Rise Animation](https://www.remotion.dev/prompts/apple-style-device-rise-animation) | | |
 | 18 | [Strava Run visualized](https://www.remotion.dev/prompts/strava-run-visualized) | | |
 | 19 | [HTML-in-canvas magnifying glass](https://www.remotion.dev/prompts/html-in-canvas-magnifying-glass) | | |
-| 20 | [The Kinetic Marketing](https://www.remotion.dev/prompts/the-kinetic-marketing) | Hooks | |
+| 20 | [The Kinetic Marketing](https://www.remotion.dev/prompts/the-kinetic-marketing) | Hooks | `KineticMarketing`, built |
 | 21 | [Audio Spectrum Visualizer](https://www.remotion.dev/prompts/audio-spectrum-visualizer) | | |
 | 22 | [Vintage screen effect (HTML-in-canvas)](https://www.remotion.dev/prompts/vintage-screen-effect-html-in-canvas) | | |
 | 23 | [BMS Active Cell Balancing Animation](https://www.remotion.dev/prompts/bms-active-cell-balancing-animation-8s1p-pack-with-energy-flow-visualization) | | `BmsCellBalancing`, in progress |

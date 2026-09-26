@@ -36,6 +36,13 @@ import { BrandKitDemo } from "./brand/BrandKitDemo";
 import { MetallicLogo3D, calculateMetallicLogo3DMetadata } from "./showcase/logo3d/MetallicLogo3D";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
+import { ShapeToWords, shapeToWordsDefaultProps, shapeToWordsSchema } from "./showcase/shapetowords/ShapeToWords";
+import {
+  KineticMarketing,
+  calculateKineticMarketingMetadata,
+  kineticMarketingDefaultProps,
+  kineticMarketingSchema,
+} from "./showcase/kineticmarketing/KineticMarketing";
 import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
 import { RealEstateInvesting } from "./showcase/realestateinvesting/RealEstateInvesting";
 import { TravelRouteMap } from "./showcase/travelroutemap/TravelRouteMap";
@@ -144,6 +151,9 @@ export const RemotionRoot: React.FC = () => {
         />
       </Folder>
       <Folder name="Experiments">
+        {/* Remotion prompt-gallery builds, used as swappable video hooks. */}
+        <Composition id="ShapeToWords" component={ShapeToWords} schema={shapeToWordsSchema} defaultProps={shapeToWordsDefaultProps} durationInFrames={300} fps={30} width={1920} height={1080} />
+        <Composition id="KineticMarketing" component={KineticMarketing} schema={kineticMarketingSchema} defaultProps={kineticMarketingDefaultProps} calculateMetadata={calculateKineticMarketingMetadata} durationInFrames={300} fps={30} width={1920} height={1080} />
         <Composition id="MetallicLogo3D" component={MetallicLogo3D} calculateMetadata={calculateMetallicLogo3DMetadata} durationInFrames={120} fps={30} width={1920} height={1080} />
         {/* From the Remotion prompt gallery; the prompt URL is at the top of each file. */}
         <Composition id="NewsHeadlineHighlight" component={NewsHeadlineHighlight} schema={newsHeadlineSchema} defaultProps={newsHeadlineDefaultProps} durationInFrames={150} fps={30} width={1920} height={1080} />
