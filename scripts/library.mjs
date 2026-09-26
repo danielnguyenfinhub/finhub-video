@@ -12,6 +12,7 @@
 //   node scripts/library.mjs add <file> <meta.json>
 //   node scripts/library.mjs index
 //   node scripts/library.mjs stats
+//   node scripts/library.mjs resolve <slug> [--public-dir dir]   edit.json visuals {find} -> file
 //
 // add() is the only thing that writes a binary into the library.
 import { createHash } from "node:crypto";
@@ -212,11 +213,46 @@ export const stats = (lib = LIBRARY) => {
   return { byKind, total };
 };
 
+// edit.json `visuals` (WP3): rewrites each {find: "<keywords>"} asset to a
+// concrete "library/..." path, so a render only ever sees a file. Exact and
+// synonym hits only (a stem hit is too loose to put on screen unseen); music
+// never. Nothing is downloaded: a miss throws, naming every unresolved
+// keyword, and the edit is left untouched. Returns the resolved paths.
+export const resolveVisuals = (slug, { publicDir = join(ROOT, "public") } = {}) => {
+  const lib = join(publicDir, "library");
+  const editFile = join(publicDir, "videos", slug, "edit.json");
+  if (!existsSync(editFile)) throw new Error(`${editFile} not found.`);
+  const edit = JSON.parse(readFileSync(editFile, "utf8"));
+  const missing = [];
+  const resolved = [];
+  const visuals = (edit.visuals ?? []).map((v) => {
+    if (typeof v.asset === "string" || !v.asset?.find) return v;
+    const hit = find(v.asset.find, { lib }).find((h) => h.match !== "stem" && h.meta.kind !== "music");
+    if (!hit) {
+      missing.push(v.asset.find);
+      return v;
+    }
+    markUsed(hit.path, slug, { lib });
+    const path = `library/${relative(lib, hit.path).replace(/\\/g, "/")}`;
+    resolved.push(`${v.asset.find} -> ${path} (${hit.match})`);
+    return { ...v, asset: path };
+  });
+  if (missing.length)
+    throw new Error(
+      `no exact or synonym library match for: ${missing.map((m) => `"${m}"`).join(", ")}. ` +
+        "Add a file with `node scripts/library.mjs add`, add the words to public/library/synonyms.json, " +
+        "or name a library/... path in edit.json. (Downloading new footage is only in the faceless tooling for now.)",
+    );
+  // ponytail: rewrites edit.json in plain 2-space JSON (one-line arrays unfold); patch the text in place if that churn bothers anyone.
+  if (resolved.length) writeFileSync(editFile, `${JSON.stringify({ ...edit, visuals }, null, 2)}\n`);
+  return resolved;
+};
+
 const cli = () => {
   const [cmd, ...rest] = process.argv.slice(2);
   const kindAt = rest.indexOf("--kind");
   const kind = kindAt >= 0 ? rest[kindAt + 1] : undefined;
-  const args = rest.filter((_, i) => i !== kindAt && i !== kindAt + 1);
+  const args = kindAt >= 0 ? rest.filter((_, i) => i !== kindAt && i !== kindAt + 1) : rest;
   if (kind && !KINDS.includes(kind)) throw new Error(`--kind must be one of ${KINDS.join(", ")}.`);
   if (cmd === "find") {
     if (!args.length) throw new Error("usage: library.mjs find <keywords...> [--kind k]");
@@ -227,6 +263,13 @@ const cli = () => {
     if (args.length !== 2) throw new Error("usage: library.mjs add <file> <meta.json>");
     const r = add(args[0], JSON.parse(readFileSync(args[1], "utf8")));
     console.log(`${r.existed ? "already in library, merged" : "added"}: ${relative(ROOT, r.path)}`);
+  } else if (cmd === "resolve") {
+    const dirAt = args.indexOf("--public-dir");
+    const publicDir = dirAt >= 0 ? resolve(args[dirAt + 1]) : undefined;
+    const slug = args.filter((_, i) => i !== dirAt && i !== dirAt + 1)[0];
+    if (!slug) throw new Error("usage: library.mjs resolve <slug> [--public-dir dir]");
+    const r = resolveVisuals(slug, { publicDir });
+    console.log(r.length ? r.join("\n") : "nothing to resolve: every visual already names a file");
   } else if (cmd === "index") {
     console.log(`index.json: ${index().length} entries`);
   } else if (cmd === "stats") {

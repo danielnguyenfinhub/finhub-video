@@ -5,7 +5,9 @@
 - Rules that apply to every field
 - Top-level fields
 - Cue types
+- Visuals (b-roll, pip, image card)
 - Compliance and exemptions
+- Several takes: clips.json
 - Minimal example
 
 Source of truth: `src/mortgage/schema.ts` (zod, strict — an unknown or misspelt key fails
@@ -41,6 +43,7 @@ the render with a readable error). Full worked example: `public/videos/ty-do/edi
 | `background` | no | `"brand"` replaces the room behind Daniel with the brand backdrop (navy into blue). Needs `foreground.webm`, made once per video at `http://localhost:4100/matte.html?slug=<slug>` (~13x the video's length); the render stops if it is missing. Use for a cleaner, studio look or when the room is messy; the cover card still shows the original frame |
 | `stats` | no | `[{atMs,durMs,big,label}]` stat cards at the top, e.g. `{"atMs":12900,"durMs":3000,"big":"~$400","label":"cho mỗi hộ gia đình"}` |
 | `cues` | no | Infographics — see below |
+| `visuals` | no | Library b-roll over the talk: cutaway, picture-in-picture, image card — see below |
 | `cta` | no | `{question?}` on the contact card. Default "Bạn cần tư vấn về khoản vay?"; button text is fixed |
 | `compliance` | no | See below |
 | `exemptions` | no | See below |
@@ -66,6 +69,39 @@ design draws the kinds above). A design needing per-video data the schema lacks 
 hard-codes it (single-use design) or adds one optional reusable field to the core schema,
 with a regression render.
 
+## Visuals (b-roll, pip, image card)
+
+`visuals: [{mode, atMs, durMs, asset}]`. `atMs` is source ms like everything else; `durMs`
+is on-screen ms, like `stats`. The core draws them, so every design gets them; captions,
+cues, stats and the end cards stay on top, and footage is muted (Daniel's voice is the only
+audio). Use one only where the picture makes the point clearer than Daniel's face does.
+
+| mode | What shows | Use when Daniel… |
+|---|---|---|
+| `cutaway` | the asset full frame, Daniel hidden (voice continues) | describes something the viewer should see (a street, a signing) |
+| `pip` | the asset full frame, Daniel small top-right | walks through something while still talking to camera |
+| `overlay` | an image card left of Daniel's face (Ken Burns on stills) | names a thing a small picture identifies (a document, keys) |
+
+```json
+"visuals": [
+  { "mode": "cutaway", "atMs": 21400, "durMs": 2500, "asset": "library/stock-video/suburb-street__pexels__1a2b3c4d.mp4" },
+  { "mode": "pip", "atMs": 46000, "durMs": 5000, "asset": { "find": "couple meeting financial adviser" } },
+  { "mode": "overlay", "atMs": 80200, "durMs": 3000, "asset": { "find": "chìa khóa nhà" } }
+]
+```
+
+- `asset` is a file under `public/library/` (lowercase, no `..`) or `{"find": "<keywords>"}`.
+  Before rendering, `node scripts/library.mjs resolve <slug>` rewrites each `find` to a file,
+  using exact and `synonyms.json` hits only, and stops listing any keyword it can't match.
+  It never downloads: new footage comes from the faceless tooling for now
+  (`scripts/voice-video.mjs`), or add a file with `node scripts/library.mjs add`.
+- The render fails on a `find` left in, or on a path whose file isn't there.
+- Golden rules (`node scripts/check-golden.mjs <slug>`): it reports the time Daniel's face is
+  hidden (cutaways only), fails a single cutaway over 4 s (`CUTAWAY_MAX_MS`, untuned) and
+  flags one that covers a spoken number, since that number's figure must stay visible.
+- A design restyles the pip and overlay frame (border, radius, mask) through its
+  `visualFrame` in `src/mortgage/design.ts`; left out, the frame is a plain white-edged card.
+
 ## Compliance and exemptions
 
 `compliance.taxNote` (added by the bootstrap): true whenever tax is discussed; adds
@@ -80,6 +116,32 @@ can appear only with all three; the card then adds the comparison-rate warning.
 third-party-name. `field` is the key printed in the RG 234 error (e.g. `cues[2]`). Promotional
 phrases ("lãi suất tốt nhất") can only be cleared by `quoted` or `negation`. Write a real `note`;
 it is the audit trail.
+
+## Several takes: clips.json
+
+When Daniel records more than one take (or wants his own B-roll), the paper edit goes in
+`public/videos/<slug>/clips.json` before any `edit.json` work: an ordered list, trimmed from each
+take's `words.json`.
+
+```json
+[
+  { "recording": "lmi-take-1", "inMs": 1200, "outMs": 48300, "role": "a-roll" },
+  { "recording": "lmi-take-2", "inMs": 300, "outMs": 21900, "role": "a-roll" },
+  { "recording": "street-walk.mp4", "inMs": 0, "outMs": 4000, "role": "b-roll" }
+]
+```
+
+- `a-roll`: a prepared recording id (`public/recordings/<id>/`); times are that take's ms.
+  `python scripts/prep-video.py <slug> --clips public/videos/<slug>/clips.json` joins the spans in
+  order into the recording `<slug>-assembly` (proxy, merged `words.json` with `"clipStart":
+  "<recording>"` on each clip's first word) and sets `edit.json` `"source"` to it. From then on
+  every `edit.json` time is **assembly** ms (the merged `words.json` clock). Changing clips.json
+  means running it again, and every time already in `edit.json` shifts.
+- `foreground.webm`: joined from the takes' own cut-outs when every take has one; otherwise the
+  assembly needs its own matte (matte.html on the slug), and prep stops rather than keep a cut-out
+  from an older clip list.
+- `b-roll`: listed by prep, not joined. TODO(WP2): add each to the library as `own-footage`
+  (`node scripts/library.mjs add <file> <meta.json>`) and place it over the a-roll with a cue.
 
 ## Minimal example
 

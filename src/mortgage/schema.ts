@@ -106,6 +106,26 @@ const cue = z
   ])
   .refine((c) => c.toMs > c.fromMs, "cue toMs must be after fromMs");
 
+// B-roll from the source library over the talk, drawn by the core so every
+// design gets it (Visuals.tsx). cutaway: full frame, Daniel hidden; pip: full
+// frame with Daniel small in a corner; overlay: an image card beside him.
+// asset is a file under public/library/, or {find} keywords that
+// `node scripts/library.mjs resolve <slug>` rewrites to one before rendering.
+export const VISUAL_MODES = ["cutaway", "pip", "overlay"] as const;
+const libraryPath = z
+  .string()
+  .regex(
+    /^library\/([a-z0-9_-]+\/)*[a-z0-9_-]+\.[a-z0-9]+$/,
+    'a file under public/library/, e.g. "library/stock-video/house__pexels__1a2b3c4d.mp4" (lowercase, no "..")',
+  );
+const visual = z.strictObject({
+  mode: z.enum(VISUAL_MODES),
+  atMs: ms,
+  durMs: z.number().positive(), // output ms, like stats
+  asset: z.union([libraryPath, z.strictObject({ find: text })]),
+});
+export type Visual = z.infer<typeof visual>;
+
 const exemption = z.strictObject({
   field: text,
   term: text,
@@ -202,6 +222,7 @@ export const editSchema = z.strictObject({
     .array(z.strictObject({ atMs: ms, durMs: ms, big: text, label: text }))
     .optional(),
   cues: z.array(cue).optional(),
+  visuals: z.array(visual).optional(),
   cta: z.strictObject({ question: text.optional() }).optional(),
   compliance: z
     .strictObject({

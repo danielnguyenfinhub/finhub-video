@@ -47,4 +47,7 @@ export type Design = {
     kind: TransitionKind,
   ) => TransitionPresentation<Record<string, unknown>>;
   copy: string[]; // every hard-coded on-screen string, RG 234-scanned
+  // edit.json visuals (drawn by the core, Visuals.tsx): border, radius, mask
+  // for the pip and overlay frames. Left out: a plain white-edged card.
+  visualFrame?: React.CSSProperties;
 };
