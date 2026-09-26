@@ -33,6 +33,7 @@ import {
 import { gradientBg, palette } from "./showcase/palette";
 import { poppins } from "./showcase/font";
 import { BrandKitDemo } from "./brand/BrandKitDemo";
+import { MetallicLogo3D, calculateMetallicLogo3DMetadata } from "./showcase/logo3d/MetallicLogo3D";
 import { EmojiCatalog } from "./brand/EmojiCatalog";
 import { ELEMENT_CATALOG_FRAMES, ElementCatalog } from "./elements/ElementCatalog";
 import { BarLineChart } from "./showcase/barlinechart/BarLineChart";
@@ -143,6 +144,7 @@ export const RemotionRoot: React.FC = () => {
         />
       </Folder>
       <Folder name="Experiments">
+        <Composition id="MetallicLogo3D" component={MetallicLogo3D} calculateMetadata={calculateMetallicLogo3DMetadata} durationInFrames={120} fps={30} width={1920} height={1080} />
         {/* From the Remotion prompt gallery; the prompt URL is at the top of each file. */}
         <Composition id="NewsHeadlineHighlight" component={NewsHeadlineHighlight} schema={newsHeadlineSchema} defaultProps={newsHeadlineDefaultProps} durationInFrames={150} fps={30} width={1920} height={1080} />
         {/* Transparent: render as ProRes 4444 with alpha (command in CtaOverlay.tsx). */}
