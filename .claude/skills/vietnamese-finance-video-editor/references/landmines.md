@@ -25,6 +25,9 @@
 - WebGL leaks/3D/effects render black → missing `--gl=angle` → render via render-video.py.
 - `trimAfter` with `playbackRate` blanks a slowed segment's tail → only `trimBefore`
   (PacedVideo does this).
+- A paced video in a `<Sequence>` with a negative `from` plays out of sync (the pip lagged the
+  voice by 0.5 s) → Remotion skips the frames before 0 at rate 1, not `playbackRate` → start
+  the Sequence at 0 and move `trimBefore` on by `skip * rate` instead (Visuals.tsx pip).
 - Tax talk with no tax disclaimer → a credit rep isn't a tax agent → `compliance.taxNote`.
 - Moving-pill caption drawn beside the words in renders (fine in the Player) → words measured with offsetLeft/Top before Be Vietnam Pro loaded, so the line wrapped differently → measure only after reelFontReady() and hold the frame with useDelayRender (studio PillCaptions; same class as NewsTicker/BoxCaption). Applies to every Remotion Element that measures text.
 - Background removal (review/matte.html) took 44.5 min for a 3.5-min video on this PC (about 13x, not the 9x measured on the shorter interest-in-advance). Start it first, before any other work on the video, and keep the browser tab open.

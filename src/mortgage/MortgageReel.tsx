@@ -26,6 +26,7 @@ import { DEFAULT_DESIGN, getDesign } from "../designs";
 import { assertCompliantCopy, assertRateGate } from "./compliance";
 import { recordingPath } from "./recording";
 import { ComplianceCard } from "./EndCards";
+import { Visuals } from "./Visuals";
 import {
   DEFAULT_CTA_QUESTION,
   DEFAULT_SUBTITLE,
@@ -107,6 +108,15 @@ export const buildReel = (
     { ...onScreenCopy(edit), [`design:${design.id}`]: design.copy },
     edit.exemptions ?? [],
   );
+  // Visuals are resolved at prep time, never during a render.
+  const unresolved = (edit.visuals ?? []).flatMap((v) =>
+    typeof v.asset === "string" ? [] : [`"${v.asset.find}"`],
+  );
+  if (unresolved.length)
+    throw new Error(
+      `MortgageReel "${slug}": visuals ${unresolved.join(", ")} still say {find}. ` +
+        `Run \`node scripts/library.mjs resolve ${slug}\` to pick library files first.`,
+    );
   const rate = edit.compliance?.advertisedRate;
   if (rate)
     assertRateGate(rate.rateFigure, rate.comparisonRate, rate.ratesAsAt);
@@ -128,12 +138,22 @@ export const calculateMortgageReelMetadata: CalculateMetadataFunction<
 > = async ({ props }) => {
   const { slug, design } = props;
   const editJson = await fetchJson(slug, `videos/${slug}/edit.json`);
-  const { source } = parseEdit(editJson, slug);
+  const { source, visuals } = parseEdit(editJson, slug);
   const cutOutPath = recordingPath(slug, source, "foreground.webm");
-  const [words, cutOut] = await Promise.all([
+  const assets = (visuals ?? []).flatMap((v) =>
+    typeof v.asset === "string" ? [v.asset] : [],
+  );
+  const [words, cutOut, ...found] = await Promise.all([
     fetchJson(slug, recordingPath(slug, source, "words.json")),
     fetch(staticFile(cutOutPath), { method: "HEAD" }),
+    ...assets.map((a) => fetch(staticFile(a), { method: "HEAD" })),
   ]);
+  const missing = assets.filter((_, i) => !(found[i] as Response).ok);
+  if (missing.length)
+    throw new Error(
+      `MortgageReel "${slug}": visuals point at files that aren't in public/: ${missing.join(", ")}. ` +
+        `Add them with \`node scripts/library.mjs add\` or change the visual.`,
+    );
   // Golden rule: the background is always removed, so the cut-out must exist.
   if (!cutOut.ok)
     throw new Error(
@@ -286,6 +306,20 @@ export const MortgageReel: React.FC<MortgageReelProps> = ({ slug, reel }) => {
       </TransitionSeries>
       {edit.music ? (
         <Music music={edit.music} captions={timeline.captions} />
+      ) : null}
+      {edit.visuals?.length ? (
+        <Sequence
+          from={TALK_START_FRAME}
+          durationInFrames={talk - OUTRO_TRANSITION}
+          layout="none"
+        >
+          <Visuals
+            reel={reel}
+            src={src}
+            foreground={foreground}
+            frameStyle={design.visualFrame}
+          />
+        </Sequence>
       ) : null}
 
       <Sequence
