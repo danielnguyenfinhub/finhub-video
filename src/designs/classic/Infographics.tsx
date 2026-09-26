@@ -159,7 +159,8 @@ const Row: React.FC<{
   label: string;
   value: string;
   color: string;
-}> = ({ at, label, value, color }) => {
+  stacked?: boolean;
+}> = ({ at, label, value, color, stacked }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const p = pop(frame, fps, at);
@@ -167,8 +168,10 @@ const Row: React.FC<{
     <div
       style={{
         display: "flex",
+        flexDirection: stacked ? "column" : "row",
+        alignItems: stacked ? "center" : undefined,
         justifyContent: "space-between",
-        gap: 12,
+        gap: stacked ? 4 : 12,
         fontSize: 36,
         fontWeight: 600,
         padding: "10px 0",
@@ -185,6 +188,8 @@ const Row: React.FC<{
   );
 };
 
+const STACK_AT = 20;
+
 export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
   cue,
   rel,
@@ -193,6 +198,12 @@ export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
   const { fps } = useVideoConfig();
   const vs = pop(frame, fps, rel(cue.vsAtMs ?? cue.cards[1].atMs));
   const qP = cue.question ? pop(frame, fps, rel(cue.question.atMs)) : 0;
+  // A long row (label + value) can't share one line in a half-width card and
+  // runs into the VS badge: stack it, centred, clear of the badge.
+  // ponytail: character count, not measured width; measure if a row still clips.
+  const stacked = cue.cards.some((c) =>
+    c.rows.some((r) => r.label.length + r.value.length > STACK_AT),
+  );
   return (
     <Panel style={{ padding: 26 }}>
       <div style={{ display: "flex", gap: 22, position: "relative" }}>
@@ -221,6 +232,7 @@ export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
                   fontWeight: 900,
                   color: brand.highlight,
                   marginBottom: 8,
+                  textAlign: stacked ? "center" : undefined,
                 }}
               >
                 {card.title}
@@ -232,6 +244,7 @@ export const Compare: React.FC<{ cue: CueOf<"compare">; rel: Rel }> = ({
                   label={r.label}
                   value={r.value}
                   color={toneColor(r.tone, "#fff")}
+                  stacked={stacked}
                 />
               ))}
             </div>

@@ -48,8 +48,8 @@ const PANEL_TOP = SAFE.top + 150;
 const BIG = 92;
 const SMALL = 58;
 // Lower band: clear of the English line, which is bottom-anchored at
-// SAFE.bottom and up to two lines (~115 px) tall.
-const LOW_BOTTOM = 1920 - SAFE.bottom + 140;
+// SAFE.bottom and up to three lines (~165 px at 36 px, lineHeight 1.35) tall.
+const LOW_BOTTOM = 1920 - SAFE.bottom + 210;
 
 const Cover: React.FC<CoverProps> = ({ title, subtitle, keywords }) => {
   const frame = useCurrentFrame();
