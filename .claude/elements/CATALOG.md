@@ -82,6 +82,10 @@ imports for any packages to install first.
 - **YouTube End Card** (`youtube/youtube-end-card`) — A clean YouTube endcard with social links and space for recommended videos.
 - **YouTube Subscribe Nudge** (`youtube/youtube-subscribe-nudge`) — An animated creator-branded subscribe prompt with a subscribed-state confirmation. This copy is the newer live-site version, ahead of `packages/docs/elements`: `clickSrc`, `dingSrc` and `avatarSrc` props replace the click sound, bell sound and avatar, which otherwise load from remotion.media. The default click (`mouseClick`) is CC0, but the default bell (`ding`) has no free licence, so pass your own `dingSrc` for a published video.
 
+## Caption style ideas
+
+35 named caption treatments from HeyGen's HyperFrames, as ideas to rebuild in Remotion: see [hyperframes/CAPTION-IDEAS.md](hyperframes/CAPTION-IDEAS.md).
+
 ## remocn (300+ more)
 
 Animations, transitions, shaders, kinetic text, UI mock-ups, 100 icons and 5 full templates from remocn.dev — see [remocn/CATALOG.md](remocn/CATALOG.md).
