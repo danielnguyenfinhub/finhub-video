@@ -109,3 +109,8 @@ or `toOutMs` (timeline.ts). Reel data: `reel.edit` (edit.json), `reel.timeline.c
   for frames 20 (cover), 120 (hook + captions), 400 and 900 (ty-do says "4.1 tỷ" near
   4 s and "400" near 13 s, so figures show). Look at the PNGs.
 - Every string on screen is either from the reel or in `copy`.
+- Finish with `node scripts/promote-design.mjs <id>` once it is registered and has a
+  `template.json` (fields as `MANIFEST_FIELDS` in `scripts/select-template.mjs`): it runs
+  lint, renders the preview and Mode A/B stills, checks `copy` (every hard-coded string,
+  RG 234) and theme-only colours (`// theme-exempt: <why>` on a line allows one), and
+  only then makes it a template the selector can pick. It lists every failure at once.
