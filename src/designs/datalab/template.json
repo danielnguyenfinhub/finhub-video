@@ -1,0 +1,43 @@
+{
+  "id": "datalab",
+  "intents": [
+    "data"
+  ],
+  "dataShapes": [
+    "numbers",
+    "banks"
+  ],
+  "grammar": {
+    "numbers": "full-screen data panel + counter (own)",
+    "comparisons": "classic compare/bars cue cards (MotionTrack)",
+    "steps": "mono chapter cards",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "dark blueprint + giant counting hook",
+    "captions": "popping words",
+    "framing": "cut-out steps aside for the chart",
+    "transitions": "core chapter transitions",
+    "texture": "blueprint grid + particles",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 40,
+    "en": 0
+  },
+  "minHoldMs": 1500,
+  "facePolicy": "face-required",
+  "renderCost": "med",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

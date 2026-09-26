@@ -1,0 +1,43 @@
+{
+  "id": "chatstory",
+  "intents": [
+    "qa",
+    "explain"
+  ],
+  "dataShapes": [
+    "narrative"
+  ],
+  "grammar": {
+    "numbers": "polaroid with one-bar chart or counter",
+    "comparisons": "classic compare/bars cue cards (MotionTrack)",
+    "steps": "chapter as a chat bubble",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "iMessage-style exchange",
+    "captions": "chat bubbles",
+    "framing": "cut-out on ice-blue paper, punch-in per cut",
+    "transitions": "core chapter transitions",
+    "texture": "ice-blue paper (paper shader)",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 60,
+    "en": 0
+  },
+  "minHoldMs": 2000,
+  "facePolicy": "face-required",
+  "renderCost": "high",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

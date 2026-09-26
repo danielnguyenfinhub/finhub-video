@@ -1,0 +1,46 @@
+{
+  "id": "classic",
+  "intents": [
+    "data",
+    "explain",
+    "compare"
+  ],
+  "dataShapes": [
+    "numbers",
+    "comparison",
+    "banks"
+  ],
+  "grammar": {
+    "numbers": "navy stat panel + counter",
+    "comparisons": "compare/bars cue cards (MotionTrack, own)",
+    "steps": "chapter banner",
+    "eligibility": "verdict cue ✓/✗ (own)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "frozen-frame + big title",
+    "captions": "karaoke pill + stroke",
+    "framing": "full-frame zoom-cuts",
+    "transitions": "light-leak flash + slide/wipe",
+    "texture": "clean gradient",
+    "sound": "money-rain hook sfx + whooshes",
+    "cta": "white card logo + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 48,
+    "en": 0
+  },
+  "minHoldMs": 1500,
+  "facePolicy": "face-required",
+  "renderCost": "high",
+  "preview": null,
+  "uses": 1,
+  "lastUsed": "2026-09-24"
+}

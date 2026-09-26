@@ -1,0 +1,42 @@
+{
+  "id": "checklist",
+  "intents": [
+    "process"
+  ],
+  "dataShapes": [
+    "steps"
+  ],
+  "grammar": {
+    "numbers": "one-bar chart inside the current step card",
+    "comparisons": "classic compare/bars cue cards (MotionTrack); step column fades out",
+    "steps": "numbered step cards + k/N progress bar (own)",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "notebook checklist",
+    "captions": "box captions",
+    "framing": "cut-out bottom-right at 0.85",
+    "transitions": "core chapter transitions",
+    "texture": "notebook paper (paper shader)",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 36,
+    "en": 0
+  },
+  "minHoldMs": 1500,
+  "facePolicy": "face-required",
+  "renderCost": "high",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

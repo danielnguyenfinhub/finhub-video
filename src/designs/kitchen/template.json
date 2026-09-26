@@ -1,0 +1,43 @@
+{
+  "id": "kitchen",
+  "intents": [
+    "story",
+    "explain"
+  ],
+  "dataShapes": [
+    "narrative"
+  ],
+  "grammar": {
+    "numbers": "tilted polaroid with a ring",
+    "comparisons": "classic compare/bars cue cards (MotionTrack)",
+    "steps": "chapter title with an amber wash",
+    "eligibility": "classic verdict cue ✓/✗ (MotionTrack)",
+    "captionPosition": "below the face (y ≥ 1300)"
+  },
+  "skinAxes": {
+    "cover": "on-screen message bubbles",
+    "captions": "sentence-paced",
+    "framing": "cut-out, no punch-ins",
+    "transitions": "slow crossfades",
+    "texture": "liquid contours + faint grain",
+    "sound": "core sfx",
+    "cta": "classic white card + contact list"
+  },
+  "aspects": [
+    "9:16",
+    "4:5"
+  ],
+  "languages": [
+    "vi"
+  ],
+  "maxChars": {
+    "vi": 48,
+    "en": 0
+  },
+  "minHoldMs": 3000,
+  "facePolicy": "face-required",
+  "renderCost": "high",
+  "preview": null,
+  "uses": 0,
+  "lastUsed": null
+}

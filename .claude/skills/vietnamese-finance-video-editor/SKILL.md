@@ -94,25 +94,9 @@ miễn phí, đảm bảo …) in the verify list — never silently cut them.
 
 ## Decision Tree — content → direction
 
-```
-IF src/designs/ does not exist
-  → run the one-time bootstrap (references/design-architecture.md) first
-IF Daniel asks for a previous video's look ("like the 4.1 tỷ đô one")
-  → reuse that design; log reused: true; skip the variety check
-ELSE pick the lead direction from the talk:
-  number-heavy (costs, comparisons, repayments)   → DATA-LED
-  explains a concept or mechanism                  → EXPLAINER (whiteboard / hand-drawn)
-  a process with steps                             → ROADMAP
-  warns, or busts a myth                           → ALERT (newsroom, strike-throughs)
-  reacts to news (RBA, lender policy)              → BROADCAST (lower-thirds, ticker)
-  tells a (synthetic) scenario story               → CINEMATIC
-  none clearly                                     → the direction least used in the log
-Mixed talks: one direction leads; borrow single scenes from a second.
-IF the chosen direction was used by the previous video
-  → change direction, or change ≥ 5 axes inside it
-```
-
-Directions and their axis options: `references/design-space.md`.
+Run `node scripts/select-template.mjs <slug>` (unless Daniel asks for a previous video's look: reuse it, log `reused: true`); its `pick` and top 3 with scores are in `out/videos/<slug>/selection.json`, and `--pick <id> --reason "…"` records an override.
+If the script errors: number-heavy → DATA-LED, a mechanism → EXPLAINER, steps → ROADMAP, a warning → ALERT, news → BROADCAST, a story → CINEMATIC;
+change direction (or ≥ 5 axes) if the previous video used it. Directions and axes: `references/design-space.md`.
 
 ## Workflow
 
@@ -143,7 +127,7 @@ before touching `edit.json` (shape: `references/edit-json.md`, "Several takes").
 hook sentence, topic changes, every number (maths-checked), false starts, misheard words
 (context-bound fixes, never audio cuts), RG 234 watch-words, tax talk.
 
-**Step 3 — Design brief** (write it into edit.json `notes`): the direction and why; the
+**Step 3 — Design brief** (write it into edit.json `notes`): the design `select-template.mjs` picked and why; the
 8 axes filled in; `python .claude/skills/vietnamese-finance-video-editor/scripts/main.py check` output showing the axes that differ from
 the last 3 videos; the 3–6 signature moments (hook, key number, turn, conclusion) and the
 exact effect at each.
